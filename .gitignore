@@ -24,10 +24,10 @@ src/config.h.in
 /gpv/gpv.lo
 /libgpv.la
 /libtool
-/src/.deps/.dirstamp
-/src/.deps/gghlite.Po
-/src/.deps/main.Po
-/src/.deps/misc.Po
+/src/.deps
 /src/.dirstamp
 /src/config.h
 /src/stamp-h1
+/tests/.deps/
+/tests/.dirstamp
+test_gpv
