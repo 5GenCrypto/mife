@@ -15,3 +15,8 @@ bin_PROGRAMS = gghlite
 gghlite_SOURCES = src/main.c src/gghlite.c src/misc.c src/gghlite.h src/misc.h
 gghlite_LDADD = $(srcdir)/dgs/libdgs.la $(srcdir)/libgpv.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 gghlite_LDFLAGS = -no-install
+
+check_PROGRAMS = test_gpv
+test_gpv_SOURCES = tests/test_gpv.c
+test_gpv_LDADD = $(srcdir)/dgs/libdgs.la $(srcdir)/libgpv.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
+test_gpv_LDFLAGS = -no-install

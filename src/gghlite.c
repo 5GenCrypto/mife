@@ -1,3 +1,4 @@
+#include "config.h"
 #include "misc.h"
 #include "gghlite.h"
 
@@ -5,13 +6,65 @@
 #include <flint/fmpz.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
+#include <flint-addons/flint-addons.h>
 #include <dgs/dgs.h>
+#include <gpv/gpv.h>
 
 #include <math.h>
 #include <stdint.h>
 
+void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk);
+  assert(self->pk->n);
 
-int _gghlite_set_n_q(gghlite_pk_t self) {
+  fmpz_mat_t I;
+  fmpz_mat_init(I, 1, self->pk->n);
+  fmpz_mat_one(I);
+  dgs_disc_gauss_lattice_mp_t *D = dgs_disc_gauss_lattice_mp_init(I, self->pk->sigma, NULL, DGS_LATTICE_IDENTITY);
+
+  fmpz_poly_init(self->g);
+  fmpz_poly_sample(self->g, D, randstate);
+
+  dgs_disc_gauss_lattice_mp_clear(D);
+  fmpz_mat_clear(I);
+}
+
+void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk);
+  assert(self->pk->n);
+  assert(fmpz_cmp_ui(self->pk->q,0)>0);
+
+  fmpz_mat_t I;
+  fmpz_mat_init(I, 1, self->pk->n);
+  fmpz_mat_one(I);
+
+  mpz_t q;
+  mpz_init(q);
+  fmpz_get_mpz(q, self->pk->q);
+  mpfr_t sqrt_q;
+  mpfr_init2(sqrt_q, fmpz_sizeinbase(self->pk->q,2)/2);
+  mpfr_set_z(sqrt_q, q, MPFR_RNDN);
+  mpz_clear(q);
+  mpfr_sqrt(sqrt_q, sqrt_q, MPFR_RNDN);
+  assert(mpfr_cmp_ui(sqrt_q,0)>0);
+
+  dgs_disc_gauss_lattice_mp_t *D = dgs_disc_gauss_lattice_mp_init(I, sqrt_q, NULL, DGS_LATTICE_IDENTITY);
+
+  fmpz_poly_init(self->h);
+  fmpz_poly_sample(self->h, D, randstate);
+
+  dgs_disc_gauss_lattice_mp_clear(D);
+  mpfr_clear(sqrt_q);
+  fmpz_mat_clear(I);
+}
+
+void _gghlite_set_cyclotomic_polynomial(gghlite_pk_t self) {
+  fmpz_poly_init(self->cyclotomic_polynomial);
+  fmpz_poly_set_coeff_si(self->cyclotomic_polynomial, self->n, 1);
+  fmpz_poly_set_coeff_si(self->cyclotomic_polynomial,       0, 1);
+}
+
+void _gghlite_set_n_q(gghlite_pk_t self) {
   const int64_t lambda = self->lambda;
   const int64_t kappa  = self->kappa;
   int64_t n_base = kappa * lambda * ceil(log2(lambda));
@@ -21,20 +74,20 @@ int _gghlite_set_n_q(gghlite_pk_t self) {
   int64_t n     = ((int64_t)(1))<<log_n;
   int64_t log_q = _gghlite_log_q(log_n, kappa);
 
-  while(1) { 
-    if (3.0/8.0 * log_q < n/lambda)
+  while(1) {
+    if (_gghlite_check_sec(log_q, n, lambda))
       break;
     c*=2;
     log_n = ceil(log2(c*n_base));
     n = ((int64_t)(1))<<log_n;
     log_q = _gghlite_log_q(log_n, kappa);
   }
-  
+
   self->n = n;
   fmpz_init_set_ui(self->q, 2);
   fmpz_pow_ui(self->q, self->q, log_q);
 
-  fmpz_t zeta;  
+  fmpz_t zeta;
   fmpz_sub_ui(self->q, self->q, 1);
   fmpz_divexact_si(zeta, self->q, self->n);
 
@@ -43,14 +96,13 @@ int _gghlite_set_n_q(gghlite_pk_t self) {
     fmpz_mul_ui(tmp, zeta, self->n);
     fmpz_add_ui(tmp, tmp, 1);
     if (fmpz_is_probabprime(tmp)) {
-      fmpz_set(self->q, tmp);      
+      fmpz_set(self->q, tmp);
       break;
     }
     fmpz_add_ui(zeta, zeta, 1);
   }
   fmpz_clear(tmp);
   fmpz_clear(zeta);
-  return 0;
 }
 
 
@@ -88,12 +140,14 @@ int _gghlite_set_sigma(gghlite_pk_t self) {
 
   mpfr_mul(self->sigma, self->sigma, tmp, MPFR_RNDN);
   mpfr_clear(tmp);
+
+  return 0;
 }
 
 /**
    `σ' ≥ 2n^{3/2}σ\sqrt{e·log(8n)/π}`, cf. [LSS14]_, p.17
 */
-   
+
 int _gghlite_set_sigma_p(gghlite_pk_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma,0)>0);
@@ -147,11 +201,11 @@ int _gghlite_set_ell_b(gghlite_pk_t self) {
   assert(mpfr_cmp_ui(self->sigma_p, 0)>0);
 
   mpfr_init2(self->ell_b, _gghlite_prec(self));
-  
+
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
-  
+
   mpfr_t pi;
   mpfr_init2(pi, _gghlite_prec(self));
   mpfr_const_pi(pi, MPFR_RNDN);
@@ -185,13 +239,13 @@ int _gghlite_set_sigma_s(gghlite_pk_t self) {
 
   mpfr_init2(self->sigma_s, _gghlite_prec(self));
   mpfr_pow_ui(self->sigma_s, self->sigma_p, 2, MPFR_RNDN); // σ^* := (σ')^2
-  
+
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
   mpfr_set_ui(tmp, self->lambda, MPFR_RNDN);
   mpfr_log(tmp, tmp, MPFR_RNDN);
   mpfr_div_ui(tmp, tmp, self->kappa, MPFR_RNDN); // ε_d
-  
+
   mpfr_t pi;
   mpfr_init2(pi, _gghlite_prec(self));
   mpfr_const_pi(pi, MPFR_RNDN);
@@ -201,7 +255,7 @@ int _gghlite_set_sigma_s(gghlite_pk_t self) {
   mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN); // 2π/ε_d
 
   mpfr_sqrt(tmp, tmp, MPFR_RNDN); // sqrt(2π/ε_d)
-  
+
   mpfr_mul(self->sigma_s, self->sigma_s, tmp, MPFR_RNDN); // σ^* := (σ')^2 · sqrt(2π/ε_d)
 
   mpfr_div(self->sigma_s, self->sigma_s, self->ell_b, MPFR_RNDN); // σ^* := (σ')^2 · sqrt(2π/ε_d)/ℓ_b
@@ -221,13 +275,18 @@ int _gghlite_set_sigma_s(gghlite_pk_t self) {
   return 0;
 }
 
-int gghlite_init(gghlite_t self, int64_t lambda, int64_t kappa, flint_rand_t randstate) { 
+void gghlite_init(gghlite_t self, const int64_t lambda, const int64_t kappa, flint_rand_t randstate) {
+  gghlite_init_step1(self, lambda, kappa);
+  gghlite_init_step2(self, randstate);
+}
+
+void gghlite_init_step1(gghlite_t self, int64_t lambda, int64_t kappa) {
   if (lambda < 1)
     ggh_die("λ ≥ 1 required.");
   self->pk->lambda = lambda;
 
   if (kappa < 1)
-    ggh_die("κ ≥ 1 required."); 
+    ggh_die("κ ≥ 1 required.");
   self->pk->kappa = kappa;
 
   _gghlite_set_n_q(self->pk);
@@ -235,28 +294,39 @@ int gghlite_init(gghlite_t self, int64_t lambda, int64_t kappa, flint_rand_t ran
   _gghlite_set_sigma_p(self->pk);
   _gghlite_set_ell_b(self->pk);
   _gghlite_set_sigma_s(self->pk);
-
-  _gghlite_sample_g(self, randstate);
-  _gghlite_sample_z(self, randstate);
-  _gghlite_sample_h(self, randstate);
-
-  return 0;
+  _gghlite_set_cyclotomic_polynomial(self->pk);
 }
 
-void gghlite_clear(gghlite_t self) {
-  mpfr_clear(self->pk->sigma_s);
-  mpfr_clear(self->pk->sigma_p);
-  mpfr_clear(self->pk->ell_b);
-  mpfr_clear(self->pk->sigma);
-  fmpz_clear(self->pk->q);
+void gghlite_init_step2(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk->lambda);
+  assert(self->pk->kappa);
+  _gghlite_sample_g(self, randstate);
+  _gghlite_sample_h(self, randstate);
+}
+
+void gghlite_pk_clear(gghlite_pk_t self) {
+  mpfr_clear(self->sigma_s);
+  mpfr_clear(self->sigma_p);
+  mpfr_clear(self->ell_b);
+  mpfr_clear(self->sigma);
+  fmpz_clear(self->q);
+  fmpz_poly_clear(self->cyclotomic_polynomial);
+
+}
+
+void gghlite_clear(gghlite_t self, int clear_pk) {
+  if (clear_pk)
+    gghlite_pk_clear(self->pk);
+  fmpz_poly_clear(self->g);
+  fmpz_poly_clear(self->h);
 }
 
 void gghlite_print(const gghlite_t self) {
   printf("GGHLite Instance:\n");
-  printf("         λ: %7d\n",self->pk->lambda);
-  printf("         k: %7d\n",self->pk->kappa);
-  printf("         n: %7d\n",self->pk->n); 
-  printf("   log₂(q): %7d (check: %d)\n", fmpz_sizeinbase(self->pk->q, 2), gghlite_check_sec(self->pk));
+  printf("         λ: %7ld\n",self->pk->lambda);
+  printf("         k: %7ld\n",self->pk->kappa);
+  printf("         n: %7ld\n",self->pk->n);
+  printf("   log₂(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->pk->q, 2), gghlite_check_sec(self->pk));
   printf(" log₂(ℓ_b): %7.1f\n",  log2(mpfr_get_d(self->pk->ell_b, MPFR_RNDN)));
   printf("   log₂(σ): %7.1f\n",  log2(mpfr_get_d(self->pk->sigma, MPFR_RNDN)));
   printf("  log₂(σ'): %7.1f\n",  log2(mpfr_get_d(self->pk->sigma_p, MPFR_RNDN)));
@@ -265,6 +335,3 @@ void gghlite_print(const gghlite_t self) {
 
 
 
-void gghlite_pk_clar(gghlite_pk_t self) {
-
-};
