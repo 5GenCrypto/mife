@@ -21,6 +21,7 @@ struct _gghlite_pk_struct {
   mpfr_t sigma_p; //< σ'
   mpfr_t sigma_s; //< σ^*
   mpfr_t ell_b;  //< l_b
+  mpfr_t ell_g;  //< l_g
 
   fmpz_poly_t cyclotomic_polynomial;
 
@@ -57,10 +58,10 @@ static inline int gghlite_check_sec(const gghlite_pk_t self) {
 }
 
 static inline long _gghlite_prec(const gghlite_pk_t self) {
-  if (self->lambda < 53)
+  if (2*self->lambda < 53)
     return 53;
   else
-    return self->lambda;
+    return 2*self->lambda;
 }
 
 /**
