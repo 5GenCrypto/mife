@@ -49,7 +49,11 @@ static inline int64_t _gghlite_log_q(const int64_t log_n, const int64_t kappa) {
 }
 
 static inline int _gghlite_check_sec(int64_t log_q, size_t n, size_t lambda) {
-  return (3.0/8.0 * log_q < n/(double)lambda);
+  /* cost by the lattice rule of thumb is >= lambda */
+  int rt  = (3.0/8.0 * log_q < n/(double)lambda);
+  /* cost of one LLL call */
+  int lll = lambda <= (5*log2(n) + log2(log_q)); // L2: d^(3+e) * n * (d + logB) * logB
+  return rt || lll;
 }
 
 
