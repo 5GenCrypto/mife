@@ -29,7 +29,7 @@ typedef struct _dgs_disc_gauss_lattice_mp_t{
 } dgs_disc_gauss_lattice_mp_t;
 
 /**
-   @param B basis matrix (copied)
+   @param B basis matrix (copied), if matrix is 1 x n it is assumed that it represents a rotational nxn basis
    @param sigma Gaussian width parameter (copied)
    @param c center
    @param algorithm
