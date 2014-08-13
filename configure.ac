@@ -28,6 +28,12 @@ else
    AC_DEFINE(NDEBUG,1,[Define whether debugging is enabled])
 fi
 
+# Primality tests
+AC_ARG_ENABLE(primality-test, [  --enable-primality-test    Check if g is prime (slow).])
+if test "xenable_primality-test" = x"yes"; then
+   AC_DEFINE(GGHLITE_CHECK_PRIMALITY,1,[Define whether g is checked for primality])
+fi
+
 AC_CONFIG_FILES([Makefile])
 
 AC_CONFIG_SUBDIRS([dgs])
