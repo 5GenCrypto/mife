@@ -19,7 +19,7 @@ AC_PROG_CC_C99()
 AS_IF([test "$ac_cv_prog_cc_c99" = "no"], AC_MSG_ERROR([C99 support is required but not found.]))
 
 # Debugging support
-AC_ARG_ENABLE(debug, [  --enable-debug          Enable assert() statements for debugging.])
+AC_ARG_ENABLE(debug, [  --enable-debug          Enable assert() statements for debugging.], [enable_debug=yes])
 
 if test "x$enable_debug" = x"yes"; then
    DEBUG_FLAGS="-g"
@@ -29,8 +29,9 @@ else
 fi
 
 # Primality tests
-AC_ARG_ENABLE(primality-test, [  --enable-primality-test    Check if g is prime (slow).])
-if test "xenable_primality-test" = x"yes"; then
+AC_ARG_ENABLE(primality-test, [  --enable-primality-test    Check if g is prime (slow).], [enable_primality_test=yes])
+
+if test "x$enable_primality_test" = x"yes"; then
    AC_DEFINE(GGHLITE_CHECK_PRIMALITY,1,[Define whether g is checked for primality])
 fi
 
