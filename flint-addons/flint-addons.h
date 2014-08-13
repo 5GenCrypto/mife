@@ -82,8 +82,9 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgs_disc_gauss_lattice_mp_t
 
   const long n = fmpz_mat_ncols(D->B);
   fmpz_poly_realloc(f, n);
-  D->call(f->coeffs, D, randstate->gmp_state);
-  assert(!fmpz_is_zero(f->coeffs +(n-1)));
+  do {
+    D->call(f->coeffs, D, randstate->gmp_state);
+  } while (fmpz_is_zero(f->coeffs +(n-1)));
   _fmpz_poly_set_length(f, n);
 }
 
