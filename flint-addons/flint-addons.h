@@ -116,5 +116,20 @@ static inline void fmpz_poly_invert_mod_fmpq(fmpq_poly_t f_inv, fmpz_poly_t f, c
   fmpq_poly_clear(r);
 }
 
+static inline void fmpz_poly_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
+  assert(fmpz_mat_nrows(rop) == fmpz_poly_length(op));
+  assert(fmpz_mat_ncols(rop) == fmpz_poly_length(op));
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  const long n = fmpz_mat_nrows(rop);
+  for(long i=0; i<n; i++) {
+    for (long j=0; j<n; j++) {
+      fmpz_poly_get_coeff_fmpz(tmp, op, (i+j)%n);
+      fmpz_set(fmpz_mat_entry(rop, i, j), tmp);
+    }
+  }
+}
+
 
 #endif //FLINT_ADDONS__H
