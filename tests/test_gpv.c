@@ -1,6 +1,7 @@
 #include <flint/fmpz_mat.h>
 #include <flint-addons/flint-addons.h>
 #include <gpv/gpv.h>
+#include <gpv/gso.h>
 #include <math.h>
 
 int test_dist_simple(long nrows, long ncols, double sigma, size_t ntrials, flint_rand_t state) {
@@ -35,7 +36,7 @@ int test_dist_simple(long nrows, long ncols, double sigma, size_t ntrials, flint
   double rght = mpfr_get_d(tmp, MPFR_RNDN);
   double quality = fabs(log2(left/rght));
 
-  printf("m: %4ld, n: %4ld, σ: %8.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f\n", nrows, ncols, sigma, left, rght, quality);
+  printf("simple:: m: %4ld, n: %4ld, σ: %8.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f\n", nrows, ncols, sigma, left, rght, quality);
 
   dgs_disc_gauss_lattice_mp_clear(D);
   _fmpz_vec_clear(v, ncols);
@@ -46,10 +47,62 @@ int test_dist_simple(long nrows, long ncols, double sigma, size_t ntrials, flint
   return 0;
 }
 
+int test_gso(long m, long n, long *M, double *GSO) {
+  double quality;
+  fmpz_mat_t B;
+  fmpz_mat_init(B, m, n);  
 
+  long x = 0;
+  for(long i=0; i<m; i++) {
+    for(long j=0; j<n; j++) {
+      fmpz_set_si(B->rows[i] + j, M[x]);
+      x++;
+    }
+  }
+  
+  mpfr_mat_t G;
+  mpfr_mat_init(G, m, n, 53);
+  mpfr_mat_set_fmpz_mat(G, B);
+
+  mpfr_mat_gso(G);
+  
+  x = 0;
+  for(long i=0; i<m; i++) {
+    for(long j=0; j<n; j++) {
+      quality += fabs(mpfr_get_d(G->rows[i][j], MPFR_RNDN) -  GSO[x]);
+      x++;
+    }
+  }
+  printf("   gso:: m: %4ld, n: %4ld, dist: %8.4f\n", m, n, quality);
+
+  mpfr_mat_clear(G);
+  fmpz_mat_clear(B);
+  return (int)quality;
+}
 
 int main(int argc, char *argv[]) {
 
+  {
+    long   M[16] = {-1, 0,-1,-1,
+                     5,-7,-1,-8,
+                    -1,-2, 5, 2,
+                     0, 2,-1,-5};
+    double G[16] = {-1.00000000000000,  0.00000000000000,  -1.00000000000000, -1.00000000000000,
+                     6.33333333333333, -7.00000000000000,   0.33333333333333, -6.66666666666667,
+                    -2.81047381546135, -2.20947630922693,   3.00997506234414, -0.199501246882793,
+                     0.27364941873717,  2.34556644631867,   1.83736038294962, -2.11100980168680};
+    test_gso(4,4, M, G);
+  }
+
+  {
+    long   M[9] = {1,2,2, -1,0,2, 0,0,1};
+    double G[9] = { 1.00000000000000,  2.000000000000000, 2.00000000000000,
+                   -1.33333333333333, -0.666666666666667, 1.33333333333333,
+                    0.22222222222222, -0.222222222222222, 0.11111111111111};
+    test_gso(3,3, M, G);
+  }
+
+  
   flint_rand_t state;
   flint_randinit(state);
   _flint_rand_init_gmp(state);
