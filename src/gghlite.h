@@ -53,6 +53,7 @@ static inline int64_t _gghlite_log_q(const int64_t log_n, const int64_t kappa) {
 
 static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
   mpfr_t g_inv_norm;
+  mpfr_init2(g_inv_norm, mpfr_get_prec(self->ell_g));
   _fmpq_vec_2norm_mpfr(g_inv_norm, fmpq_poly_numref(g_inv), fmpq_poly_denref(g_inv), self->n);
   int r = (mpfr_cmp(g_inv_norm, self->ell_g) <= 0);
   mpfr_clear(g_inv_norm);
