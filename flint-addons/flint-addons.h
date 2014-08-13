@@ -131,5 +131,20 @@ static inline void fmpz_poly_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   }
 }
 
+static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op) {
+  fmpz_mat_t B;
+  fmpz_mat_init(B, fmpz_poly_length(op), fmpz_poly_length(op));
+  fmpz_poly_rot_basis(B, op);
+
+  fmpz_t det;
+  fmpz_init(det);
+  fmpz_mat_det(det, B);
+
+  int r = fmpz_is_probabprime(det); 
+  fmpz_clear(det);
+
+  fmpz_mat_clear(B);
+  return r;
+}
 
 #endif //FLINT_ADDONS__H
