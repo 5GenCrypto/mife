@@ -14,6 +14,9 @@
 #include <math.h>
 #include <stdint.h>
 
+
+
+
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk);
   assert(self->pk->n);
@@ -27,16 +30,19 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_init2(g_inv_norm, fmpz_sizeinbase(self->pk->q,2));
 
   while(1) {
+    fflush(0);
     fmpz_poly_sample_sigma(self->g, self->pk->n, self->pk->sigma, randstate);
 
+#ifdef GGHLITE_CHECK_PRIMALITY    
     /* 1. check if prime */
-
-
-
+    if (!fmpz_poly_ideal_is_probaprime(self->g)) {
+      printf("!p");
+      continue;
+    }
+#endif
     /* 2. check norm of inverse */
     fmpz_poly_invert_mod_fmpq(g_inv, self->g, self->pk->cyclotomic_polynomial);
-    _fmpq_vec_2norm_mpfr(g_inv_norm, fmpq_poly_numref(g_inv), fmpq_poly_denref(g_inv), self->pk->n);
-    if (mpfr_cmp(g_inv_norm, self->pk->ell_g) > 0) {
+    if (!_gghlite_g_inv_check(self->pk, g_inv)) {
       printf("!n");
       continue;
     }
@@ -375,8 +381,9 @@ void gghlite_print(const gghlite_t self) {
   printf("         k: %7ld\n",self->pk->kappa);
   printf("         n: %7ld\n",self->pk->n);
   printf("   log₂(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->pk->q, 2), gghlite_check_sec(self->pk));
-  printf(" log₂(ℓ_b): %7.1f\n",  log2(mpfr_get_d(self->pk->ell_b, MPFR_RNDN)));
   printf("   log₂(σ): %7.1f\n",  log2(mpfr_get_d(self->pk->sigma, MPFR_RNDN)));
+  printf(" log₂(ℓ_g): %7.1f\n",  log2(mpfr_get_d(self->pk->ell_g, MPFR_RNDN)));
   printf("  log₂(σ'): %7.1f\n",  log2(mpfr_get_d(self->pk->sigma_p, MPFR_RNDN)));
+  printf(" log₂(ℓ_b): %7.1f\n",  log2(mpfr_get_d(self->pk->ell_b, MPFR_RNDN)));
   printf(" log₂(σ^*): %7.1f\n", log2(mpfr_get_d(self->pk->sigma_s, MPFR_RNDN)));
 };

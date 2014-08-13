@@ -1,11 +1,14 @@
 #ifndef GGHLITE__H
 #define GGHLITE__H
 
-#include <flint/fmpz_poly.h>
-#include <flint/fmpz_mod_poly.h>
-
 #include <stdint.h>
 #include <math.h>
+
+#include <flint/fmpz_poly.h>
+#include <flint/fmpq_poly.h>
+#include <flint/fmpz_mod_poly.h>
+#include <flint-addons/flint-addons.h>
+
 
 /**
    Structs
@@ -46,6 +49,14 @@ typedef struct _gghlite_struct gghlite_t[1];
 static inline int64_t _gghlite_log_q(const int64_t log_n, const int64_t kappa) {
   int64_t log_q = (8.5*log_n + log2(log2(kappa))/2.0 + log2(log_n)) * (8*kappa);
   return log_q;
+}
+
+static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
+  mpfr_t g_inv_norm;
+  _fmpq_vec_2norm_mpfr(g_inv_norm, fmpq_poly_numref(g_inv), fmpq_poly_denref(g_inv), self->n);
+  int r = (mpfr_cmp(g_inv_norm, self->ell_g) <= 0);
+  mpfr_clear(g_inv_norm);
+  return r;
 }
 
 static inline int _gghlite_check_sec(int64_t log_q, size_t n, size_t lambda) {
