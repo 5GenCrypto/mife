@@ -14,16 +14,53 @@
 #include <math.h>
 #include <stdint.h>
 
+void _gghlite_set_pzt(gghlite_t self) {
+  assert(self->pk);
+  assert(self->pk->n);
+  assert(fmpz_cmp_ui(self->pk->q,0)>0);
+  assert(!fmpz_mod_poly_is_zero(self->z));
+  assert(!fmpz_poly_is_zero(self->h));
+  assert(fmpz_poly_degree(self->pk->cyclotomic_polynomial) == self->pk->n);
+
+  fmpz_mod_poly_t modulus;
+  fmpz_mod_poly_init(modulus, self->pk->q);
+  fmpz_mod_poly_set_fmpz_poly(modulus, self->pk->cyclotomic_polynomial);
+
+  fmpz_mod_poly_t z_kappa;
+  fmpz_mod_poly_init(z_kappa, self->pk->q);
+  fmpz_mod_poly_set(z_kappa, self->z);
+  fmpz_mod_poly_powmod_ui_binexp(z_kappa, z_kappa, self->pk->kappa, modulus);
+
+  fmpz_mod_poly_t g_inv;
+  fmpz_mod_poly_init(g_inv, self->pk->q);
+  fmpz_mod_poly_set_fmpq_poly(g_inv, self->g_inv);
+
+  fmpz_mod_poly_t pzt;
+  fmpz_mod_poly_init(pzt, self->pk->q);
+  fmpz_mod_poly_mulmod(pzt, z_kappa, g_inv, modulus);
 
 
+  fmpz_mod_poly_t h;
+  fmpz_mod_poly_init(h, self->pk->q);
+  fmpz_mod_poly_set_fmpz_poly(h, self->h);
+  
+  fmpz_mod_poly_mulmod(pzt, pzt, h, modulus);
+  fmpz_mod_poly_init(self->pk->pzt, self->pk->q);
+  fmpz_mod_poly_set(self->pk->pzt, pzt);
+
+  fmpz_mod_poly_clear(h);
+  fmpz_mod_poly_clear(pzt);
+  fmpz_mod_poly_clear(z_kappa);
+  fmpz_mod_poly_clear(g_inv);
+  fmpz_mod_poly_clear(modulus);
+}
 
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk);
   assert(self->pk->n);
 
   fmpz_poly_init(self->g);
-  fmpq_poly_t g_inv;
-  fmpq_poly_init(g_inv);
+  fmpq_poly_init(self->g_inv);
 
 
   mpfr_t g_inv_norm;
@@ -41,8 +78,8 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     }
 #endif
     /* 2. check norm of inverse */
-    fmpz_poly_invert_mod_fmpq(g_inv, self->g, self->pk->cyclotomic_polynomial);
-    if (!_gghlite_g_inv_check(self->pk, g_inv)) {
+    fmpz_poly_invert_mod_fmpq(self->g_inv, self->g, self->pk->cyclotomic_polynomial);
+    if (!_gghlite_g_inv_check(self->pk, self->g_inv)) {
       printf("!n");
       continue;
     }
@@ -50,7 +87,6 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   }
   printf("\n");
   mpfr_clear(g_inv_norm);
-  fmpq_poly_clear(g_inv);
 }
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
@@ -72,6 +108,15 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
   fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
 
   mpfr_clear(sqrt_q);
+}
+
+void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk);
+  assert(self->pk->n);
+  assert(fmpz_cmp_ui(self->pk->q,0)>0);
+
+  fmpz_mod_poly_init(self->z, self->pk->q);
+  fmpz_mod_poly_randtest(self->z, randstate, self->pk->n);
 }
 
 void _gghlite_set_cyclotomic_polynomial(gghlite_pk_t self) {
@@ -354,7 +399,9 @@ void gghlite_init_step2(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->lambda);
   assert(self->pk->kappa);
   _gghlite_sample_g(self, randstate);
+  _gghlite_sample_z(self, randstate);
   _gghlite_sample_h(self, randstate);
+  _gghlite_set_pzt(self);
 }
 
 void gghlite_pk_clear(gghlite_pk_t self) {
@@ -386,4 +433,4 @@ void gghlite_print(const gghlite_t self) {
   printf("  log₂(σ'): %7.1f\n",  log2(mpfr_get_d(self->pk->sigma_p, MPFR_RNDN)));
   printf(" log₂(ℓ_b): %7.1f\n",  log2(mpfr_get_d(self->pk->ell_b, MPFR_RNDN)));
   printf(" log₂(σ^*): %7.1f\n", log2(mpfr_get_d(self->pk->sigma_s, MPFR_RNDN)));
-};
+}

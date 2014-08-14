@@ -27,7 +27,7 @@ struct _gghlite_pk_struct {
   mpfr_t ell_g;  //< l_g
 
   fmpz_poly_t cyclotomic_polynomial;
-
+  fmpz_mod_poly_t pzt;
 };
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
@@ -36,8 +36,10 @@ struct _gghlite_struct {
   gghlite_pk_t pk;
 
   fmpz_poly_t g;
-  fmpz_poly_t z;
+  fmpq_poly_t g_inv;
+  fmpz_mod_poly_t z;
   fmpz_poly_t h;
+
 };
 
 typedef struct _gghlite_struct gghlite_t[1];
