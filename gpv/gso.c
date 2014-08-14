@@ -50,27 +50,6 @@ mpfr_prec_t mpfr_mat_get_prec(mpfr_mat_t mat) {
     return 53;
 }
 
-static inline void _mpfr_vec_dot_product(mpfr_t rop, const mpfr_t *op1, const mpfr_t *op2, const long n) {
-  mpfr_set_si(rop, 0, MPFR_RNDN);
-  mpfr_t tmp;
-  mpfr_init2(tmp, mpfr_get_prec(rop));
-  for(long i=0; i<n; i++) {
-    mpfr_mul(tmp, op1[i], op2[i], MPFR_RNDN);
-    mpfr_add(rop, rop, tmp, MPFR_RNDN); 
-  }
-  mpfr_clear(tmp);
-}
-
-static inline void _mpfr_vec_submul(mpfr_t *rop, mpfr_t scalar, mpfr_t *op, const long n) {
-  mpfr_t tmp;
-  mpfr_init2(tmp, mpfr_get_prec(rop[0]));
-  for(long i=0; i<n; i++) {
-    mpfr_mul(tmp, scalar, op[i], MPFR_RNDN);
-    mpfr_sub(rop[i], rop[i], tmp, MPFR_RNDN);
-  }
-  mpfr_clear(tmp);
-}
-
 void mpfr_mat_gso(mpfr_mat_t mat)  {
   const long m = mat->r;
   const long n = mat->c;
