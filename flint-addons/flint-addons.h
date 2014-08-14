@@ -5,7 +5,12 @@
 #include <flint/fmpz.h>
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_poly.h>
+#include <flint/fmpz_mod_poly.h>
 #include <gpv/gpv.h>
+
+/**
+   fmpz_mat_t
+*/
 
 static inline int fmpz_mat_rot_is_one(const fmpz_mat_t mat) {
   assert(mat->c);
@@ -35,6 +40,10 @@ static inline int fmpz_mat_is_one(const fmpz_mat_t mat) {
   return 1;
 }
 
+/**
+   fmpz*
+*/
+
 static inline void _fmpz_vec_2norm_mpfr(mpfr_t rop, fmpz *vec, long len) {
   fmpz_t tmp;
   fmpz_init(tmp);
@@ -50,6 +59,10 @@ static inline void _fmpz_vec_2norm_mpfr(mpfr_t rop, fmpz *vec, long len) {
   mpfr_sqrt(rop, rop, MPFR_RNDN);
   mpz_clear(tmp_g);
 }
+
+/**
+   fmpq*
+*/
 
 static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long len) {
   fmpz_t acc_num;
@@ -75,6 +88,9 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
   fmpz_clear(acc_num);
 }
 
+/**
+   fmpz_poly_t
+*/
 
 static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgs_disc_gauss_lattice_mp_t *D, flint_rand_t randstate) {
   assert(D);
@@ -140,11 +156,38 @@ static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op) {
   fmpz_init(det);
   fmpz_mat_det(det, B);
 
-  int r = fmpz_is_probabprime(det); 
+  int r = fmpz_is_probabprime(det);
   fmpz_clear(det);
 
   fmpz_mat_clear(B);
   return r;
 }
+
+/**
+ fmpz_mod_poly_t
+ */
+
+static inline void fmpz_mod_poly_set_fmpq_poly(fmpz_mod_poly_t rop, fmpq_poly_t op) {
+  fmpz_t tmp;
+  fmpz_t den_inv;
+
+  fmpz *q = fmpz_mod_poly_modulus(rop);
+
+  fmpz_init(tmp);
+  fmpz_init(den_inv);
+
+  fmpz_set(den_inv, fmpq_poly_denref(op));
+  fmpz_invmod(den_inv, den_inv, q);
+
+  for(long i=0; i<fmpq_poly_length(op); i++) {
+    fmpz_set(tmp, fmpq_poly_numref(op)+i);
+    fmpz_mul(tmp, tmp, den_inv);
+    fmpz_mod(tmp, tmp, q);
+    fmpz_mod_poly_set_coeff_fmpz(rop, i, tmp);
+  }
+  fmpz_clear(tmp);
+  fmpz_clear(den_inv);
+}
+
 
 #endif //FLINT_ADDONS__H
