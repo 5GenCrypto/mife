@@ -20,6 +20,27 @@ void mpfr_mat_init(mpfr_mat_t mat, long rows, long cols, mpfr_prec_t prec) {
   mat->c = cols;
 }
 
+void mpfr_mat_set_fmpz_mat_rot(mpfr_mat_t rop, const fmpz_mat_t op) {
+  assert((rop->r == op->c) && (rop->c == op->c));
+  const long n = op->c;  
+
+  mpz_t t_g;
+  mpz_init(t_g);
+
+  fmpz *gen = _fmpz_vec_init(n);
+  _fmpz_vec_set(gen, op->rows[0], n);
+  
+  for(long i=0; i<n; i++) {
+    for(long j=0; j<n; j++) {
+      fmpz_get_mpz(t_g, gen +j );
+      mpfr_set_z(rop->rows[i][j], t_g, MPFR_RNDN);
+    }
+    _fmpz_vec_rot_left_neg(gen, gen, n);
+  }
+  _fmpz_vec_clear(gen, n);
+  mpz_clear(t_g);
+}
+
 void mpfr_mat_set_fmpz_mat(mpfr_mat_t rop, const fmpz_mat_t op) {
   assert((rop->r == op->r) && (rop->c == op->c));
   mpz_t t_g;

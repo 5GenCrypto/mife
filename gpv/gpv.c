@@ -33,8 +33,20 @@ int dgs_disc_gauss_lattice_mp_call_inlattice(fmpz *rop,  const dgs_disc_gauss_la
 
   _fmpz_vec_zero(rop, n);
 
+
   if (fmpz_mat_nrows(self->B) == 1) {
-    dgs_die("not implemented");
+    fmpz* gen = _fmpz_vec_init(n);
+    _fmpz_vec_set(gen, self->B->rows[0], n);
+    for(long i=0; i<n; i++) {
+      self->D[i]->call(tmp_g, self->D[i], state);
+      fmpz_set_mpz(tmp_f, tmp_g);
+      _fmpz_vec_scalar_addmul_fmpz(rop, gen, n, tmp_f);
+      _fmpz_vec_rot_left_neg(gen, gen, n);
+    }
+    _fmpz_vec_clear(gen, n);
+    if (self->c)
+      _fmpz_vec_add(rop, rop, self->c, n);
+
   } else {
     for(long i=0; i<m; i++) {
       self->D[i]->call(tmp_g, self->D[i], state);
@@ -60,8 +72,12 @@ dgs_disc_gauss_lattice_mp_t *dgs_disc_gauss_lattice_mp_init(const fmpz_mat_t B, 
 
   dgs_gauss_lattice_alg_t alg = algorithm;
 
-  const long m = fmpz_mat_nrows(B);
-  const long n = fmpz_mat_ncols(B);
+  long m = fmpz_mat_nrows(B);
+  long n = fmpz_mat_ncols(B);
+
+  if (m == 1)
+    m = n; /* rotational basis */
+
   const mpfr_prec_t prec = mpfr_get_prec(sigma);
 
   fmpz_mat_init_set(self->B, B);
@@ -74,7 +90,7 @@ dgs_disc_gauss_lattice_mp_t *dgs_disc_gauss_lattice_mp_init(const fmpz_mat_t B, 
   if (alg == DGS_LATTICE_DETECT) {
     if (fmpz_mat_is_one(self->B) || fmpz_mat_rot_is_one(self->B)) {
       alg = DGS_LATTICE_IDENTITY;
-    }    else if (_fmpz_vec_is_zero(self->c, n))
+    } else if (_fmpz_vec_is_zero(self->c, n))
       alg = DGS_LATTICE_INLATTICE;
     else
       alg = DGS_LATTICE_COSET; //TODO: we could test for lattice membership here
@@ -96,7 +112,10 @@ dgs_disc_gauss_lattice_mp_t *dgs_disc_gauss_lattice_mp_init(const fmpz_mat_t B, 
 
     mpfr_mat_t G;
     mpfr_mat_init(G, m, n, prec);
-    mpfr_mat_set_fmpz_mat(G, B);
+    if (fmpz_mat_nrows(B) == 1)
+      mpfr_mat_set_fmpz_mat_rot(G, B);
+    else
+      mpfr_mat_set_fmpz_mat(G, B);
 
     mpfr_t sigma_;
     mpfr_init2(sigma_, prec);

@@ -60,6 +60,23 @@ static inline void _fmpz_vec_2norm_mpfr(mpfr_t rop, fmpz *vec, long len) {
   mpz_clear(tmp_g);
 }
 
+static inline void _fmpz_vec_rot_left(fmpz *rop, fmpz *op, long len, long shift) {
+  fmpz* tmp = _fmpz_vec_init(shift);
+  for(long i=0; i<shift; i++) {
+    fmpz_set(tmp + i, op + len - shift + i);
+  }
+  for(long i=len-shift-1; i>=0; i--)
+    fmpz_set(rop + shift + i, op + i);
+  for(long i=0; i<shift; i++) {
+    fmpz_set(rop + i, tmp + i);
+  }
+  _fmpz_vec_clear(tmp, shift);
+}
+
+static inline void _fmpz_vec_rot_left_neg(fmpz *rop, fmpz *op, long len) {
+  _fmpz_vec_rot_left(rop, op, len, 1);
+  fmpz_neg(rop + 0, rop + 0);
+}
 /**
    fmpq*
 */
