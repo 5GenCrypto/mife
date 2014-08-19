@@ -14,6 +14,74 @@
 #include <math.h>
 #include <stdint.h>
 
+void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk);
+  assert(self->pk->n);
+  assert(!fmpz_poly_is_zero(self->g));
+
+  const long n = self->pk->n;
+
+  dgs_disc_gauss_lattice_mp_t *D;
+  {
+    fmpz_mat_t B;
+    fmpz_mat_init(B, 1, n);
+    _fmpz_vec_set(B->rows[0], self->g->coeffs, n);
+    D = dgs_disc_gauss_lattice_mp_init(B, self->pk->sigma_p, NULL, DGS_LATTICE_INLATTICE);
+    fmpz_mat_clear(B);
+  }
+
+  fmpz_poly_t B;
+  fmpz_poly_init2(B, 2*n);
+  fmpz_poly_init(self->b[0]);
+  fmpz_poly_init(self->b[1]);
+
+  mpfr_t sigma_n;
+  mpfr_init2(sigma_n, mpfr_get_prec(self->pk->sigma_p));
+
+  mpfr_t norm;
+  mpfr_init2(norm, mpfr_get_prec(self->pk->sigma_p));
+
+  mpfr_t sqrtn_sigma_p;
+  mpfr_init2(sqrtn_sigma_p, mpfr_get_prec(self->pk->sigma_p));
+  mpfr_set_si(sqrtn_sigma_p, self->pk->n, MPFR_RNDN);
+  mpfr_sqrt(sqrtn_sigma_p, sqrtn_sigma_p, MPFR_RNDN);
+  mpfr_mul(sqrtn_sigma_p, sqrtn_sigma_p, self->pk->sigma_p, MPFR_RNDN);
+  
+  while(1) {
+    fflush(0);
+    fmpz_poly_sample_D(self->b[0], D, randstate);
+    fmpz_poly_sample_D(self->b[1], D, randstate);
+
+    if (fmpz_poly_ideal_subset(self->g, self->b[0], self->b[1]) != 0) {
+      printf("!i");
+      continue;
+    }
+
+    _fmpz_vec_set(B->coeffs+0, self->b[0]->coeffs, n);
+    _fmpz_vec_set(B->coeffs+n, self->b[1]->coeffs, n);
+
+#ifdef GGHLITE_CHECK_SIGMA_N
+    fmpz_poly_rot_basis_sigma_n(sigma_n, B);
+    if (mpfr_cmp(sigma_n, self->pk->ell_b) < 0)
+      continue;
+#endif    
+    
+    _fmpz_vec_2norm_mpfr(norm, B->coeffs, 2*n);
+    if (mpfr_cmp(norm, sqrtn_sigma_p) > 0) {
+      printf("!n");
+      continue;
+    }
+
+    break;
+  }
+  printf("\n");
+
+  mpfr_clear(sqrtn_sigma_p);
+  mpfr_clear(sigma_n);
+  fmpz_poly_clear(B);  
+  dgs_disc_gauss_lattice_mp_clear(D);
+}
+
 void _gghlite_set_pzt(gghlite_t self) {
   assert(self->pk);
   assert(self->pk->n);
@@ -66,10 +134,25 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_t g_inv_norm;
   mpfr_init2(g_inv_norm, fmpz_sizeinbase(self->pk->q,2));
 
+  mpfr_t norm;
+  mpfr_init2(norm, mpfr_get_prec(self->pk->sigma));
+
+  mpfr_t sqrtn_sigma;
+  mpfr_init2(sqrtn_sigma, mpfr_get_prec(self->pk->sigma));
+  mpfr_set_si(sqrtn_sigma, self->pk->n, MPFR_RNDN);
+  mpfr_sqrt(sqrtn_sigma, sqrtn_sigma, MPFR_RNDN);
+  mpfr_mul(sqrtn_sigma, sqrtn_sigma, self->pk->sigma, MPFR_RNDN);
+
+  
   while(1) {
     fflush(0);
     fmpz_poly_sample_sigma(self->g, self->pk->n, self->pk->sigma, randstate);
 
+    _fmpz_vec_2norm_mpfr(norm, self->g->coeffs, self->pk->n);
+    if(mpfr_cmp(norm, sqrtn_sigma)>0) {
+      printf("!n");
+      continue;
+    }
 #ifdef GGHLITE_CHECK_PRIMALITY    
     /* 1. check if prime */
     if (!fmpz_poly_ideal_is_probaprime(self->g)) {
@@ -80,12 +163,14 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     /* 2. check norm of inverse */
     fmpz_poly_invert_mod_fmpq(self->g_inv, self->g, self->pk->cyclotomic_polynomial);
     if (!_gghlite_g_inv_check(self->pk, self->g_inv)) {
-      printf("!n");
+      printf("!~n");
       continue;
     }
     break;
   }
   printf("\n");
+  mpfr_clear(norm);
+  mpfr_clear(sqrtn_sigma);
   mpfr_clear(g_inv_norm);
 }
 
@@ -401,6 +486,7 @@ void gghlite_init_step2(gghlite_t self, flint_rand_t randstate) {
   _gghlite_sample_g(self, randstate);
   _gghlite_sample_z(self, randstate);
   _gghlite_sample_h(self, randstate);
+  _gghlite_sample_b(self, randstate);
   _gghlite_set_pzt(self);
 }
 

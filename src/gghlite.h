@@ -18,7 +18,7 @@ struct _gghlite_pk_struct {
   size_t lambda;
   size_t kappa;
 
-  size_t n;
+  long n;
   fmpz_t q;
   mpfr_t sigma;   //< σ
   mpfr_t sigma_p; //< σ'
@@ -28,6 +28,8 @@ struct _gghlite_pk_struct {
 
   fmpz_poly_t cyclotomic_polynomial;
   fmpz_mod_poly_t pzt;
+  fmpz_mod_poly_t x[2];
+  fmpz_mod_poly_t y;
 };
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
@@ -39,6 +41,8 @@ struct _gghlite_struct {
   fmpq_poly_t g_inv;
   fmpz_mod_poly_t z;
   fmpz_poly_t h;
+  fmpz_poly_t b[2];
+  fmpz_poly_t a;
 
 };
 
