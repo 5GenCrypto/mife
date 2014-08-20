@@ -109,7 +109,7 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
    fmpz_poly_t
 */
 
-static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgs_disc_gauss_lattice_mp_t *D, flint_rand_t randstate) {
+static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
   assert(D);
   assert(randstate->gmp_init);
 
@@ -124,13 +124,23 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgs_disc_gauss_lattice_mp_t
 static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
   fmpz_mat_t I;
   fmpz_mat_init(I, 1, len);
-  fmpz_mat_one(I);
-  dgs_disc_gauss_lattice_mp_t *D = dgs_disc_gauss_lattice_mp_init(I, sigma, NULL, DGS_LATTICE_IDENTITY);
+  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
 
   fmpz_poly_sample_D(f, D, randstate);
 
-  dgs_disc_gauss_lattice_mp_clear(D);
+  gpv_mp_clear(D);
   fmpz_mat_clear(I);
+}
+
+static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly_t f, fmpz_mod_poly_t modulus) {
+  fmpz_mod_poly_t r; fmpz_mod_poly_init(r, fmpz_mod_poly_modulus(modulus));
+  fmpz_mod_poly_t t; fmpz_mod_poly_init(t, fmpz_mod_poly_modulus(modulus));
+
+  fmpz_mod_poly_xgcd(r, f_inv, t, f, modulus);
+  assert(fmpz_mod_poly_degree(r) == 0 && fmpz_is_one(r->coeffs + 0));
+
+  fmpz_mod_poly_clear(t);
+  fmpz_mod_poly_clear(r);
 }
 
 static inline void fmpz_poly_invert_mod_fmpq(fmpq_poly_t f_inv, fmpz_poly_t f, const fmpz_poly_t g) {

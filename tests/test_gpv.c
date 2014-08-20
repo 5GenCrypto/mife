@@ -17,7 +17,7 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
 
-  dgs_disc_gauss_lattice_mp_t *D = dgs_disc_gauss_lattice_mp_init(B, sigma_, NULL, DGS_LATTICE_INLATTICE);
+  gpv_mp_t *D = gpv_mp_init(B, sigma_, NULL, GPV_INLATTICE);
 
   fmpz *v = _fmpz_vec_init(ncols);
 
@@ -43,7 +43,7 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
 
   printf("inlattice:: m: %4ld, n: %4ld, bits: %3ld, σ: %10.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f", nrows, ncols, bits, sigma, left, rght, quality);
 
-  dgs_disc_gauss_lattice_mp_clear(D);
+  gpv_mp_clear(D);
   _fmpz_vec_clear(v, ncols);
 
   mpfr_clear(sigma_);
@@ -67,7 +67,7 @@ int test_dist_simple(long nrows, long ncols, double sigma, size_t ntrials, flint
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
 
-  dgs_disc_gauss_lattice_mp_t *D = dgs_disc_gauss_lattice_mp_init(B, sigma_, NULL, DGS_LATTICE_DETECT);
+  gpv_mp_t *D = gpv_mp_init(B, sigma_, NULL, GPV_DETECT);
 
   fmpz *v = _fmpz_vec_init(ncols);
 
@@ -94,7 +94,7 @@ int test_dist_simple(long nrows, long ncols, double sigma, size_t ntrials, flint
 
   printf("   simple:: m: %4ld, n: %4ld, σ: %10.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f", nrows, ncols, sigma, left, rght, quality);
 
-  dgs_disc_gauss_lattice_mp_clear(D);
+  gpv_mp_clear(D);
   _fmpz_vec_clear(v, ncols);
 
   mpfr_clear(sigma_);

@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   long lamba = 32;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:s:")) != -1) {
     switch(c) {
     case 'l':
       lamba = (long)atol(optarg);
@@ -42,7 +42,10 @@ int main(int argc, char *argv[]) {
   flint_randinit(state);
   _flint_rand_init_gmp(state);
   gghlite_init_step1(self, lamba, kappa);
-  gghlite_print(self);
-  gghlite_init_step2(self, state);
+  printf("GGHLite\n");
+  gghlite_print_params(self->pk);
+  printf("---\n");
+  
+  gghlite_init_step2(self, 1ULL<<0, state);
   gghlite_clear(self, 1);
 }
