@@ -5,7 +5,11 @@
 void mpfr_mat_init(mpfr_mat_t mat, long rows, long cols, mpfr_prec_t prec) {
   if ((rows) && (cols)) {
     mat->entries = (mpfr_t *) calloc(rows * cols, sizeof(mpfr_t));
-    mat->rows = (mpfr_t **) flint_malloc(rows * sizeof(mpfr_t *));    /* Initialise rows */
+    if (!mat->entries)
+      dgs_die("out of memory");
+    mat->rows = (mpfr_t **) calloc(rows, sizeof(mpfr_t *));
+    if (!mat->rows)
+      dgs_die("out of memory");
 
     for (long i = 0; i < rows; i++) {
       mat->rows[i] = mat->entries + i * cols;
@@ -71,7 +75,7 @@ mpfr_prec_t mpfr_mat_get_prec(mpfr_mat_t mat) {
     return 53;
 }
 
-void mpfr_mat_gso(mpfr_mat_t mat)  {
+void mpfr_mat_gso(mpfr_mat_t mat, mpfr_rnd_t rnd)  {
   const long m = mat->r;
   const long n = mat->c;
   const mpfr_prec_t prec = mpfr_mat_get_prec(mat);
@@ -84,11 +88,12 @@ void mpfr_mat_gso(mpfr_mat_t mat)  {
   
   for(long k = 0; k < m; k++) {
     for(long i = 0; i < k; i++) {
-      _mpfr_vec_dot_product(tmp, (const mpfr_t *)mat->rows[i], (const mpfr_t *)mat->rows[k], n);
-      mpfr_div(tmp, tmp, dot_products->rows[0][i], MPFR_RNDN);
-      _mpfr_vec_submul(mat->rows[k], tmp, mat->rows[i], n);      
+      _mpfr_vec_dot_product(tmp, mat->rows[i], mat->rows[k], n, rnd);
+      mpfr_div(tmp, tmp, dot_products->rows[0][i], rnd);
+      mpfr_neg(tmp, tmp, rnd);
+      _mpfr_vec_scalar_addmul_mpfr(mat->rows[k], mat->rows[i], n, tmp, rnd);      
     }
-    _mpfr_vec_dot_product(dot_products->rows[0][k], (const mpfr_t *)mat->rows[k], (const mpfr_t *)mat->rows[k], n);
+    _mpfr_vec_dot_product(dot_products->rows[0][k], mat->rows[k], mat->rows[k], n, rnd);
   }
   mpfr_clear(tmp);
   mpfr_mat_clear(dot_products);

@@ -8,6 +8,8 @@
 #include <gpv/gpv.h>
 #include <mpfr.h>
 
+#define S_TO_SIGMA 0.398942280401433 /* 1/sqrt(2*pi) */
+
 static inline void ggh_die(const char *msg, ...) {
   va_list lst;
   va_start(lst, msg);
@@ -34,13 +36,24 @@ static inline void *ggh_calloc(size_t nmemb, size_t size) {
   return ret;
 };
 
-static inline gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, const fmpz *c, gpv_alg_t algorithm) {
+static inline gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg_t algorithm) {
   fmpz_mat_t B;
   const long n = fmpz_poly_length(g);
   fmpz_mat_init(B, 1, n);
   _fmpz_vec_set(B->rows[0], g->coeffs, n);
-  gpv_mp_t *D = gpv_mp_init(B, sigma, c, algorithm);
+
+  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
+  */
+
+  mpfr_t sigma_;
+  mpfr_init2(sigma_, mpfr_get_prec(sigma));
+  mpfr_set(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
+  
+  gpv_mp_t *D = gpv_mp_init(B, sigma_, c, algorithm);
   fmpz_mat_clear(B);
+  mpfr_clear(sigma_);
   return D;
 }
 
@@ -48,8 +61,19 @@ static inline gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma) {
   fmpz_mat_t I;
   fmpz_mat_init(I, 1, n);
   fmpz_mat_one(I);
-  gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
+
+  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
+  */
+
+  mpfr_t sigma_;
+  mpfr_init2(sigma_, mpfr_get_prec(sigma));
+  mpfr_set(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
+ 
+  gpv_mp_t *D = gpv_mp_init(I, sigma_, NULL, GPV_IDENTITY);
   fmpz_mat_clear(I);
+  mpfr_clear(sigma_);
   return D;
 }
 

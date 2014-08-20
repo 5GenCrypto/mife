@@ -5,6 +5,7 @@
 #include <dgs/dgs.h>
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_vec.h>
+#include "gso.h"
 
 /**
    Sampling algorithms
@@ -21,7 +22,9 @@ struct _gpv_mp_t;
 
 typedef struct _gpv_mp_t{
   fmpz_mat_t B; //< basis matrix
-  fmpz *c; //< center
+  mpfr_mat_t G; //< Gram-Schmidt matrix
+  mpfr_t *c; //< center
+  fmpz *c_z; //< center
   mpfr_t sigma; //< Gaussian parameter
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
   int (*call)(fmpz *rop,  const struct _gpv_mp_t *self, gmp_randstate_t state); //< call this function
@@ -35,7 +38,7 @@ typedef struct _gpv_mp_t{
    @param algorithm
 */
 
-gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, const mpfr_t sigma,const fmpz *c, const gpv_alg_t algorithm);
+gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const gpv_alg_t algorithm);
 
 /**
    Simple sampling when B is the identity
@@ -48,7 +51,29 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, const mpfr_t sigma,const fmpz *c, cons
 
 int gpv_mp_call_simple(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state);
 
-
 void gpv_mp_clear(gpv_mp_t *self);
+
+static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
+  assert(D);
+  assert(randstate->gmp_init);
+
+  const long n = fmpz_mat_ncols(D->B);
+  fmpz_poly_realloc(f, n);
+  do {
+    D->call(f->coeffs, D, randstate->gmp_state);
+  } while (fmpz_is_zero(f->coeffs +(n-1)));
+  _fmpz_poly_set_length(f, n);
+}
+
+static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
+  fmpz_mat_t I;
+  fmpz_mat_init(I, 1, len);
+  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
+
+  fmpz_poly_sample_D(f, D, randstate);
+
+  gpv_mp_clear(D);
+  fmpz_mat_clear(I);
+}
 
 #endif

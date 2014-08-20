@@ -281,8 +281,6 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate);
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate);
 
 /**
-   @todo: we are comparing with sqrt(2*n)*sigma_p not sqrt(n)*sigma_p as
-   specified because the latter hardly ever is satisfied
  */
 
 void _gghlite_sample_b(gghlite_t self, const uint64_t rerand_mask, flint_rand_t randstate);

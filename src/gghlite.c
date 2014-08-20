@@ -66,7 +66,7 @@ void _gghlite_sample_b(gghlite_t self, uint64_t rerand_mask, flint_rand_t randst
 
   mpfr_t sqrtn_sigma_p;
   mpfr_init2(sqrtn_sigma_p, _gghlite_prec(self->pk));
-  mpfr_set_si(sqrtn_sigma_p, 2*n, MPFR_RNDN);
+  mpfr_set_si(sqrtn_sigma_p, n, MPFR_RNDN);
   mpfr_sqrt(sqrtn_sigma_p, sqrtn_sigma_p, MPFR_RNDN);
   mpfr_mul(sqrtn_sigma_p, sqrtn_sigma_p, self->pk->sigma_p, MPFR_RNDN);
 
@@ -481,7 +481,7 @@ void _gghlite_set_ell_b(gghlite_pk_t self) {
 
 void _gghlite_set_sigma_s(gghlite_pk_t self) {
   assert(self->kappa > 0);
-  assert(self->lamba > 0);
+  assert(self->lambda > 0);
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma_p, 0)>0);
   assert(mpfr_cmp_ui(self->ell_b, 0)>0);

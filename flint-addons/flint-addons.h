@@ -1,12 +1,12 @@
 #ifndef FLINT_ADDONS__H
 #define FLINT_ADDONS__H
 
+#include <assert.h>
 #include <flint/fmpq_poly.h>
 #include <flint/fmpz.h>
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
-#include <gpv/gpv.h>
 
 /**
    fmpz_mat_t
@@ -105,32 +105,19 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
   fmpz_clear(acc_num);
 }
 
+static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len) {
+  mpz_t tmp;
+  mpz_init(tmp);
+  for(long i=0; i<len; i++) {
+    mpfr_get_z(tmp, op[i], MPFR_RNDN);
+    fmpz_set_mpz(rop + i, tmp);
+  }
+  mpz_clear(tmp);
+}
+
 /**
    fmpz_poly_t
 */
-
-static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
-  assert(D);
-  assert(randstate->gmp_init);
-
-  const long n = fmpz_mat_ncols(D->B);
-  fmpz_poly_realloc(f, n);
-  do {
-    D->call(f->coeffs, D, randstate->gmp_state);
-  } while (fmpz_is_zero(f->coeffs +(n-1)));
-  _fmpz_poly_set_length(f, n);
-}
-
-static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
-  fmpz_mat_t I;
-  fmpz_mat_init(I, 1, len);
-  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
-
-  fmpz_poly_sample_D(f, D, randstate);
-
-  gpv_mp_clear(D);
-  fmpz_mat_clear(I);
-}
 
 static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly_t f, fmpz_mod_poly_t modulus) {
   fmpz_mod_poly_t r; fmpz_mod_poly_init(r, fmpz_mod_poly_modulus(modulus));
