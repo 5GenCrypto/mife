@@ -5,7 +5,8 @@ void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self) {
 }
 
 void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate) {
-  assert(k <= self->kappa && k>=1);
+  assert(k <= self->kappa && 1<=k);
+  assert(self->rerand_mask && (1ULL<<(k-1)));
   assert(!fmpz_mod_poly_is_zero(self->x[k-1][0]) && !fmpz_mod_poly_is_zero(self->x[k-1][1]));
   assert(self->D_sigma_s);
 
@@ -20,7 +21,7 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   fmpz_mod_poly_clear(tmp);
 }
 
-void gghlite_lift(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime, int rerand, flint_rand_t randstate) {
+void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime, int rerand, flint_rand_t randstate) {
   assert(kprime <= k);
   assert(k <= self->kappa);
   if (k>kprime) {
@@ -45,6 +46,11 @@ void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
 }
 
 void gghlite_print_params(const gghlite_pk_t self) {
+  assert(self->lamba);
+  assert(self->kappa);
+  assert(self->n);
+  assert(!fmpz_is_zero(self->q));
+  
   const long lambda = self->lambda;
   const long kappa = self->kappa;
   const long n = self->n;

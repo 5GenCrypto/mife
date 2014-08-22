@@ -29,9 +29,9 @@ typedef struct _cmdline_params_struct cmdline_params_t[1];
 
 static inline void print_header(const char *name, cmdline_params_t params) {
   printf("####################################################################\n");
-  printf(" %s\n", name);
-  printf(" λ: %3d, κ: %2d, seed: 0x%016lx\n",params->lambda, params->kappa, params->seed);
-  printf("##############################################all logs are base two#\n\n");
+  printf("%s\n", name);
+  printf(" λ: %3d, κ: %2d                              seed: 0x%016lx\n",params->lambda, params->kappa, params->seed);
+  printf("#############################################all logs are base two##\n\n");
 }
 
 static inline int parse_cmdline(cmdline_params_t params, int argc, char *argv[], const char *name, const char *extra) {

@@ -16,10 +16,13 @@ int main(int argc, char *argv[]) {
   gmp_randseed_ui(randstate->gmp_state, params->seed ^ 0xDEADBEEFDEADBEEFULL);
     
   gghlite_t self;
-  gghlite_init(self, params->lambda, params->kappa, 1<<0, randstate);
-
-  printf("\n");
+  gghlite_pk_init_params(self->pk, params->lambda, params->kappa, 1<<0);
   gghlite_print_params(self->pk);
+
+  printf("\n---\n");
+  
+  gghlite_init_instance(self, randstate);
+
   gghlite_clear(self, 1);
 
   flint_randclear(randstate);
