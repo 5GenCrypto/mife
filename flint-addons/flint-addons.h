@@ -119,17 +119,6 @@ static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len)
    fmpz_poly_t
 */
 
-static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly_t f, fmpz_mod_poly_t modulus) {
-  fmpz_mod_poly_t r; fmpz_mod_poly_init(r, fmpz_mod_poly_modulus(modulus));
-  fmpz_mod_poly_t t; fmpz_mod_poly_init(t, fmpz_mod_poly_modulus(modulus));
-
-  fmpz_mod_poly_xgcd(r, f_inv, t, f, modulus);
-  assert(fmpz_mod_poly_degree(r) == 0 && fmpz_is_one(r->coeffs + 0));
-
-  fmpz_mod_poly_clear(t);
-  fmpz_mod_poly_clear(r);
-}
-
 static inline void fmpz_poly_invert_mod_fmpq(fmpq_poly_t f_inv, fmpz_poly_t f, const fmpz_poly_t g) {
   fmpq_poly_t r; fmpq_poly_init(r);
   fmpq_poly_t t; fmpq_poly_init(t);
@@ -151,7 +140,7 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   assert(fmpz_mat_ncols(rop) == fmpz_poly_length(op));
 
   const long n = fmpz_poly_length(op);
-  
+
   fmpz* v = _fmpz_vec_init(n);
   _fmpz_vec_set(v, op->coeffs, n);
   for(long i=0; i<n; i++) {
@@ -159,14 +148,14 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
       fmpz_set(fmpz_mat_entry(rop, i, j), v+j);
     _fmpz_vec_rot_left_neg(v, v, n);
   }
-  _fmpz_vec_clear(v, n);  
+  _fmpz_vec_clear(v, n);
 }
 
 /**
    Decide if <b_0,b_1> = <g>
  */
 
-static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1) {  
+static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1) {
   fmpz_mat_t G, B;
   const long n = fmpz_poly_length(g);
   fmpz_mat_init(G, n, n);
@@ -193,7 +182,7 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
   fmpz_gcd(tmp, det_b0, det_b1);
   fmpz_clear(det_b0);
   fmpz_clear(det_b1);
-  
+
   int r = fmpz_cmp(det, tmp);
 
   fmpz_clear(det);
@@ -217,9 +206,42 @@ static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op) {
   return r;
 }
 
+static inline void fmpz_poly_set_fmpz_mod_poly(fmpz_poly_t rop, fmpz_mod_poly_t op) {
+  long n = fmpz_mod_poly_length(op);
+
+  fmpz *q = fmpz_mod_poly_modulus(op);
+
+  fmpz_t q2;
+  fmpz_init(q2);
+  fmpz_fdiv_q_2exp(q2,q, 1);
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  
+  for(long i=0; i<n; i++) {
+    fmpz_mod_poly_get_coeff_fmpz(tmp, op, i);
+    if (fmpz_cmp(tmp, q2)>=0)
+      fmpz_sub(tmp, tmp, q);
+    fmpz_poly_set_coeff_fmpz(rop, i, tmp);
+  }
+  fmpz_clear(tmp);
+  fmpz_clear(q2);
+}
+
 /**
  fmpz_mod_poly_t
  */
+
+static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly_t f, fmpz_mod_poly_t modulus) {
+  fmpz_mod_poly_t r; fmpz_mod_poly_init(r, fmpz_mod_poly_modulus(modulus));
+  fmpz_mod_poly_t t; fmpz_mod_poly_init(t, fmpz_mod_poly_modulus(modulus));
+
+  fmpz_mod_poly_xgcd(r, f_inv, t, f, modulus);
+  assert(fmpz_mod_poly_degree(r) == 0 && fmpz_is_one(r->coeffs + 0));
+
+  fmpz_mod_poly_clear(t);
+  fmpz_mod_poly_clear(r);
+}
 
 static inline void fmpz_mod_poly_set_fmpq_poly(fmpz_mod_poly_t rop, fmpq_poly_t op) {
   fmpz_t tmp;

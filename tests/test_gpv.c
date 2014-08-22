@@ -4,7 +4,7 @@
 #include <gpv/gso.h>
 #include <math.h>
 
-int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, size_t ntrials, flint_rand_t state) {
+int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long c, size_t ntrials, flint_rand_t state) {
   assert(nrows>0);
   assert(ncols>0);
   assert(bits>0);
@@ -13,6 +13,63 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
   fmpz_mat_t B;
   fmpz_mat_init(B, nrows, ncols);
   fmpz_mat_randtest(B, state, bits);
+  
+  mpfr_t sigma_;
+  mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+
+  mpfr_t *c_ = _mpfr_vec_init(ncols, 53);
+  mpfr_set_si(c_[0], c, MPFR_RNDN);
+  
+  gpv_mp_t *D = gpv_mp_init(B, sigma_, c_, GPV_INLATTICE);
+
+  _mpfr_vec_clear(c_, ncols);
+
+  fmpz *v = _fmpz_vec_init(ncols);
+
+  mpfr_t tmp, acc;
+  mpfr_init(tmp);
+  mpfr_init_set_ui(acc, 0, MPFR_RNDN);
+  
+  for(size_t i=0; i<ntrials; i++) {
+    D->call(v, D, state->gmp_state);
+    _fmpz_vec_2norm_mpfr(tmp, v, ncols);
+    mpfr_add(acc, acc, tmp, MPFR_RNDN);
+  }
+
+  mpfr_div_ui(tmp, acc, ntrials, MPFR_RNDN);
+
+  double left;
+  if(nrows == 1)
+    left = sqrt((double)ncols)*mpfr_get_d(sigma_, MPFR_RNDN);
+  else
+    left = sqrt((double)nrows)*mpfr_get_d(sigma_, MPFR_RNDN);
+  double rght = mpfr_get_d(tmp, MPFR_RNDN);
+  double quality = fabs(log2(left/rght));
+
+  printf("    coset:: m: %4ld, n: %4ld, bits: %3ld, σ: %10.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f", nrows, ncols, bits, sigma, left, rght, quality);
+
+  gpv_mp_clear(D);
+  _fmpz_vec_clear(v, ncols);
+
+  mpfr_clear(sigma_);
+  mpfr_clear(tmp);
+  mpfr_clear(acc);
+  if (quality < 0.1)
+    return 0;
+  else
+    return 1;
+}
+
+int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, size_t ntrials, flint_rand_t state) {
+  assert(nrows>0);
+  assert(ncols>0);
+  assert(bits>0);
+  assert(sigma>0);
+  assert(ntrials>0);
+  fmpz_mat_t B;
+  fmpz_mat_init(B, nrows, ncols);
+  fmpz_mat_randrank(B, state, nrows, bits);
+  fmpz_mat_randops(B, state, 100);
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
@@ -25,6 +82,27 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
   mpfr_init(tmp);
   mpfr_init_set_ui(acc, 0, MPFR_RNDN);
 
+  mpfr_mat_t G;
+  if (nrows > 1) {
+    mpfr_mat_init(G, nrows, ncols, 53);
+    mpfr_mat_set_fmpz_mat(G, B);
+  } else {
+    mpfr_mat_init(G, ncols, ncols, 53);
+    mpfr_mat_set_fmpz_mat_rot(G, B);
+  }
+  mpfr_mat_gso(G, MPFR_RNDN);
+
+#if 0  
+  mpfr_t vol;
+  mpfr_init_set_ui(vol, 1, MPFR_RNDN);
+  for(long i=0; i<G->r; i++) {
+    _mpfr_vec_2norm(tmp, G->rows[i], ncols, MPFR_RNDN);
+    printf("%ld : %lf\n",i,mpfr_get_d(tmp, MPFR_RNDN));
+    mpfr_mul(vol, vol, tmp, MPFR_RNDN);
+  }
+  printf("%lf\n",log2(mpfr_get_d(vol,MPFR_RNDN)));
+#endif
+  
   for(size_t i=0; i<ntrials; i++) {
     D->call(v, D, state->gmp_state);
     _fmpz_vec_2norm_mpfr(tmp, v, ncols);
@@ -130,7 +208,7 @@ int test_gso(long m, long n, long *M, double *GSO) {
     mpfr_mat_set_fmpz_mat_rot(G, B);
   }
 
-  mpfr_mat_gso(G);
+  mpfr_mat_gso(G, MPFR_RNDN);
 
   x = 0;
   for(long i=0; i<G->r; i++) {
@@ -161,13 +239,17 @@ int main(int argc, char *argv[]) {
   flint_randinit(state);
   _flint_rand_init_gmp(state);
 
-  status += test_gpv_run( test_dist_inlattice(30, 30,  2,   255.0, 1<<13, state) );
+
+  status += test_gpv_run( test_dist_coset( 5,  5,  5,   1293.0,  1, 1<<8, state) );
+  printf("\n");
+  
+  status += test_gpv_run( test_dist_inlattice(30, 30,  2,  1849.0, 1<<13, state) );
   status += test_gpv_run( test_dist_inlattice(10, 10,  3,   255.0, 1<<13, state) );
   status += test_gpv_run( test_dist_inlattice(13, 13,  4, 24145.0, 1<<13, state) );
 
   status += test_gpv_run( test_dist_inlattice( 1, 30,  2,   255.0, 1<<13, state) );
-  status += test_gpv_run( test_dist_inlattice( 1, 10,  3,   255.0, 1<<13, state) );
-  status += test_gpv_run( test_dist_inlattice( 1, 13,  4, 24145.0, 1<<13, state) );
+  status += test_gpv_run( test_dist_inlattice( 1, 10,  3,    25.0, 1<<13, state) );
+  status += test_gpv_run( test_dist_inlattice( 1, 13,  4,  2445.0, 1<<13, state) );
   printf("\n");
 
   status += test_gpv_run( test_dist_simple(  10,   10,  3.0, 1<<14, state) );

@@ -234,6 +234,8 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
 
 
 void gpv_mp_clear(gpv_mp_t *self) {
+  if (!self)
+    return;
   _fmpz_vec_clear(self->c_z, fmpz_mat_ncols(self->B));
   _mpfr_vec_clear(self->c,   fmpz_mat_ncols(self->B));
   

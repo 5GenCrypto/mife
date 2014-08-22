@@ -53,16 +53,35 @@ int gpv_mp_call_simple(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state);
 
 void gpv_mp_clear(gpv_mp_t *self);
 
+static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
+  assert(D);
+  assert(randstate->gmp_init);
+
+  const long n = fmpz_mat_ncols(D->B);
+  fmpz_mod_poly_realloc(f, n);
+  D->call(f->coeffs, D, randstate->gmp_state);
+  _fmpz_mod_poly_set_length(f, n);
+}
+
 static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
   assert(D);
   assert(randstate->gmp_init);
 
   const long n = fmpz_mat_ncols(D->B);
   fmpz_poly_realloc(f, n);
-  do {
-    D->call(f->coeffs, D, randstate->gmp_state);
-  } while (fmpz_is_zero(f->coeffs +(n-1)));
+  D->call(f->coeffs, D, randstate->gmp_state);
   _fmpz_poly_set_length(f, n);
+}
+
+static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
+  fmpz_mat_t I;
+  fmpz_mat_init(I, 1, len);
+  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
+
+  fmpz_mod_poly_sample_D(f, D, randstate);
+
+  gpv_mp_clear(D);
+  fmpz_mat_clear(I);
 }
 
 static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
