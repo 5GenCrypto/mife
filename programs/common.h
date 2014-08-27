@@ -12,7 +12,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf(" %s\n",name);
   printf("####################################################################\n");
   printf("-l   security parameter λ > 0 (default: %d)\n", DEFAULT_LAMBDA);
-  printf("-k   multi-linearity parameter k > 1 (default: 2)\n", DEFAULT_KAPPA);
+  printf("-k   multi-linearity parameter k > 1 (default: %d)\n", DEFAULT_KAPPA);
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   if (extra)
     printf("%s\n", extra);
@@ -35,9 +35,9 @@ static inline void print_header(const char *name, cmdline_params_t params) {
 }
 
 static inline int parse_cmdline(cmdline_params_t params, int argc, char *argv[], const char *name, const char *extra) {
-  params->kappa  =  2;
-  params->lambda = 16;
-  params->seed   =  0;
+  params->kappa  =  DEFAULT_KAPPA;
+  params->lambda =  DEFAULT_LAMBDA;
+  params->seed   =  DEFAULT_SEED;
 
   int c;
   while ((c = getopt(argc, argv, "l:k:s:")) != -1) {

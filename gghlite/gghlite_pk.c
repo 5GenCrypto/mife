@@ -192,7 +192,7 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
 }
 
 void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
-  assert(!self->n);
+  assert(self->n);
   assert(!mpfr_zero_p(self->sigma_p));
   self->D_sigma_p = _gghlite_gpv_from_n(self->n, self->sigma_p);
 }
@@ -307,7 +307,7 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
 }
 
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
-  assert(!self->n);
+  assert(self->n);
   assert(!mpfr_zero_p(self->sigma_s));
   self->D_sigma_s = _gghlite_gpv_from_n(self->n, self->sigma_s);
 }
@@ -352,19 +352,11 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   mpfr_clear(self->ell_g);
   mpfr_clear(self->sigma);
   fmpz_clear(self->q);
+  gpv_mp_clear(self->D_sigma_p);
+  gpv_mp_clear(self->D_sigma_s);
 }
 
-void gghlite_print_params(const gghlite_pk_t self) {
-  const long lambda = self->lambda;
-  const long kappa = self->kappa;
-  const long n = self->n;
-  printf("         λ: %7ld\n",lambda);
-  printf("         k: %7ld\n",kappa);
-  printf("         n: %7ld\n",n);
-  printf("   log₂(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_check_sec(self));
-  printf("   log₂(σ): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
-  printf(" log₂(ℓ_g): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
-  printf("  log₂(σ'): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
-  printf(" log₂(ℓ_b): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
-  printf(" log₂(σ^*): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
+void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op) {
+  memcpy(rop, op->pk, sizeof(struct _gghlite_pk_struct));
 }
+

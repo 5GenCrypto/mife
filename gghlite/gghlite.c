@@ -294,6 +294,8 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
   _gghlite_set_y(self);
   _gghlite_set_x(self);
   _gghlite_set_pzt(self);
+  _gghlite_pk_set_D_sigma_p(self->pk);
+  _gghlite_pk_set_D_sigma_s(self->pk);
 }
 
 void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa,

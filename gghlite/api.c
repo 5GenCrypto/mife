@@ -1,10 +1,13 @@
+#include <stdarg.h>
+#include "gghlite.h"
+#include "gghlite-internals.h"
 
 void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self) {
   assert(!fmpz_is_zero(self->q));
   fmpz_mod_poly_init(op, self->q);
 }
 
-void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate) {
+void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, flint_rand_t randstate) {
   assert(k <= self->kappa && 1<=k);
   assert(self->rerand_mask && (1ULL<<(k-1)));
   assert(!fmpz_mod_poly_is_zero(self->x[k-1][0]) && !fmpz_mod_poly_is_zero(self->x[k-1][1]));
@@ -13,6 +16,8 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   fmpz_mod_poly_t tmp;
   fmpz_mod_poly_init_gghlite(tmp, self);
 
+  fmpz_mod_poly_set(rop, op);
+  
   for(long i=0; i<2; i++) {
     fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
     fmpz_mod_poly_mulmod(tmp, tmp, self->x[k-1][i], self->modulus);
@@ -21,7 +26,7 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   fmpz_mod_poly_clear(tmp);
 }
 
-void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime, int rerand, flint_rand_t randstate) {
+void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, long kprime, int rerand, flint_rand_t randstate) {
   assert(kprime <= k);
   assert(k <= self->kappa);
   if (k>kprime) {
@@ -29,24 +34,44 @@ void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime
     fmpz_mod_poly_init_gghlite(yk, self);
     fmpz_mod_poly_set(yk, self->y);
     fmpz_mod_poly_powmod_ui_binexp(yk, yk, k-kprime, self->modulus);
-    fmpz_mod_poly_mulmod(rop, rop, yk, self->modulus);
+    fmpz_mod_poly_mulmod(rop, op, yk, self->modulus);
     fmpz_mod_poly_clear(yk);
   }
   if(rerand) {
-    gghlite_rerand(rop, self, k, randstate);
+    gghlite_rerand(rop, self, rop, k, randstate);
   }
 }
+
 
 void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate) {
   assert(self->kappa);
   assert(k >=0 && k <= self->kappa);
 
   fmpz_mod_poly_sample_D(rop, self->D_sigma_p, randstate);
-  gghlite_lift(rop, self, k, 0, 1, randstate);
+  if (k == 0)
+    return;
+  gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
+}
+
+void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, int cleanup) {
+  fmpz_mod_poly_t t;
+  fmpz_mod_poly_init_gghlite(t, self);
+  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);
+  fmpz_poly_set_fmpz_mod_poly(rop, t);
+  fmpz_mod_poly_clear(t);
+
+  if (!cleanup)
+    return;
+  long logq = fmpz_sizeinbase(self->q,2)-1;
+  for(long i=0; i<fmpz_poly_length(rop); i++) {    
+    for(long j=0; j<logq-2*self->lambda; j++) {
+      fmpz_clrbit(rop->coeffs + i, j);
+    }
+  }
 }
 
 void gghlite_print_params(const gghlite_pk_t self) {
-  assert(self->lamba);
+  assert(self->lambda);
   assert(self->kappa);
   assert(self->n);
   assert(!fmpz_is_zero(self->q));

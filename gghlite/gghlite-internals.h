@@ -55,10 +55,10 @@ static inline int gghlite_check_sec(const gghlite_pk_t self) {
 */
 
 static inline long _gghlite_prec(const gghlite_pk_t self) {
-  if (2*self->lambda < 53)
+  if (self->lambda*self->lambda < 53)
     return 53;
   else
-    return 2*self->lambda;
+    return self->lambda*self->lambda;
 }
 /**
    Compute `n` and `q`.
@@ -140,6 +140,8 @@ static inline double _gghlite_sigma_p(double n) {
 
 void _gghlite_pk_set_sigma_p(gghlite_pk_t self);
 
+void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self);
+
 /**
    Compute `ℓ_b` in double precision.
 */
@@ -191,6 +193,8 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa) {
 */
 
 void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
+
+void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self);
 
 /**
    Set `x^n + 1`.

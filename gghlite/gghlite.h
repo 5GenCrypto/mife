@@ -46,6 +46,8 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate);
 
 void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa, const uint64_t rerand_mask, flint_rand_t randstate);
 
+void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op);
+
 /**
    Clear GGHLite public key.
 
@@ -102,7 +104,7 @@ void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self);
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_rerand(fmpz_mod_poly_t f, gghlite_pk_t self, long k, flint_rand_t randstate);
+void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, flint_rand_t randstate);
 
 /**
    Elevate an encoding at levek `k'` to level `k` and re-randomise if requested.
@@ -121,7 +123,7 @@ void gghlite_rerand(fmpz_mod_poly_t f, gghlite_pk_t self, long k, flint_rand_t r
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime, int rerand, flint_rand_t randstate);
+void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, long kprime, int rerand, flint_rand_t randstate);
 
 /**
 
@@ -141,5 +143,15 @@ void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, long kprime
 */
 
 void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate);
+
+static inline void gghlite_enc(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, int rerand, flint_rand_t randstate) {
+  gghlite_elevate(rop, self, op, k, 0, rerand, randstate);
+}
+
+static inline void gghlite_mult(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t left, fmpz_mod_poly_t right) {
+  fmpz_mod_poly_mulmod(rop, left, right, self->modulus);
+}
+
+void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, int hash);
 
 #endif //_GGHLITE_H_

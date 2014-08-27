@@ -17,7 +17,8 @@ libgghlite_la_SOURCES = gghlite/gghlite.c \
                         gghlite/gghlite.h \
                         gghlite/misc.h \
                         gghlite/ggh-defs.h \
-                        gghlite/ggh-internals.h
+                        gghlite/ggh-internals.h \
+                        gghlite/api.c
 
 libgghlite_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
@@ -25,15 +26,18 @@ include_HEADERS = gpv/gpv.h gpv/gso.h gghlite/gghlite.h gghlite/misc.h
 
 MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libgpv.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 
-bin_PROGRAMS = gghlite_params gghlite_instance
+bin_PROGRAMS = gghlite_params gghlite_instance nike
 gghlite_params_SOURCES = programs/gghlite_params.c programs/common.h
 gghlite_params_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_params_LDFLAGS = -no-install
 
-
 gghlite_instance_SOURCES = programs/gghlite_instance.c programs/common.h
 gghlite_instance_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_instance_LDFLAGS = -no-install
+
+nike_SOURCES = programs/nike.c programs/common.h
+nike_LDADD = $(MY_PROGRAM_LDADD)
+nike_LDFLAGS = -no-install
 
 check_PROGRAMS = test_gpv
 test_gpv_SOURCES = tests/test_gpv.c

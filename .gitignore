@@ -20,6 +20,7 @@ missing
 /config.status
 /gghlite_params
 /gghlite_instance
+/nike
 */.dirstamp
 */*.lo
 *.la
