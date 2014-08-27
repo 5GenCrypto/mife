@@ -10,6 +10,9 @@ int main(int argc, char *argv[]) {
 
   gghlite_pk_init_params(self->pk, params->lambda, params->kappa, 1<<0);  
   gghlite_print_params(self->pk);
+
+  printf("\nCHECK:\n\n");
+  gghlite_check_params(self->pk);
   gghlite_clear(self, 1);
   mpfr_free_cache(); 
 }

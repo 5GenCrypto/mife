@@ -19,7 +19,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
 
   /* increase n until security check passes */
   while(1) {
-    if (_gghlite_check_sec(log_q, n, lambda))
+    if (_gghlite_check_sec(log_q, n, lambda) && _gghlite_check_func(log_q, n, lambda, kappa))
       break;
     c*=2;
     log_n = ceil(log2(c*n_base));
@@ -31,6 +31,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
   fmpz_init_set_ui(self->q, 2);
   fmpz_pow_ui(self->q, self->q, log_q);
 
+#if 0  
   /* increase q until it is probably prime and q % n == 1*/
 
   fmpz_t zeta;
@@ -51,6 +52,14 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
   }
   fmpz_clear(tmp);
   fmpz_clear(zeta);
+#else
+  fmpz_add_ui(self->q, self->q, 1);
+  while(1) {
+    if(fmpz_is_probabprime(self->q))
+      break;
+    fmpz_add_ui(self->q, self->q, 2);
+  }
+#endif
 }
 
 

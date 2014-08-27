@@ -10,7 +10,7 @@
 */
 
 static inline int64_t _gghlite_log_q(const long log_n, const long kappa) {
-  long log_q = (10.5*log_n + log2(kappa)/2.0 + log2(log_n)) * (8*kappa);
+  long log_q = (10.5*log_n + log2(kappa)/2.0 + 8*log2(log_n)) * (8*kappa);
   return log_q;
 }
 
@@ -27,28 +27,7 @@ static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_in
   return r;
 }
 
-/**
-   Check if security constraints are satisfied.
 
-   @todo: refine this function to reflect actual lattice attacks
- */
-
-static inline int _gghlite_check_sec(int64_t log_q, size_t n, size_t lambda) {
-  /* cost by the lattice rule of thumb is >= lambda */
-  int rt  = (3.0/8.0 * log_q < n/(double)lambda);
-  /* cost of one L2: d^(3+ε) * n * (d + logB) * logB */
-  int lll = (lambda <= (5*log2(n) + log2(log_q))) && (lambda <= (4*log2(n) + 2*log2(log_q)));
-  return rt || lll;
-}
-
-
-/**
-   Check security constraints are satisfied
-*/
-
-static inline int gghlite_check_sec(const gghlite_pk_t self) {
-  return _gghlite_check_sec(fmpz_sizeinbase(self->q, 2), self->n, self->lambda);
-}
 
 /**
    Return precision used for floating point computations
@@ -208,6 +187,38 @@ static inline void _gghlite_pk_set_modulus(gghlite_pk_t self) {
   fmpz_mod_poly_set_coeff_ui(self->modulus,       0, 1);
 }
 
+
+/**
+   Check if security constraints are satisfied.
+
+   @todo: refine this function to reflect actual lattice attacks
+ */
+
+static inline int _gghlite_check_sec(int64_t log_q, size_t n, size_t lambda) {
+  /* cost by the lattice rule of thumb is >= lambda */
+  int rt  = (3.0/8.0 * log_q < n/(double)lambda);
+  /* heuristic cost of one LLLL: n^3·logB^2 */
+  int lll = (lambda <= (3*log2(n) + 2*log2(log_q))) && (lambda <= (4*log2(n) + 2*log2(log_q)));
+  return rt || lll;
+}
+
+/**
+   Check security constraints are satisfied
+*/
+
+static inline int gghlite_check_sec(const gghlite_pk_t self) {
+  return _gghlite_check_sec(fmpz_sizeinbase(self->q, 2), self->n, self->lambda);
+}
+
+static inline int _gghlite_check_func(int64_t log_q, size_t n, size_t lambda, size_t kappa) {
+  double sigma_p = _gghlite_sigma_p(n);
+  double sigma_s = _gghlite_sigma_s(n, lambda, kappa);
+  double lhs = 8*kappa * (log2(3.0*n) + log2(sigma_p) + log2(sigma_s));
+  if (lhs < log_q)
+    return 1;
+  else
+    return 0;
+}
 
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate);
 

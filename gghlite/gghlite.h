@@ -79,6 +79,8 @@ void gghlite_clear(gghlite_t self, int clear_pk);
 
 void gghlite_print_params(const gghlite_pk_t self);
 
+void gghlite_check_params(const gghlite_pk_t self);
+
 /**
    Initialise encoding to zero at level 0.
 
