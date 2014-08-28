@@ -102,6 +102,10 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 
   long fail[3] = {0,0,0};
 
+  fmpz_poly_t modulus;
+  fmpz_poly_init(modulus);
+  fmpz_poly_set_fmpz_mod_poly(modulus, self->pk->modulus);
+  
 #ifndef GGHLITE_CHECK_SIGMA_N
   printf("WARNING: Not checking that `σ_n(rot(B^(k))) < ℓ_b`.\n");
 #endif
@@ -119,7 +123,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
       fmpz_poly_sample_D(self->b[k][0], D, randstate);
       fmpz_poly_sample_D(self->b[k][1], D, randstate);
 
-      if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1]) != 0) {
+      if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1], modulus) != 0) {
         fail[0]++;
         continue;
       }
@@ -149,6 +153,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   mpfr_clear(sqrtn_sigma_p);
   mpfr_clear(sigma_n);
   fmpz_poly_clear(B);
+  fmpz_poly_clear(modulus);
   gpv_mp_clear(D);
 }
 
@@ -233,7 +238,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     }
 #ifdef GGHLITE_CHECK_PRIMALITY
     /* 1. check if prime */
-    if (!fmpz_poly_ideal_is_probaprime(self->g)) {
+    if (!fmpz_poly_ideal_is_probaprime(self->g, modulus)) {
       fail[1]++;
       continue;
     }

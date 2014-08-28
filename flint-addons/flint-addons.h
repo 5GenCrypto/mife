@@ -44,7 +44,7 @@ static inline int fmpz_mat_is_one(const fmpz_mat_t mat) {
    fmpz*
 
    .. todo:
-   
+
        This function should accept a rounding mode.
 
 */
@@ -86,7 +86,7 @@ static inline void _fmpz_vec_rot_left_neg(fmpz *rop, fmpz *op, long len) {
    fmpq*
 
    .. todo:
-   
+
        This function should accept a rounding mode.
 */
 
@@ -116,7 +116,7 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
 
 /**
    .. todo:
-   
+
        This function should accept a rounding mode.
 */
 
@@ -154,6 +154,8 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   assert(fmpz_mat_nrows(rop) == fmpz_poly_length(op));
   assert(fmpz_mat_ncols(rop) == fmpz_poly_length(op));
 
+  printf("WARNING: called fmpz_poly_ideal_rot_basis, O(n^ω) algorithms ahead.\n");
+
   const long n = fmpz_poly_length(op);
 
   fmpz* v = _fmpz_vec_init(n);
@@ -166,35 +168,26 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   _fmpz_vec_clear(v, n);
 }
 
+static inline int fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t modulus) {
+  fmpz_poly_resultant(norm, f, modulus);
+}
+
 /**
    Decide if <b_0,b_1> = <g>
-
-   .. todo:
-
-       This function uses an algorithm with O(n^ω) but O(n^2) algorithms exist
  */
 
-static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1) {
-  fmpz_mat_t G, B;
-  const long n = fmpz_poly_length(g);
-  fmpz_mat_init(G, n, n);
-  fmpz_poly_ideal_rot_basis(G, g);
+static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1, fmpz_poly_t modulus) {
+  const long n = fmpz_poly_degree(modulus);
   fmpz_t det;
   fmpz_init(det);
-  fmpz_mat_det(det, G);
-  fmpz_mat_clear(G);
+  fmpz_poly_ideal_norm(det, g, modulus);
 
   fmpz_t det_b0, det_b1;
   fmpz_init(det_b0);
   fmpz_init(det_b1);
 
-  fmpz_mat_init(B, n, n);
-  fmpz_poly_ideal_rot_basis(B, b0);
-  fmpz_mat_det(det_b0, B);
-
-  fmpz_poly_ideal_rot_basis(B, b1);
-  fmpz_mat_det(det_b1, B);
-  fmpz_mat_clear(B);
+  fmpz_poly_ideal_norm(det_b0, b0, modulus);
+  fmpz_poly_ideal_norm(det_b1, b1, modulus);
 
   fmpz_t tmp;
   fmpz_init(tmp);
@@ -216,19 +209,13 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
        This function uses an algorithm with O(n^ω) but O(n^2) algorithms exist
 */
 
-static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op) {
-  fmpz_mat_t B;
-  fmpz_mat_init(B, fmpz_poly_length(op), fmpz_poly_length(op));
-  fmpz_poly_ideal_rot_basis(B, op);
-
+static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op, fmpz_poly_t modulus) {
   fmpz_t det;
   fmpz_init(det);
-  fmpz_mat_det(det, B);
+  fmpz_poly_ideal_norm(det, op, modulus);
 
   int r = fmpz_is_probabprime(det);
   fmpz_clear(det);
-
-  fmpz_mat_clear(B);
   return r;
 }
 
@@ -243,7 +230,7 @@ static inline void fmpz_poly_set_fmpz_mod_poly(fmpz_poly_t rop, fmpz_mod_poly_t 
 
   fmpz_t tmp;
   fmpz_init(tmp);
-  
+
   for(long i=0; i<n; i++) {
     fmpz_mod_poly_get_coeff_fmpz(tmp, op, i);
     if (fmpz_cmp(tmp, q2)>=0)
