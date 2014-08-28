@@ -10,7 +10,11 @@
 */
 
 static inline int64_t _gghlite_log_q(const long log_n, const long kappa) {
-  long log_q = (10.5*log_n + log2(kappa)/2.0 + 8*log2(log_n)) * (8*kappa);
+#ifndef GGHLITE_HEURISTICS
+  long log_q = (10.5*log_n + log2(kappa)/2.0 + 10.5*log2(log_n)) * (8*kappa);
+#else
+  long log_q = ( 8.5*log_n + log2(kappa)/2.0 +  9.5*log2(log_n)) * (8*kappa);
+#endif
   return log_q;
 }
 
@@ -45,10 +49,12 @@ static inline long _gghlite_prec(const gghlite_pk_t self) {
 
 void _gghlite_pk_set_n_q(gghlite_pk_t self);
 
+
+#ifndef GGHLITE_HEURISTICS
+
 /**
    Compute `σ` in double precision.
 */
-
 
 static inline double _gghlite_sigma(double n) {
   const double e  = 2.71828182845905;
@@ -66,6 +72,26 @@ static inline double _gghlite_sigma(double n) {
 */
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self);
+#else
+/**
+   Compute `σ`.
+
+   CONSTRAINTS:
+
+   #. `σ = \sqrt{n}
+*/
+
+/**
+   Compute `σ` in double precision.
+*/
+
+static inline double _gghlite_sigma(double n) {
+  const double sigma = sqrt(n);
+  return sigma;
+}
+
+void _gghlite_pk_set_sigma(gghlite_pk_t self);
+#endif
 
 /**
   Compute `ℓ_g` in double precision.
@@ -216,7 +242,7 @@ static inline int gghlite_check_sec(const gghlite_pk_t self) {
 static inline int _gghlite_check_func(int64_t log_q, size_t n, size_t lambda, size_t kappa) {
   double sigma_p = _gghlite_sigma_p(n);
   double sigma_s = _gghlite_sigma_s(n, lambda, kappa);
-  double lhs = 8*kappa * (log2(3.0*n) + log2(sigma_p) + log2(sigma_s));
+  double lhs = 8*kappa * (log2(3.0) + 1.5*log2(n) + log2(sigma_p) + log2(sigma_s));
   if (lhs < log_q)
     return 1;
   else

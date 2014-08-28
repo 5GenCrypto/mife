@@ -62,6 +62,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
 #endif
 }
 
+#ifndef GGHLITE_HEURISTICS
 void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   assert(self->n > 0);
 
@@ -95,6 +96,15 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   mpfr_clear(tmp);
   mpfr_clear(pi);
 }
+#else
+void _gghlite_pk_set_sigma(gghlite_pk_t self) {
+  assert(self->n > 0);
+
+  mpfr_init2(self->sigma, _gghlite_prec(self));
+  mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
+  mpfr_sqrt(self->sigma, self->sigma, MPFR_RNDN);
+}
+#endif
 
 void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
   assert(self->n > 0);

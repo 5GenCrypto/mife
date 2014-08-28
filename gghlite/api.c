@@ -99,6 +99,6 @@ void gghlite_check_params(const gghlite_pk_t self) {
   mpfr_pow_ui(tmp, tmp, 8*self->kappa, MPFR_RNDN);
   mpfr_log2(tmp, tmp, MPFR_RNDN);
   
-  printf("(8κ)·log₂((m+1)·n·σ^*σ') ≤ log₂(q): %10.2f ≤ %7ld\n", mpfr_get_d(tmp, MPFR_RNDN), fmpz_sizeinbase(self->q, 2));
-  printf("                 8/3·n/λ ≥ log₂(q): %10.2f ≥ %7ld\n", 8.0/3.0 * self->n / (double)self->lambda, fmpz_sizeinbase(self->q, 2));
+  printf("(8κ)·log₂((m+1)·n^{3/2}·σ^*σ') ≤ log₂(q): %10.2f ≤ %7ld\n", mpfr_get_d(tmp, MPFR_RNDN), fmpz_sizeinbase(self->q, 2));
+  printf("                       8/3·n/λ ≥ log₂(q): %10.2f ≥ %7ld\n", 8.0/3.0 * self->n / (double)self->lambda, fmpz_sizeinbase(self->q, 2));
 }
