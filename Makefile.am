@@ -26,7 +26,7 @@ include_HEADERS = gpv/gpv.h gpv/gso.h gghlite/gghlite.h gghlite/misc.h
 
 MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libgpv.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 
-bin_PROGRAMS = gghlite_params gghlite_instance nike
+bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike
 gghlite_params_SOURCES = applications/gghlite_params.c applications/common.h
 gghlite_params_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_params_LDFLAGS = -no-install
@@ -34,6 +34,10 @@ gghlite_params_LDFLAGS = -no-install
 gghlite_instance_SOURCES = applications/gghlite_instance.c applications/common.h
 gghlite_instance_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_instance_LDFLAGS = -no-install
+
+gghlite_noise_dist_SOURCES = applications/gghlite_noise_dist.c applications/common.h
+gghlite_noise_dist_LDADD = $(MY_PROGRAM_LDADD)
+gghlite_noise_dist_LDFLAGS = -no-install
 
 nike_SOURCES = applications/nike.c applications/nike.h
 nike_LDADD = $(MY_PROGRAM_LDADD)

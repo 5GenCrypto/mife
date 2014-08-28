@@ -54,6 +54,12 @@ void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
 }
 
+/**
+   .. todo:
+
+       pick l as suggested in GGHLite paper
+*/
+
 void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   fmpz_mod_poly_t t;
   gghlite_enc_init(t, self);

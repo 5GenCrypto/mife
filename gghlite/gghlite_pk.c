@@ -343,7 +343,7 @@ void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint
   assert((kappa > 0) && (kappa <= KAPPA));
 
   _gghlite_pk_zero(self);
-  
+
   self->lambda = lambda;
   self->kappa = kappa;
   self->rerand_mask = rerand_mask;
@@ -383,4 +383,3 @@ void gghlite_pk_clear(gghlite_pk_t self) {
 void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op) {
   memcpy(rop, op->pk, sizeof(struct _gghlite_pk_struct));
 }
-
