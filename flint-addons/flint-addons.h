@@ -229,7 +229,7 @@ static inline void fmpz_poly_set_fmpz_mod_poly(fmpz_poly_t rop, fmpz_mod_poly_t 
 }
 
 /**
- fmpz_mod_poly_t
+   fmpz_mod_poly_t
  */
 
 static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly_t f, fmpz_mod_poly_t modulus) {
@@ -265,5 +265,18 @@ static inline void fmpz_mod_poly_set_fmpq_poly(fmpz_mod_poly_t rop, fmpq_poly_t 
   fmpz_clear(den_inv);
 }
 
+/**
+   flint_rand_t
+*/
+
+static inline void flint_randinit_seed(flint_rand_t randstate, mp_limb_t seed, int gmp) {
+  flint_randinit(randstate);
+  randstate->__randval  = seed;
+  randstate->__randval2 = seed ^ 0x5555555555555555ULL;
+  if (gmp) {
+    _flint_rand_init_gmp(randstate);
+    gmp_randseed_ui(randstate->gmp_state, seed ^ 0xDEADBEEFDEADBEEFULL);
+  }
+}
 
 #endif //FLINT_ADDONS__H

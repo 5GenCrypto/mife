@@ -31,7 +31,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
   fmpz_init_set_ui(self->q, 2);
   fmpz_pow_ui(self->q, self->q, log_q);
 
-#if 0  
+#if 0
   /* increase q until it is probably prime and q % n == 1*/
 
   fmpz_t zeta;
@@ -61,7 +61,6 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
   }
 #endif
 }
-
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   assert(self->n > 0);
@@ -238,14 +237,6 @@ void _gghlite_pk_set_ell_b(gghlite_pk_t self) {
 }
 
 
-/**
-   CONSTRAINTS:
-
-   #. `σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}`, cf. [LSS14]_, p.17, Eq. (8)
-   #. `σ^* ≥ n^{1.5}·(σ')²\sqrt{8πε_d^{-1}}/ℓ_b`, cf. [LSS14]_, p.17, Eq. (9) with
-   `εₑ^{-1} = O(log λ/κ)`.
-*/
-
 void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
   assert(self->kappa > 0);
   assert(self->lambda > 0);
@@ -361,8 +352,6 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   mpfr_clear(self->ell_g);
   mpfr_clear(self->sigma);
   fmpz_clear(self->q);
-  gpv_mp_clear(self->D_sigma_p);
-  gpv_mp_clear(self->D_sigma_s);
 }
 
 void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op) {

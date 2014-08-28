@@ -22,7 +22,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
 struct _cmdline_params_struct{
   long lambda;
   long kappa;
-  uint64_t seed;
+  mp_limb_t seed;
 };
 
 typedef struct _cmdline_params_struct cmdline_params_t[1];

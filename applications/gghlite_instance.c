@@ -9,11 +9,7 @@ int main(int argc, char *argv[]) {
   print_header("GGHLite Instance Generator", params);
   
   flint_rand_t randstate;
-  flint_randinit(randstate);
-  randstate->__randval  = params->seed;
-  randstate->__randval2 = params->seed ^ 0x5555555555555555ULL;
-  _flint_rand_init_gmp(randstate);
-  gmp_randseed_ui(randstate->gmp_state, params->seed ^ 0xDEADBEEFDEADBEEFULL);
+  flint_randinit_seed(randstate, params->seed, 1);
     
   gghlite_t self;
   gghlite_pk_init_params(self->pk, params->lambda, params->kappa, 1<<0);

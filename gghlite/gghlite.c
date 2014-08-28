@@ -19,6 +19,7 @@ void _gghlite_set_y(gghlite_t self) {
   fmpz_mod_poly_init(tmp, self->pk->q);
   fmpz_mod_poly_set_fmpz_poly(tmp, self->a);
   fmpz_mod_poly_mulmod(tmp, tmp, z_inv, self->pk->modulus);
+  fmpz_mod_poly_truncate(tmp, self->pk->n);
 
   fmpz_mod_poly_init(self->pk->y, self->pk->q);
   fmpz_mod_poly_set(self->pk->y, tmp);
@@ -63,10 +64,13 @@ void _gghlite_set_x(gghlite_t self) {
     fmpz_mod_poly_init(self->pk->x[k][0], self->pk->q);
     fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][0]);
     fmpz_mod_poly_mulmod(self->pk->x[k][0], tmp, acc, self->pk->modulus);
+    fmpz_mod_poly_truncate(self->pk->x[k][0], self->pk->n);
 
     fmpz_mod_poly_init(self->pk->x[k][1], self->pk->q);
     fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][1]);
     fmpz_mod_poly_mulmod(self->pk->x[k][1], tmp, acc, self->pk->modulus);
+    fmpz_mod_poly_truncate(self->pk->x[k][0], self->pk->n);
+
   }
   fmpz_mod_poly_clear(tmp);
   fmpz_mod_poly_clear(acc);
@@ -169,12 +173,12 @@ void _gghlite_set_pzt(gghlite_t self) {
   fmpz_mod_poly_init(pzt, self->pk->q);
   fmpz_mod_poly_mulmod(pzt, z_kappa, g_inv, self->pk->modulus);
 
-
   fmpz_mod_poly_t h;
   fmpz_mod_poly_init(h, self->pk->q);
   fmpz_mod_poly_set_fmpz_poly(h, self->h);
 
   fmpz_mod_poly_mulmod(pzt, pzt, h, self->pk->modulus);
+  fmpz_mod_poly_truncate(pzt, self->pk->n);
   fmpz_mod_poly_init(self->pk->pzt, self->pk->q);
   fmpz_mod_poly_set(self->pk->pzt, pzt);
 

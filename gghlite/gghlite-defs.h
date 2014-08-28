@@ -4,6 +4,9 @@
 #include <gghlite/config.h>
 #include <gghlite/misc.h>
 
+typedef fmpz_mod_poly_t gghlite_enc_t;
+typedef fmpz_poly_t     gghlite_clr_t;
+
 /**
    Maximum supported multi-linearity level.
 */
@@ -48,10 +51,10 @@ struct _gghlite_pk_struct {
   mpfr_t ell_b;
   mpfr_t ell_g;
 
-  fmpz_mod_poly_t modulus;
-  fmpz_mod_poly_t pzt;
-  fmpz_mod_poly_t x[KAPPA][2];
-  fmpz_mod_poly_t y;
+  gghlite_enc_t modulus;
+  gghlite_enc_t pzt;
+  gghlite_enc_t x[KAPPA][2];
+  gghlite_enc_t y;
   gpv_mp_t *D_sigma_p;
   gpv_mp_t *D_sigma_s;
 };
@@ -75,12 +78,12 @@ typedef struct _gghlite_pk_struct gghlite_pk_t[1];
 struct _gghlite_struct {
   gghlite_pk_t pk;
 
-  fmpz_poly_t g;
+  gghlite_clr_t g;
   fmpq_poly_t g_inv;
-  fmpz_mod_poly_t z;
-  fmpz_poly_t h;
-  fmpz_poly_t a;
-  fmpz_poly_t b[KAPPA][2];
+  gghlite_enc_t z;
+  gghlite_clr_t h;
+  gghlite_clr_t a;
+  gghlite_clr_t b[KAPPA][2];
 };
 
 typedef struct _gghlite_struct gghlite_t[1];

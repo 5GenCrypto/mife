@@ -173,6 +173,10 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa) {
 
 void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
 
+/**
+   Init `D_{σ^*}`.
+*/
+
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self);
 
 /**
@@ -186,7 +190,6 @@ static inline void _gghlite_pk_set_modulus(gghlite_pk_t self) {
   fmpz_mod_poly_set_coeff_ui(self->modulus, self->n, 1);
   fmpz_mod_poly_set_coeff_ui(self->modulus,       0, 1);
 }
-
 
 /**
    Check if security constraints are satisfied.

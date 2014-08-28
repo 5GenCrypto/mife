@@ -35,7 +35,7 @@ gghlite_instance_SOURCES = applications/gghlite_instance.c applications/common.h
 gghlite_instance_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_instance_LDFLAGS = -no-install
 
-nike_SOURCES = applications/nike.c applications/common.h
+nike_SOURCES = applications/nike.c applications/nike.h
 nike_LDADD = $(MY_PROGRAM_LDADD)
 nike_LDFLAGS = -no-install
 

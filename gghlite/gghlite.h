@@ -46,6 +46,13 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate);
 
 void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa, const uint64_t rerand_mask, flint_rand_t randstate);
 
+/**
+   Get a reference to the public parameters of ``op``.
+
+   :param rop:  GGHlite public key, all fields are overwritten
+   :param  op:  initialised GGHLite Instance
+*/
+
 void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op);
 
 /**
@@ -62,8 +69,9 @@ void gghlite_pk_clear(gghlite_pk_t self);
    The parameter ``clear_pk`` is useful to clear all secret data that was
    required to produce the public set of parameters stored in ``self->pk``.
    After ``gghlite_clear(self, 0)`` was called, it is safe to forget about
-   ``self`` and to use ``self->pk`` independently (which can later be cleared
-   by calling ``gghlite_pk_clear(self->pk)``.
+   ``self`` and to use ``self->pk`` independently (which can later be cleared by
+   calling ``gghlite_pk_clear(self->pk)``. A reference to ``self->pk`` can be
+   obtained by calling ``gghlite_pk_ref(·, self->pk)``.
 
    :param self:      all fields are cleared, except perhaps pk
    :param clear_pk:  if set, the public key is also cleared
@@ -79,6 +87,12 @@ void gghlite_clear(gghlite_t self, int clear_pk);
 
 void gghlite_print_params(const gghlite_pk_t self);
 
+/**
+   Print checks to STDOUT to inspect if parameters satisfy constraints.
+
+   :param self: assumes ``gghlite_pk_init_params(self,·,·,·)`` was called
+*/
+
 void gghlite_check_params(const gghlite_pk_t self);
 
 /**
@@ -87,7 +101,19 @@ void gghlite_check_params(const gghlite_pk_t self);
    :param op:   uninitialised polynomial
    :param self: initialised GGHLite public key
 */
-void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self);
+
+void gghlite_enc_init(gghlite_enc_t op, gghlite_pk_t self);
+
+static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c) {
+  fmpz_mod_poly_zero(op);
+  fmpz_mod_poly_set_coeff_ui(op, 0, c);
+}
+
+#define gghlite_enc_clear fmpz_mod_poly_clear
+
+#define gghlite_clr_init  fmpz_poly_init
+#define gghlite_clr_clear fmpz_poly_clear
+#define gghlite_clr_equal fmpz_poly_equal
 
 /**
    Rerandomise encoding at level `k`.
@@ -106,7 +132,7 @@ void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self);
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, flint_rand_t randstate);
+void gghlite_rerand(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, flint_rand_t randstate);
 
 /**
    Elevate an encoding at levek `k'` to level `k` and re-randomise if requested.
@@ -125,13 +151,13 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, 
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, long kprime, int rerand, flint_rand_t randstate);
+void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, long kprime, int rerand, flint_rand_t randstate);
 
 /**
 
    Sample a new random encoding at levek `k`.
 
-   :param rop:       initialised encoding
+   :param rop:       initialised encoding, return value
    :param self:      initialise GGHLite public key
    :param k:         targer level `0 ≤ k ≤ κ`
    :param randstate: entropy source, assumes ``flint_randinit(randstate)`` and
@@ -144,16 +170,45 @@ void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op,
 
 */
 
-void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate);
+void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, long k, flint_rand_t randstate);
 
-static inline void gghlite_enc(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, int rerand, flint_rand_t randstate) {
+/**
+   Encode level-0 encoding ``op`` at level `k`.
+
+   :param rop:       initialised encoding, return value
+   :param self:      initialise GGHLite public key
+   :param op:        valid level-0 encoding
+   :param k:         targer level `0 ≤ k ≤ κ`
+   :param rerand:    rerandomise.
+   :param randstate: entropy source, assumes ``flint_randinit(randstate)`` and
+
+*/
+
+static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, int rerand, flint_rand_t randstate) {
   gghlite_elevate(rop, self, op, k, 0, rerand, randstate);
 }
 
-static inline void gghlite_mult(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t left, fmpz_mod_poly_t right) {
-  fmpz_mod_poly_mulmod(rop, left, right, self->modulus);
+/**
+   Compute `h = f·g`.
+
+   :param h:         initialised encoding, return value
+   :param self:      initialise GGHLite public key
+   :param f:         valid encoding
+   :param g:         valid encoding
+*/
+
+static inline void gghlite_mult(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_t f, gghlite_enc_t g) {
+  fmpz_mod_poly_mulmod(h, f, g, self->modulus);
 }
 
-void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, int hash);
+/**
+   Extract canonical string from ``op``
+
+   :param rop:       initialised encoding, return value
+   :param self:      initialise GGHLite public key
+   :param op:        valid encoding at level-`k`
+*/
+
+void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
 
 #endif //_GGHLITE_H_

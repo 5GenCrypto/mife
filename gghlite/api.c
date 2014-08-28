@@ -2,7 +2,7 @@
 #include "gghlite.h"
 #include "gghlite-internals.h"
 
-void fmpz_mod_poly_init_gghlite(fmpz_mod_poly_t op, gghlite_pk_t self) {
+void gghlite_enc_init(fmpz_mod_poly_t op, gghlite_pk_t self) {
   assert(!fmpz_is_zero(self->q));
   fmpz_mod_poly_init(op, self->q);
 }
@@ -14,7 +14,7 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, 
   assert(self->D_sigma_s);
 
   fmpz_mod_poly_t tmp;
-  fmpz_mod_poly_init_gghlite(tmp, self);
+  gghlite_enc_init(tmp, self);
 
   fmpz_mod_poly_set(rop, op);
   
@@ -31,10 +31,11 @@ void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op,
   assert(k <= self->kappa);
   if (k>kprime) {
     fmpz_mod_poly_t yk;
-    fmpz_mod_poly_init_gghlite(yk, self);
+    gghlite_enc_init(yk, self);
     fmpz_mod_poly_set(yk, self->y);
     fmpz_mod_poly_powmod_ui_binexp(yk, yk, k-kprime, self->modulus);
     fmpz_mod_poly_mulmod(rop, op, yk, self->modulus);
+    fmpz_mod_poly_truncate(rop, self->n);
     fmpz_mod_poly_clear(yk);
   }
   if(rerand) {
@@ -53,15 +54,13 @@ void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
 }
 
-void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, int cleanup) {
+void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   fmpz_mod_poly_t t;
-  fmpz_mod_poly_init_gghlite(t, self);
-  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);
+  gghlite_enc_init(t, self);
+  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);  
   fmpz_poly_set_fmpz_mod_poly(rop, t);
   fmpz_mod_poly_clear(t);
 
-  if (!cleanup)
-    return;
   long logq = fmpz_sizeinbase(self->q,2)-1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {    
     for(long j=0; j<logq-2*self->lambda; j++) {
@@ -89,7 +88,6 @@ void gghlite_print_params(const gghlite_pk_t self) {
   printf(" log₂(ℓ_b): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
   printf(" log₂(σ^*): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
 }
-
 
 void gghlite_check_params(const gghlite_pk_t self) {
   mpfr_t tmp;
