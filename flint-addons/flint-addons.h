@@ -42,6 +42,11 @@ static inline int fmpz_mat_is_one(const fmpz_mat_t mat) {
 
 /**
    fmpz*
+
+   .. todo:
+   
+       This function should accept a rounding mode.
+
 */
 
 static inline void _fmpz_vec_2norm_mpfr(mpfr_t rop, fmpz *vec, long len) {
@@ -79,6 +84,10 @@ static inline void _fmpz_vec_rot_left_neg(fmpz *rop, fmpz *op, long len) {
 }
 /**
    fmpq*
+
+   .. todo:
+   
+       This function should accept a rounding mode.
 */
 
 static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long len) {
@@ -104,6 +113,12 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
   fmpz_clear(acc_den);
   fmpz_clear(acc_num);
 }
+
+/**
+   .. todo:
+   
+       This function should accept a rounding mode.
+*/
 
 static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len) {
   mpz_t tmp;
@@ -153,6 +168,10 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
 
 /**
    Decide if <b_0,b_1> = <g>
+
+   .. todo:
+
+       This function uses an algorithm with O(n^ω) but O(n^2) algorithms exist
  */
 
 static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1) {
@@ -189,6 +208,13 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
   fmpz_clear(tmp);
   return r;
 }
+
+/**
+
+   .. todo:
+
+       This function uses an algorithm with O(n^ω) but O(n^2) algorithms exist
+*/
 
 static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op) {
   fmpz_mat_t B;

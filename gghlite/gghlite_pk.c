@@ -63,6 +63,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
 }
 
 #ifndef GGHLITE_HEURISTICS
+
 void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   assert(self->n > 0);
 
@@ -96,15 +97,6 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   mpfr_clear(tmp);
   mpfr_clear(pi);
 }
-#else
-void _gghlite_pk_set_sigma(gghlite_pk_t self) {
-  assert(self->n > 0);
-
-  mpfr_init2(self->sigma, _gghlite_prec(self));
-  mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
-  mpfr_sqrt(self->sigma, self->sigma, MPFR_RNDN);
-}
-#endif
 
 void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
   assert(self->n > 0);
@@ -134,6 +126,28 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
   mpfr_div(self->ell_g, tmp, self->sigma, MPFR_RNDN);
   mpfr_clear(tmp);
 }
+#else
+
+void _gghlite_pk_set_sigma(gghlite_pk_t self) {
+  assert(self->n > 0);
+
+  mpfr_init2(self->sigma, _gghlite_prec(self));
+  mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
+  mpfr_sqrt(self->sigma, self->sigma, MPFR_RNDN);
+}
+
+void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
+  assert(self->n > 0);
+  assert(mpfr_cmp_ui(self->sigma, 0)>0);
+
+  mpfr_init2(self->ell_g, _gghlite_prec(self));
+  mpfr_set_ui(self->ell_g, self->n, MPFR_RNDN);
+  mpfr_sqrt(self->ell_g, self->ell_g, MPFR_RNDN);
+  mpfr_ui_div(self->ell_g, 1, self->ell_g, MPFR_RNDN);
+}
+
+#endif
+
 
 void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
   assert(self->n > 0);

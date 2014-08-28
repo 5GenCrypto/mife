@@ -207,7 +207,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_set_si(sqrtn_sigma, self->pk->n, MPFR_RNDN);
   mpfr_sqrt(sqrtn_sigma, sqrtn_sigma, MPFR_RNDN);
   mpfr_mul(sqrtn_sigma, sqrtn_sigma, self->pk->sigma, MPFR_RNDN);
-
+  
   gpv_mp_t *D = _gghlite_gpv_from_n(self->pk->n, self->pk->sigma);
 
   long fail[3] = {0,0,0};
@@ -260,14 +260,16 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->n);
   assert(fmpz_cmp_ui(self->pk->q,0)>0);
 
-  mpz_t q;
-  mpz_init(q);
-  fmpz_get_mpz(q, self->pk->q);
   mpfr_t sqrt_q;
-  mpfr_init2(sqrt_q, fmpz_sizeinbase(self->pk->q,2));
-  mpfr_set_z(sqrt_q, q, MPFR_RNDN);
-  mpz_clear(q);
+  mpfr_init2(sqrt_q, fmpz_sizeinbase(self->pk->q, 2));
+  _gghlite_get_q_mpfr(sqrt_q, self->pk, MPFR_RNDN);
   mpfr_sqrt(sqrt_q, sqrt_q, MPFR_RNDN);
+
+  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
+  */
+  mpfr_mul_d(sqrt_q, sqrt_q, S_TO_SIGMA, MPFR_RNDN);
+  
   assert(mpfr_cmp_ui(sqrt_q,0)>0);
 
   fmpz_poly_init(self->h);
@@ -323,4 +325,62 @@ void gghlite_clear(gghlite_t self, int clear_pk) {
 
   if (clear_pk)
     gghlite_pk_clear(self->pk);
+}
+
+
+void gghlite_print_norms(const gghlite_t self) {
+  assert(self->pk->n);
+  assert(!fmpz_is_zero(self->g));
+  
+  mpfr_t norm;
+  mpfr_init2(norm, _gghlite_prec(self->pk));
+
+  mpfr_t bound;
+  mpfr_init2(bound, _gghlite_prec(self->pk));
+
+  mpfr_t sqrt_n;
+  mpfr_init2(sqrt_n, _gghlite_prec(self->pk));
+  mpfr_set_ui(sqrt_n, self->pk->n, MPFR_RNDN);
+  mpfr_sqrt(sqrt_n, sqrt_n, MPFR_RNDN);
+  mpfr_log2(sqrt_n, sqrt_n, MPFR_RNDN);
+  
+  _fmpz_vec_2norm_mpfr(norm, self->g->coeffs, self->pk->n);
+  mpfr_log2(norm, norm, MPFR_RNDN);
+
+  mpfr_set(bound, self->pk->sigma, MPFR_RNDN);
+  mpfr_log2(bound, bound, MPFR_RNDN);
+  mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
+  
+  printf("  log(|g|): %7.1f < %7.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
+
+  for(int k=0; k<self->pk->kappa; k++) {
+    if ((1ULL<<k) & self->pk->rerand_mask) {
+      mpfr_set(bound, self->pk->sigma_p, MPFR_RNDN);
+      mpfr_log2(bound, bound, MPFR_RNDN);
+      mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
+      
+      for(int i=0; i<2; i++) {
+        _fmpz_vec_2norm_mpfr(norm, self->b[k][i]->coeffs, self->pk->n);
+        mpfr_log2(norm, norm, MPFR_RNDN);
+        printf("log(|b_%d|): %7.1f < %7.1f\n", i, mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
+      }
+    }
+  }
+
+  mpfr_set(bound, self->pk->sigma_p, MPFR_RNDN);
+  mpfr_log2(bound, bound, MPFR_RNDN);
+  mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
+ 
+  _fmpz_vec_2norm_mpfr(norm, self->a->coeffs, self->pk->n);
+  mpfr_log2(norm, norm, MPFR_RNDN);
+  printf("  log(|a|): %7.1f < %7.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
+
+  _gghlite_get_q_mpfr(bound, self->pk, MPFR_RNDN);
+  mpfr_sqrt(bound, bound, MPFR_RNDN);
+  mpfr_log2(bound, bound, MPFR_RNDN);
+  mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
+  
+  _fmpz_vec_2norm_mpfr(norm, self->h->coeffs, self->pk->n);
+  mpfr_log2(norm, norm, MPFR_RNDN);
+  printf("  log(|h|): %7.1f < %7.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
 }

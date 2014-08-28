@@ -50,6 +50,15 @@ static inline long _gghlite_prec(const gghlite_pk_t self) {
 void _gghlite_pk_set_n_q(gghlite_pk_t self);
 
 
+static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_rnd_t rnd) {
+  assert(!fmpz_is_zero(self->q));
+  mpz_t qz;
+  mpz_init(qz);
+  fmpz_get_mpz(qz, self->q);
+  mpfr_set_z(q, qz, rnd);
+  mpz_clear(qz);
+}
+
 #ifndef GGHLITE_HEURISTICS
 
 /**
@@ -72,6 +81,20 @@ static inline double _gghlite_sigma(double n) {
 */
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self);
+
+
+/**
+  Compute `ℓ_g` in double precision.
+*/
+
+static inline double _gghlite_ell_g(double n) {
+  const double e  = 2.71828182845905;
+  const double pi = 3.14159265358979;
+  const double sigma = _gghlite_sigma(n);
+  const double ell_g = 4*sqrt(pi*e*n)/(sigma);
+  return ell_g;
+}
+
 #else
 /**
    Compute `σ`.
@@ -91,19 +114,19 @@ static inline double _gghlite_sigma(double n) {
 }
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self);
-#endif
+
 
 /**
   Compute `ℓ_g` in double precision.
 */
 
 static inline double _gghlite_ell_g(double n) {
-  const double e  = 2.71828182845905;
-  const double pi = 3.14159265358979;
-  const double sigma = _gghlite_sigma(n);
-  const double ell_g = 4*sqrt(pi*e*n)/(sigma);
+  const double ell_g = 1/sqrt(n*log(n));
   return ell_g;
 }
+
+#endif
+
 
 /**
   Compute `ℓ_g`.
@@ -264,5 +287,7 @@ void _gghlite_set_pzt(gghlite_t self);
 void _gghlite_set_x(gghlite_t self);
 
 void _gghlite_set_y(gghlite_t self);
+
+void gghlite_print_norms(const gghlite_t self);
 
 #endif /* _GGHLITE_INTERNALS_H_ */

@@ -17,7 +17,7 @@ void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, 
   gghlite_enc_init(tmp, self);
 
   fmpz_mod_poly_set(rop, op);
-  
+
   for(long i=0; i<2; i++) {
     fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
     fmpz_mod_poly_mulmod(tmp, tmp, self->x[k-1][i], self->modulus);
@@ -57,12 +57,12 @@ void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
 void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   fmpz_mod_poly_t t;
   gghlite_enc_init(t, self);
-  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);  
+  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);
   fmpz_poly_set_fmpz_mod_poly(rop, t);
   fmpz_mod_poly_clear(t);
 
   long logq = fmpz_sizeinbase(self->q,2)-1;
-  for(long i=0; i<fmpz_poly_length(rop); i++) {    
+  for(long i=0; i<fmpz_poly_length(rop); i++) {
     for(long j=0; j<logq-2*self->lambda; j++) {
       fmpz_clrbit(rop->coeffs + i, j);
     }
@@ -74,19 +74,35 @@ void gghlite_print_params(const gghlite_pk_t self) {
   assert(self->kappa);
   assert(self->n);
   assert(!fmpz_is_zero(self->q));
-  
+
   const long lambda = self->lambda;
   const long kappa = self->kappa;
   const long n = self->n;
-  printf("         λ: %7ld\n",lambda);
-  printf("         k: %7ld\n",kappa);
-  printf("         n: %7ld\n",n);
-  printf("   log₂(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_check_sec(self));
-  printf("   log₂(σ): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
-  printf(" log₂(ℓ_g): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
-  printf("  log₂(σ'): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
-  printf(" log₂(ℓ_b): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
-  printf(" log₂(σ^*): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
+  printf("        λ: %7ld\n",lambda);
+  printf("        k: %7ld\n",kappa);
+  printf("        n: %7ld\n",n);
+  printf("   log(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_check_sec(self));
+  printf("   log(σ): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
+  printf(" log(ℓ_g): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
+  printf("  log(σ'): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
+  printf(" log(ℓ_b): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
+  printf(" log(σ^*): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
+
+
+  mpfr_t enc;
+  mpfr_init2(enc, _gghlite_prec(self));
+
+  _gghlite_get_q_mpfr(enc, self, MPFR_RNDN);
+  mpfr_log2(enc, enc, MPFR_RNDN);
+  mpfr_mul_ui(enc, enc, n, MPFR_RNDN);
+
+  printf("    |enc|: %7.1f MB\n",mpfr_get_d(enc, MPFR_RNDN)/8.0/1024.0/1024.0);
+
+  mpfr_t par;
+  mpfr_init2(par, _gghlite_prec(self));
+  mpfr_set(par, enc, MPFR_RNDN);
+  mpfr_mul_ui(par, par, self->kappa*2 + 1 + 1, MPFR_RNDN);
+  printf("    |par|: %7.1f MB\n",mpfr_get_d(par, MPFR_RNDN)/8.0/1024.0/1024.0);
 }
 
 void gghlite_check_params(const gghlite_pk_t self) {
@@ -98,7 +114,7 @@ void gghlite_check_params(const gghlite_pk_t self) {
   mpfr_mul(tmp, tmp, self->sigma_p, MPFR_RNDN);
   mpfr_pow_ui(tmp, tmp, 8*self->kappa, MPFR_RNDN);
   mpfr_log2(tmp, tmp, MPFR_RNDN);
-  
-  printf("(8κ)·log₂((m+1)·n^{3/2}·σ^*σ') ≤ log₂(q): %10.2f ≤ %7ld\n", mpfr_get_d(tmp, MPFR_RNDN), fmpz_sizeinbase(self->q, 2));
-  printf("                       8/3·n/λ ≥ log₂(q): %10.2f ≥ %7ld\n", 8.0/3.0 * self->n / (double)self->lambda, fmpz_sizeinbase(self->q, 2));
+
+  printf("(8κ)·log((m+1)·n^{3/2}·σ^*σ') ≤ log(q): %10.2f ≤ %7ld\n", mpfr_get_d(tmp, MPFR_RNDN), fmpz_sizeinbase(self->q, 2));
+  printf("                      8/3·n/λ ≥ log(q): %10.2f ≥ %7ld\n", 8.0/3.0 * self->n / (double)self->lambda, fmpz_sizeinbase(self->q, 2));
 }

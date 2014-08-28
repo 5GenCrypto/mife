@@ -1,4 +1,5 @@
 #include <gghlite/gghlite.h>
+#include <gghlite/gghlite-internals.h>
 #include "common.h"
 
 int main(int argc, char *argv[]) {
@@ -19,6 +20,10 @@ int main(int argc, char *argv[]) {
   
   gghlite_init_instance(self, randstate);
 
+  printf("\n---\n");
+
+  gghlite_print_norms(self);
+  
   gghlite_clear(self, 1);
 
   flint_randclear(randstate);
