@@ -19,6 +19,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
 
   /* increase n until security check passes */
   while(1) {
+    printf("log(n): %ld, log(q): %ld, sec: %d, func: %d\n", log_n, log_q, _gghlite_check_sec(log_q, n, lambda), _gghlite_check_func(log_q, n, lambda, kappa));
     if (_gghlite_check_sec(log_q, n, lambda) && _gghlite_check_func(log_q, n, lambda, kappa))
       break;
     c*=2;
@@ -26,6 +27,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
     n = ((int64_t)(1))<<log_n;
     log_q = _gghlite_log_q(log_n, kappa);
   }
+  printf("\n");
 
   self->n = n;
   fmpz_init_set_ui(self->q, 2);

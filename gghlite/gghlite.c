@@ -330,7 +330,7 @@ void gghlite_clear(gghlite_t self, int clear_pk) {
 
 void gghlite_print_norms(const gghlite_t self) {
   assert(self->pk->n);
-  assert(!fmpz_is_zero(self->g));
+  assert(!fmpz_poly_is_zero(self->g));
   
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self->pk));
