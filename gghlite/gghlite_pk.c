@@ -57,6 +57,7 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
 #else
   fmpz_add_ui(self->q, self->q, 1);
   while(1) {
+    // TODO: use mpz_next_prime
     if(fmpz_is_probabprime(self->q))
       break;
     fmpz_add_ui(self->q, self->q, 2);

@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   printf("Step 1: GCHQ runs Setup:\n");
   printf("------------------------------------\n");
 
-  unsigned long long t = walltime(0);
+  uint64_t t = ggh_walltime(0);
   
   gghlite_t self;
   gghlite_pk_init_params(self->pk, cmdline_params->lambda, cmdline_params->N-1, 1<<0);
@@ -37,13 +37,13 @@ int main(int argc, char *argv[]) {
   gghlite_clear(self, 0);
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
 
   printf("------------------------------------\n");
   printf("Step 2: \n");
   printf("------------------------------------\n");
 
-  t = walltime(0);
+  t = ggh_walltime(0);
   
   gghlite_enc_t *e = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
   gghlite_enc_t *u = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
@@ -60,13 +60,13 @@ int main(int argc, char *argv[]) {
   }
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
 
   printf("------------------------------------\n");
   printf("Step 3: \n");
   printf("------------------------------------\n");
 
-  t = walltime(0);
+  t = ggh_walltime(0);
   
   gghlite_enc_t tmp;
   for(int i=0; i<cmdline_params->N; i++) {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   }
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
   printf("------------------------------------\n");
   printf("Check: \n");
   printf("------------------------------------\n");

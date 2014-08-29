@@ -4,11 +4,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include <gpv/gpv.h>
-#include <mpfr.h>
-
-#define S_TO_SIGMA 0.398942280401433 /* 1/sqrt(2*pi) */
+#include <stdint.h>
 
 static inline void ggh_die(const char *msg, ...) {
   va_list lst;
@@ -36,8 +32,17 @@ static inline void *ggh_calloc(size_t nmemb, size_t size) {
   return ret;
 }
 
-gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg_t algorithm);
 
-gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma);
+#include <sys/time.h>
+#include <unistd.h>
+
+static inline uint64_t ggh_walltime(uint64_t t0) {
+  static time_t base_sec;
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  if (base_sec == 0)
+    base_sec = tp.tv_sec;
+  return ((uint64_t)(tp.tv_sec - base_sec)) * 1000000 + (uint64_t)tp.tv_usec - t0;
+}
 
 #endif //MISC__H

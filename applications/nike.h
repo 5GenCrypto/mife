@@ -1,19 +1,6 @@
 #ifndef _NIKE_H_
 #define _NIKE_H_
 
-#include <sys/time.h>
-#include <unistd.h>
-
-
-static inline unsigned long long walltime(unsigned long long t0) {
-  static time_t base_sec;
-  struct timeval tp;
-  gettimeofday(&tp, NULL);
-  if (base_sec == 0)
-    base_sec = tp.tv_sec;
-  return (tp.tv_sec - base_sec) * 1000000 + tp.tv_usec - t0;
-}
-
 struct _cmdline_params_struct{
   long lambda;
   long N;
@@ -89,14 +76,14 @@ const char *agents[26] = {"Alice",
                           "Peggy",
                           "Q",
                           "Robert",
-                          "Sybil",
+                          "Silke",
                           "Trent",
                           "Uwe",
                           "Viet",
                           "Wendy",
                           "Xavier",
                           "Y",
-                          "Zorro"};
+                          "Ziggy"};
 
 
 

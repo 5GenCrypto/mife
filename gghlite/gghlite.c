@@ -40,7 +40,10 @@ void _gghlite_sample_a(gghlite_t self, flint_rand_t randstate) {
   _mpfr_vec_clear(c, n);
 
   fmpz_poly_init(self->a);
+
+  uint64_t t = ggh_walltime(0);
   fmpz_poly_sample_D(self->a, D, randstate);
+  self->t_sample += ggh_walltime(t);
   gpv_mp_clear(D);
 }
 
@@ -120,12 +123,18 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
     while(1) {
       printf("\rk: %2ld :: !i: %4ld, !s: %4ld, !n: %4ld",k+1, fail[0], fail[1], fail[2]);
       fflush(0);
+      uint64_t t = ggh_walltime(0);
       fmpz_poly_sample_D(self->b[k][0], D, randstate);
       fmpz_poly_sample_D(self->b[k][1], D, randstate);
+      self->t_sample += ggh_walltime(t);
 
+      t = ggh_walltime(0);
       if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1], modulus) != 0) {
         fail[0]++;
+        self->t_is_subideal += ggh_walltime(t);
         continue;
+      } else {
+        self->t_is_subideal += ggh_walltime(t);
       }
 
       _fmpz_vec_set(B->coeffs+0, self->b[k][0]->coeffs, n);
@@ -229,7 +238,9 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     printf("\r    g :: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
     fflush(0);
 
+    uint64_t t = ggh_walltime(0);
     fmpz_poly_sample_D(self->g, D, randstate);
+    self->t_sample += ggh_walltime(t);
 
     _fmpz_vec_2norm_mpfr(norm, self->g->coeffs, self->pk->n);
     if(mpfr_cmp(norm, sqrtn_sigma)>0) {
@@ -238,9 +249,13 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     }
 #ifdef GGHLITE_CHECK_PRIMALITY
     /* 1. check if prime */
+    t = ggh_walltime(0);
     if (!fmpz_poly_ideal_is_probaprime(self->g, modulus)) {
       fail[1]++;
+      self->t_is_prime += ggh_walltime(t);
       continue;
+    } else {
+      self->t_is_prime += ggh_walltime(t);
     }
 #endif
     /* 2. check norm of inverse */
@@ -278,7 +293,9 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
   assert(mpfr_cmp_ui(sqrt_q,0)>0);
 
   fmpz_poly_init(self->h);
+  uint64_t t = ggh_walltime(0);
   fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
+  self->t_sample +=  ggh_walltime(t);
 
   mpfr_clear(sqrt_q);
 }
@@ -289,7 +306,9 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
   assert(fmpz_cmp_ui(self->pk->q,0)>0);
 
   fmpz_mod_poly_init(self->z, self->pk->q);
+  uint64_t t = ggh_walltime(0);
   fmpz_mod_poly_randtest(self->z, randstate, self->pk->n);
+  self->t_sample +=  ggh_walltime(t);
 }
 
 void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
@@ -388,4 +407,51 @@ void gghlite_print_norms(const gghlite_t self) {
   _fmpz_vec_2norm_mpfr(norm, self->h->coeffs, self->pk->n);
   mpfr_log2(norm, norm, MPFR_RNDN);
   printf("  log(|h|): %7.1f < %7.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
+}
+
+void gghlite_print_times(const gghlite_t self) {
+  printf("        sampling: %7.1fs\n", self->t_sample/1000000.0);
+  printf("  primality test: %7.1fs\n", self->t_is_prime/1000000.0);
+  printf("<b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
+}
+
+gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg_t algorithm) {
+  fmpz_mat_t B;
+  const long n = fmpz_poly_length(g);
+  fmpz_mat_init(B, 1, n);
+  _fmpz_vec_set(B->rows[0], g->coeffs, n);
+
+  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
+  */
+
+  mpfr_t sigma_;
+  mpfr_init2(sigma_, mpfr_get_prec(sigma));
+  mpfr_set(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
+  
+  gpv_mp_t *D = gpv_mp_init(B, sigma_, c, algorithm);
+  fmpz_mat_clear(B);
+  mpfr_clear(sigma_);
+  return D;
+}
+
+gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma) {
+  fmpz_mat_t I;
+  fmpz_mat_init(I, 1, n);
+  fmpz_mat_one(I);
+
+  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
+  */
+
+  mpfr_t sigma_;
+  mpfr_init2(sigma_, mpfr_get_prec(sigma));
+  mpfr_set(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
+ 
+  gpv_mp_t *D = gpv_mp_init(I, sigma_, NULL, GPV_IDENTITY);
+  fmpz_mat_clear(I);
+  mpfr_clear(sigma_);
+  return D;
 }

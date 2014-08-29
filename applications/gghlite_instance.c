@@ -23,6 +23,10 @@ int main(int argc, char *argv[]) {
   printf("\n---\n");
 
   gghlite_print_norms(self);
+
+  printf("\n---\n");
+
+  gghlite_print_times(self);
   
   gghlite_clear(self, 1);
 

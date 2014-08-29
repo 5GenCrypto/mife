@@ -290,4 +290,13 @@ void _gghlite_set_y(gghlite_t self);
 
 void gghlite_print_norms(const gghlite_t self);
 
+void gghlite_print_times(const gghlite_t self);
+
+#define S_TO_SIGMA 0.398942280401433 /* 1/sqrt(2*pi) */
+
+gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg_t algorithm);
+
+gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma);
+
+
 #endif /* _GGHLITE_INTERNALS_H_ */

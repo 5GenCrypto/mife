@@ -3,6 +3,9 @@
 
 #include <gghlite/config.h>
 #include <gghlite/misc.h>
+#include <flint/fmpz_poly.h>
+#include <flint/fmpz_mod_poly.h>
+#include <gpv/gpv.h>
 
 typedef fmpz_mod_poly_t gghlite_enc_t;
 typedef fmpz_poly_t     gghlite_clr_t;
@@ -84,6 +87,11 @@ struct _gghlite_struct {
   gghlite_clr_t h;
   gghlite_clr_t a;
   gghlite_clr_t b[KAPPA][2];
+
+
+  uint64_t t_is_prime;
+  uint64_t t_is_subideal;
+  uint64_t t_sample;
 };
 
 typedef struct _gghlite_struct gghlite_t[1];

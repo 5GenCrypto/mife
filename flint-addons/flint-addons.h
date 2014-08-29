@@ -8,6 +8,7 @@
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
 
+#include <gghlite/misc.h>
 /**
    fmpz_mat_t
 */
@@ -42,13 +43,9 @@ static inline int fmpz_mat_is_one(const fmpz_mat_t mat) {
 
 /**
    fmpz*
-
-   .. todo:
-
-       This function should accept a rounding mode.
-
 */
 
+// TODO: This function should accept a rounding mode.
 static inline void _fmpz_vec_2norm_mpfr(mpfr_t rop, fmpz *vec, long len) {
   fmpz_t tmp;
   fmpz_init(tmp);
@@ -85,11 +82,9 @@ static inline void _fmpz_vec_rot_left_neg(fmpz *rop, fmpz *op, long len) {
 /**
    fmpq*
 
-   .. todo:
-
-       This function should accept a rounding mode.
 */
 
+// TODO: This function should accept a rounding mode.
 static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long len) {
   fmpz_t acc_num;
   fmpz_init(acc_num);
@@ -114,12 +109,7 @@ static inline void _fmpq_vec_2norm_mpfr(mpfr_t rop, fmpz *num, fmpz_t den, long 
   fmpz_clear(acc_num);
 }
 
-/**
-   .. todo:
-
-       This function should accept a rounding mode.
-*/
-
+// TODO: This function should accept a rounding mode.
 static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len) {
   mpz_t tmp;
   mpz_init(tmp);
@@ -204,14 +194,14 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
 
 /**
 
-   .. todo:
-
-       This function uses an algorithm with O(n^ω) but O(n^2) algorithms exist
+   
 */
 
 static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op, fmpz_poly_t modulus) {
   fmpz_t det;
   fmpz_init(det);
+
+  // TODO: Implement multi-modular resultant
   fmpz_poly_ideal_norm(det, op, modulus);
 
   int r = fmpz_is_probabprime(det);
