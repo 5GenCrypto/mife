@@ -2,7 +2,6 @@
 #define _GGHLITE_INTERNALS_H_
 
 #include <math.h>
-
 #include <gghlite/gghlite-defs.h>
 
 /**

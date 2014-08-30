@@ -18,9 +18,9 @@ AC_PROG_CC_C99()
 
 AS_IF([test "$ac_cv_prog_cc_c99" = "no"], AC_MSG_ERROR([C99 support is required but not found.]))
 
-AC_ARG_ENABLE(debug,      [  --enable-debug          Enable assert() statements for debugging.], [enable_debug=yes])
-AC_ARG_ENABLE(is-prime,   [  --enable-is-prime       Check if g is prime (slow).], [enable_is_prime=yes])
-AC_ARG_ENABLE(heuristics, [  --enable-heuristics     Enable various heuristic improvements.], [enable_heuristics=yes])
+AC_ARG_ENABLE(debug,        [  --enable-debug          Enable assert() statements for debugging.], [enable_debug=yes])
+AC_ARG_ENABLE(sloppy-checks,[  --enable-sloppy-checks  Disable expensive tests.], [enable_sloppy_checks=yes])
+AC_ARG_ENABLE(heuristics,   [  --enable-heuristics     Enable various heuristic improvements.], [enable_heuristics=yes])
 
 # Debugging support
 if test "x$enable_debug" = x"yes"; then
@@ -32,8 +32,8 @@ fi
 
 # Primality tests
 
-if test "x$enable_is_prime" = x"yes"; then
-   AC_DEFINE(GGHLITE_CHECK_PRIMALITY,1,[Define whether g is checked for primality])
+if test "x$enable_sloppy_checks" = x"yes"; then
+   AC_DEFINE(GGHLITE_SLOPPY,1,[Define whether expensive tests are disabled])
 fi
 
 # Heuristics
