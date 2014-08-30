@@ -9,6 +9,21 @@
 #include <flint/fmpz_mod_poly.h>
 
 #include <gghlite/misc.h>
+#include <math.h>
+
+static inline mp_limb_t n_prevprime(mp_limb_t n, int proved) {
+  n--;
+  if (n <= 1)
+    abort();
+  if (n <= 3)
+    return n;
+  if (n%2 == 0)
+    n -= 1;
+  while ((!proved && !n_is_probabprime(n)) || (proved && !n_is_prime(n)))
+    n -= 2;
+  return n;
+}
+
 /**
    fmpz_mat_t
 */
@@ -158,8 +173,134 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   _fmpz_vec_clear(v, n);
 }
 
+static inline void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, slong len1,
+                                                      const fmpz * poly2, slong len2, mp_bitcnt_t bound) {
+  mp_bitcnt_t pbits, curr_bits = 0;
+  slong i, num_primes;
+  fmpz_comb_t comb;
+  fmpz_comb_temp_t comb_temp;
+  fmpz_t ac, bc, l, modulus;
+  fmpz * A, * B, * lead_A, * lead_B;
+  mp_ptr a, b, rarr, parr;
+  mp_limb_t p;
+  nmod_t mod;
+
+  /* special case, one of the polys is a constant */
+  if (len2 == 1) /* if len1 == 1 then so does len2 */ {
+    fmpz_pow_ui(res, poly2, len1 - 1);
+    return;
+  }
+
+  fmpz_init(ac);
+  fmpz_init(bc);
+
+  /* compute content of poly1 and poly2 */
+  _fmpz_vec_content(ac, poly1, len1);
+  _fmpz_vec_content(bc, poly2, len2);
+
+  /* divide poly1 and poly2 by their content */
+  A = _fmpz_vec_init(len1);
+  B = _fmpz_vec_init(len2);
+  _fmpz_vec_scalar_divexact_fmpz(A, poly1, len1, ac);
+  _fmpz_vec_scalar_divexact_fmpz(B, poly2, len2, bc);
+
+  /* get product of leading coefficients */
+  fmpz_init(l);
+
+  lead_A = A + len1 - 1;
+  lead_B = B + len2 - 1;
+  fmpz_mul(l, lead_A, lead_B);
+
+  /* set size of first prime */
+  pbits = FLINT_BITS -1;
+  p = (UWORD(1)<<pbits);
+
+  num_primes = (bound + pbits - 1)/pbits;
+  parr = _nmod_vec_init(num_primes);
+  rarr = _nmod_vec_init(num_primes);
+
+  fmpz_init(modulus);
+  fmpz_set_ui(modulus, 1);
+  fmpz_zero(res);
+
+  /* make space for polynomials mod p */
+  a = _nmod_vec_init(len1);
+  b = _nmod_vec_init(len2);
+
+  for (i = 0; curr_bits < bound; ) {
+    /* get new prime and initialise modulus */
+    p = n_prevprime(p, 0);
+    if (fmpz_fdiv_ui(l, p) == 0)
+      continue;
+
+    curr_bits += pbits;
+
+    nmod_init(&mod, p);
+
+    /* reduce polynomials modulo p */
+    _fmpz_vec_get_nmod_vec(a, A, len1, mod);
+    _fmpz_vec_get_nmod_vec(b, B, len2, mod);
+
+    /* compute resultant over Z/pZ */
+    parr[i] = p;
+    rarr[i++] = _nmod_poly_resultant(a, len1, b, len2, mod);
+  }
+
+  fmpz_comb_init(comb, parr, num_primes);
+  fmpz_comb_temp_init(comb_temp, comb);
+
+  fmpz_multi_CRT_ui(res, rarr, comb, comb_temp, 1);
+
+  fmpz_clear(modulus);
+  fmpz_comb_temp_clear(comb_temp);
+  fmpz_comb_clear(comb);
+
+  _nmod_vec_clear(a);
+  _nmod_vec_clear(b);
+
+  _nmod_vec_clear(parr);
+  _nmod_vec_clear(rarr);
+
+  /* finally multiply by powers of content */
+  if (!fmpz_is_one(ac)) {
+    fmpz_pow_ui(l, ac, len2 - 1);
+    fmpz_mul(res, res, l);
+  }
+
+  if (!fmpz_is_one(bc)) {
+    fmpz_pow_ui(l, bc, len1 - 1);
+    fmpz_mul(res, res, l);
+  }
+
+  fmpz_clear(l);
+
+  _fmpz_vec_clear(A, len1);
+  _fmpz_vec_clear(B, len2);
+
+  fmpz_clear(ac);
+  fmpz_clear(bc);
+}
+
+static inline void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly_t poly1,
+                                                     const fmpz_poly_t poly2, const mp_bitcnt_t bound) {
+  slong len1 = poly1->length;
+  slong len2 = poly2->length;
+
+  if (len1 == 0 || len2 == 0)
+    fmpz_zero(res);
+  else if (len1 >= len2)
+    _fmpz_poly_resultant_modular_bound(res, poly1->coeffs, len1, poly2->coeffs, len2, bound);
+  else {
+    _fmpz_poly_resultant_modular_bound(res, poly2->coeffs, len2, poly1->coeffs, len1, bound);
+    if ((len1 > 1) && (!(len1 & WORD(1)) & !(len2 & WORD(1))))
+      fmpz_neg(res, res);
+  }
+}
+
 static inline int fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t modulus) {
-  fmpz_poly_resultant(norm, f, modulus);
+  mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
+  mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
+  fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
 }
 
 /**
@@ -194,7 +335,7 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
 
 /**
 
-   
+
 */
 
 static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op, fmpz_poly_t modulus) {

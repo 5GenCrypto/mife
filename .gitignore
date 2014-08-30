@@ -29,5 +29,7 @@ missing
 */stamp-h1
 */.deps/
 test_gpv
+test_resultant
+callgrind.*
 *~
 .libs/
