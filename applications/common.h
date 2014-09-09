@@ -28,9 +28,15 @@ struct _cmdline_params_struct{
 typedef struct _cmdline_params_struct cmdline_params_t[1];
 
 static inline void print_header(const char *name, cmdline_params_t params) {
+#ifdef GGHLITE_HEURISTICS
+  int heuristics = 1;
+#else
+  int heuristics = 0;
+#endif
+
   printf("####################################################################\n");
   printf("%s\n", name);
-  printf(" λ: %3d, κ: %2d                              seed: 0x%016lx\n",params->lambda, params->kappa, params->seed);
+  printf(" λ: %3d, κ: %2d, heutistics: %d               seed: 0x%016lx\n",params->lambda, params->kappa, heuristics,  params->seed);
   printf("#############################################all logs are base two##\n\n");
 }
 
@@ -63,6 +69,6 @@ static inline int parse_cmdline(cmdline_params_t params, int argc, char *argv[],
   if (params->lambda<1)
     print_help_and_exit(name, extra);
 }
-  
+
 
 #endif /* _COMMON_H_ */
