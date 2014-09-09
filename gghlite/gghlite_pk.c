@@ -136,7 +136,17 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
 
   mpfr_init2(self->sigma, _gghlite_prec(self));
   mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
+
+  mpfr_t pi;
+  mpfr_init2(pi, _gghlite_prec(self));
+  mpfr_const_pi(pi, MPFR_RNDN);
+
+  mpfr_mul_ui(self->sigma, self->sigma, 2, MPFR_RNDN);
+  mpfr_mul(self->sigma, self->sigma, pi, MPFR_RNDN);
+
   mpfr_sqrt(self->sigma, self->sigma, MPFR_RNDN);
+
+  mpfr_clear(pi);
 }
 
 void _gghlite_pk_set_ell_g(gghlite_pk_t self) {

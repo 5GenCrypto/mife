@@ -109,7 +109,8 @@ static inline double _gghlite_ell_g(double n) {
 */
 
 static inline double _gghlite_sigma(double n) {
-  const double sigma = sqrt(n);
+  const double pi = 3.14159265358979;
+  const double sigma = sqrt(2*pi*n);
   return sigma;
 }
 
