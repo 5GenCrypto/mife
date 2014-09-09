@@ -36,11 +36,12 @@ static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_in
    Return precision used for floating point computations
 */
 
-static inline long _gghlite_prec(const gghlite_pk_t self) {
-  if (self->lambda*self->lambda < 53)
+static inline mpfr_prec_t _gghlite_prec(const gghlite_pk_t self) {
+  const mpfr_prec_t prec = 4*self->kappa*self->lambda;
+  if (prec < 53)
     return 53;
   else
-    return self->lambda*self->lambda;
+    return prec;
 }
 /**
    Compute `n` and `q`.
