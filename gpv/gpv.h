@@ -61,6 +61,7 @@ static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, gpv_mp_t *D, flint_
   fmpz_mod_poly_realloc(f, n);
   D->call(f->coeffs, D, randstate->gmp_state);
   _fmpz_mod_poly_set_length(f, n);
+  _fmpz_mod_poly_normalise(f);
 }
 
 static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
@@ -71,6 +72,7 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t r
   fmpz_poly_realloc(f, n);
   D->call(f->coeffs, D, randstate->gmp_state);
   _fmpz_poly_set_length(f, n);
+  _fmpz_poly_normalise(f);
 }
 
 static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
