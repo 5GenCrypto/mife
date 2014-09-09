@@ -3,10 +3,10 @@
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_vec.h>
 #include <flint-addons/flint-addons.h>
-#include "gpv.h"
+#include "dgsl.h"
 #include "gso.h"
 
-int gpv_mp_call_identity(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = fmpz_mat_ncols(self->B);
@@ -24,7 +24,7 @@ int gpv_mp_call_identity(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state
   return 0;
 }
 
-int gpv_mp_call_inlattice(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state) {
   assert(rop); assert(self);
 
   const long m = fmpz_mat_nrows(self->B);
@@ -62,7 +62,7 @@ int gpv_mp_call_inlattice(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t stat
   return 0;
 }
 
-int gpv_mp_call_coset(fmpz *rop, const gpv_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, gmp_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = fmpz_mat_ncols(self->B);
@@ -130,14 +130,14 @@ int gpv_mp_call_coset(fmpz *rop, const gpv_mp_t *self, gmp_randstate_t state) {
   return 0;
 }
 
-gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
-                      mpfr_t *c, const gpv_alg_t algorithm) {
+dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma,
+                      mpfr_t *c, const dgsl_alg_t algorithm) {
   assert(mpfr_cmp_ui(sigma, 0) > 0);
 
-  gpv_mp_t *self = (gpv_mp_t*)calloc(1, sizeof(gpv_mp_t));
+  dgsl_mp_t *self = (dgsl_mp_t*)calloc(1, sizeof(dgsl_mp_t));
   if(!self) dgs_die("out of memory");
 
-  gpv_alg_t alg = algorithm;
+  dgsl_alg_t alg = algorithm;
 
   long m = fmpz_mat_nrows(B);
   long n = fmpz_mat_ncols(B);
@@ -153,28 +153,28 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
   mpfr_init2(self->sigma, prec);
   mpfr_set(self->sigma, sigma, MPFR_RNDN);
 
-  if (alg == GPV_DETECT) {
+  if (alg == DGSL_DETECT) {
     if (fmpz_mat_is_one(self->B) || fmpz_mat_rot_is_one(self->B)) {
-      alg = GPV_IDENTITY;
+      alg = DGSL_IDENTITY;
     } else if (_mpfr_vec_is_zero(c, n))
-      alg = GPV_INLATTICE;
+      alg = DGSL_INLATTICE;
     else
-      alg = GPV_COSET; //TODO: we could test for lattice membership here
+      alg = DGSL_COSET; //TODO: we could test for lattice membership here
   }
 
   mpfr_t c_;
   mpfr_init2(c_, prec);
 
   switch(alg) {
-  case GPV_IDENTITY:
+  case DGSL_IDENTITY:
     self->D = (dgs_disc_gauss_mp_t**)calloc(1, sizeof(dgs_disc_gauss_mp_t*));
     mpfr_set_d(c_, 0.0, MPFR_RNDN);
     self->D[0] = dgs_disc_gauss_mp_init(self->sigma, c_, 6, DGS_DISC_GAUSS_DEFAULT);
 
-    self->call = gpv_mp_call_identity;
+    self->call = dgsl_mp_call_identity;
     break;
 
-  case GPV_INLATTICE:
+  case DGSL_INLATTICE:
     self->D = (dgs_disc_gauss_mp_t**)calloc(m, sizeof(dgs_disc_gauss_mp_t*));
 
     if (c)
@@ -209,10 +209,10 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
     mpfr_clear(norm);
     mpfr_mat_clear(G);
 
-    self->call = gpv_mp_call_inlattice;
+    self->call = dgsl_mp_call_inlattice;
     break;
     
-  case GPV_COSET:
+  case DGSL_COSET:
     mpfr_mat_init(self->G, m, n, prec);
     if (fmpz_mat_nrows(B) == 1)
       mpfr_mat_set_fmpz_mat_rot(self->G, B);
@@ -221,7 +221,7 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
 
     mpfr_mat_gso(self->G, MPFR_RNDN);
 
-    self->call = gpv_mp_call_coset;
+    self->call = dgsl_mp_call_coset;
     break;
   default:
     dgs_die("not implemented");
@@ -233,7 +233,7 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma,
 }
 
 
-void gpv_mp_clear(gpv_mp_t *self) {
+void dgsl_mp_clear(dgsl_mp_t *self) {
   if (!self)
     return;
   _fmpz_vec_clear(self->c_z, fmpz_mat_ncols(self->B));
@@ -246,7 +246,7 @@ void gpv_mp_clear(gpv_mp_t *self) {
   if (!mpfr_mat_is_empty(self->G)) {
     mpfr_mat_clear(self->G);
   }
-  if(self->call == gpv_mp_call_identity) {
+  if(self->call == dgsl_mp_call_identity) {
     if(self->D) {
       dgs_disc_gauss_mp_clear(self->D[0]);
       free(self->D);

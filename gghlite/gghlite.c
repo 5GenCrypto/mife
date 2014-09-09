@@ -36,7 +36,7 @@ void _gghlite_sample_a(gghlite_t self, flint_rand_t randstate) {
   const long n = self->pk->n;
   mpfr_t *c = _mpfr_vec_init(n, _gghlite_prec(self->pk));
   mpfr_set_ui(c[0], 1, MPFR_RNDN);
-  gpv_mp_t *D = _gghlite_gpv_from_poly(self->g, self->pk->sigma_p, c, GPV_INLATTICE);
+  dgsl_mp_t *D = _gghlite_dgsl_from_poly(self->g, self->pk->sigma_p, c, DGSL_INLATTICE);
   _mpfr_vec_clear(c, n);
 
   fmpz_poly_init(self->a);
@@ -44,7 +44,7 @@ void _gghlite_sample_a(gghlite_t self, flint_rand_t randstate) {
   uint64_t t = ggh_walltime(0);
   fmpz_poly_sample_D(self->a, D, randstate);
   self->t_sample += ggh_walltime(t);
-  gpv_mp_clear(D);
+  dgsl_mp_clear(D);
 }
 
 void _gghlite_set_x(gghlite_t self) {
@@ -86,7 +86,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   assert(!fmpz_poly_is_zero(self->g));
 
   const long n = self->pk->n;
-  gpv_mp_t *D = _gghlite_gpv_from_poly(self->g, self->pk->sigma_p, NULL, GPV_INLATTICE);
+  dgsl_mp_t *D = _gghlite_dgsl_from_poly(self->g, self->pk->sigma_p, NULL, DGSL_INLATTICE);
 
   mpfr_t sigma_n;
   mpfr_init2(sigma_n, _gghlite_prec(self->pk));
@@ -165,7 +165,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   mpfr_clear(sigma_n);
   fmpz_poly_clear(B);
   fmpz_poly_clear(modulus);
-  gpv_mp_clear(D);
+  dgsl_mp_clear(D);
 }
 
 void _gghlite_set_pzt(gghlite_t self) {
@@ -224,7 +224,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_sqrt(sqrtn_sigma, sqrtn_sigma, MPFR_RNDN);
   mpfr_mul(sqrtn_sigma, sqrtn_sigma, self->pk->sigma, MPFR_RNDN);
 
-  gpv_mp_t *D = _gghlite_gpv_from_n(self->pk->n, self->pk->sigma);
+  dgsl_mp_t *D = _gghlite_dgsl_from_n(self->pk->n, self->pk->sigma);
 
   long fail[3] = {0,0,0};
 
@@ -270,7 +270,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_clear(norm);
   mpfr_clear(sqrtn_sigma);
   mpfr_clear(g_inv_norm);
-  gpv_mp_clear(D);
+  dgsl_mp_clear(D);
 }
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
@@ -417,7 +417,7 @@ void gghlite_print_times(const gghlite_t self) {
   printf("<b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
 }
 
-gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg_t algorithm) {
+dgsl_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, dgsl_alg_t algorithm) {
   fmpz_mat_t B;
   const long n = fmpz_poly_length(g);
   fmpz_mat_init(B, 1, n);
@@ -432,13 +432,13 @@ gpv_mp_t *_gghlite_gpv_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, gpv_alg
   mpfr_set(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
 
-  gpv_mp_t *D = gpv_mp_init(B, sigma_, c, algorithm);
+  dgsl_mp_t *D = dgsl_mp_init(B, sigma_, c, algorithm);
   fmpz_mat_clear(B);
   mpfr_clear(sigma_);
   return D;
 }
 
-gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma) {
+dgsl_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma) {
   fmpz_mat_t I;
   fmpz_mat_init(I, 1, n);
   fmpz_mat_one(I);
@@ -452,7 +452,7 @@ gpv_mp_t *_gghlite_gpv_from_n(const long n, mpfr_t sigma) {
   mpfr_set(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
 
-  gpv_mp_t *D = gpv_mp_init(I, sigma_, NULL, GPV_IDENTITY);
+  dgsl_mp_t *D = dgsl_mp_init(I, sigma_, NULL, DGSL_IDENTITY);
   fmpz_mat_clear(I);
   mpfr_clear(sigma_);
   return D;

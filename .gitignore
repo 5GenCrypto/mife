@@ -28,7 +28,7 @@ missing
 /libtool
 */stamp-h1
 */.deps/
-test_gpv
+test_dgsl
 test_resultant
 callgrind.*
 *~

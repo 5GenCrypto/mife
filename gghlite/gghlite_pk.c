@@ -239,7 +239,7 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
 void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_p));
-  self->D_sigma_p = _gghlite_gpv_from_n(self->n, self->sigma_p);
+  self->D_sigma_p = _gghlite_dgsl_from_n(self->n, self->sigma_p);
 }
 
 
@@ -346,7 +346,7 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_s));
-  self->D_sigma_s = _gghlite_gpv_from_n(self->n, self->sigma_s);
+  self->D_sigma_s = _gghlite_dgsl_from_n(self->n, self->sigma_s);
 }
 
 void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask) {
@@ -381,10 +381,10 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   }
 
   fmpz_mod_poly_clear(self->modulus);
-  gpv_mp_clear(self->D_sigma_s);
+  dgsl_mp_clear(self->D_sigma_s);
   mpfr_clear(self->sigma_s);
   mpfr_clear(self->ell_b);
-  gpv_mp_clear(self->D_sigma_p);
+  dgsl_mp_clear(self->D_sigma_p);
   mpfr_clear(self->sigma_p);
   mpfr_clear(self->ell_g);
   mpfr_clear(self->sigma);

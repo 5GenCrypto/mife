@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <gpv/gpv.h>
+#include <dgsl/dgsl.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpq_poly.h>
 #include <flint/fmpz_mod_poly.h>

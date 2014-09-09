@@ -1,5 +1,5 @@
-#ifndef GPV__H
-#define GPV__H
+#ifndef DGSL__H
+#define DGSL__H
 
 #include <mpfr.h>
 #include <dgs/dgs.h>
@@ -12,24 +12,24 @@
 */
 
 typedef enum {
-  GPV_DETECT       = 0x0, //< detect which algorithm to use
-  GPV_IDENTITY     = 0x2, //< identity lattice
-  GPV_INLATTICE    = 0x3, //< c is in the lattice
-  GPV_COSET        = 0x4, //< c is not in the lattice
-} gpv_alg_t;
+  DGSL_DETECT       = 0x0, //< detect which algorithm to use
+  DGSL_IDENTITY     = 0x2, //< identity lattice
+  DGSL_INLATTICE    = 0x3, //< c is in the lattice
+  DGSL_COSET        = 0x4, //< c is not in the lattice
+} dgsl_alg_t;
 
-struct _gpv_mp_t;
+struct _dgsl_mp_t;
 
-typedef struct _gpv_mp_t{
+typedef struct _dgsl_mp_t{
   fmpz_mat_t B; //< basis matrix
   mpfr_mat_t G; //< Gram-Schmidt matrix
   mpfr_t *c; //< center
   fmpz *c_z; //< center
   mpfr_t sigma; //< Gaussian parameter
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
-  int (*call)(fmpz *rop,  const struct _gpv_mp_t *self, gmp_randstate_t state); //< call this function
+  int (*call)(fmpz *rop,  const struct _dgsl_mp_t *self, gmp_randstate_t state); //< call this function
 
-} gpv_mp_t;
+} dgsl_mp_t;
 
 /**
    @param B basis matrix (copied), if matrix is 1 x n it is assumed that it represents a rotational basis mod X^n + 1
@@ -38,7 +38,7 @@ typedef struct _gpv_mp_t{
    @param algorithm
 */
 
-gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const gpv_alg_t algorithm);
+dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const dgsl_alg_t algorithm);
 
 /**
    Simple sampling when B is the identity
@@ -49,11 +49,11 @@ gpv_mp_t *gpv_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const gpv_alg
 
 */
 
-int gpv_mp_call_simple(fmpz *rop,  const gpv_mp_t *self, gmp_randstate_t state);
+int dgsl_mp_call_simple(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
 
-void gpv_mp_clear(gpv_mp_t *self);
+void dgsl_mp_clear(dgsl_mp_t *self);
 
-static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
+static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, dgsl_mp_t *D, flint_rand_t randstate) {
   assert(D);
   assert(randstate->gmp_init);
 
@@ -64,7 +64,7 @@ static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, gpv_mp_t *D, flint_
   _fmpz_mod_poly_normalise(f);
 }
 
-static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t randstate) {
+static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgsl_mp_t *D, flint_rand_t randstate) {
   assert(D);
   assert(randstate->gmp_init);
 
@@ -78,22 +78,22 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, gpv_mp_t *D, flint_rand_t r
 static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
   fmpz_mat_t I;
   fmpz_mat_init(I, 1, len);
-  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
+  fmpz_mat_one(I); dgsl_mp_t *D = dgsl_mp_init(I, sigma, NULL, DGSL_IDENTITY);
 
   fmpz_mod_poly_sample_D(f, D, randstate);
 
-  gpv_mp_clear(D);
+  dgsl_mp_clear(D);
   fmpz_mat_clear(I);
 }
 
 static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
   fmpz_mat_t I;
   fmpz_mat_init(I, 1, len);
-  fmpz_mat_one(I); gpv_mp_t *D = gpv_mp_init(I, sigma, NULL, GPV_IDENTITY);
+  fmpz_mat_one(I); dgsl_mp_t *D = dgsl_mp_init(I, sigma, NULL, DGSL_IDENTITY);
 
   fmpz_poly_sample_D(f, D, randstate);
 
-  gpv_mp_clear(D);
+  dgsl_mp_clear(D);
   fmpz_mat_clear(I);
 }
 

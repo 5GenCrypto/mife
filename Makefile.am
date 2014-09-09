@@ -4,12 +4,12 @@ SUBDIRS = flint dgs
 
 AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(srcdir)/dgs/ -I$(srcdir)/flint #-I$(srcdir)/flint/flint
 
-lib_LTLIBRARIES = libgpv.la libgghlite.la
+lib_LTLIBRARIES = libdgsl.la libgghlite.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 
-libgpv_la_SOURCES = gpv/gpv.c gpv/gso.c
-libgpv_la_LDFLAGS = $(MY_LIB_LDFLAGS)
+libdgsl_la_SOURCES = dgsl/dgsl.c dgsl/gso.c
+libdgsl_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
 libgghlite_la_SOURCES = gghlite/gghlite.c \
                         gghlite/gghlite_pk.c \
@@ -22,9 +22,9 @@ libgghlite_la_SOURCES = gghlite/gghlite.c \
 
 libgghlite_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
-include_HEADERS = gpv/gpv.h gpv/gso.h gghlite/gghlite.h gghlite/misc.h
+include_HEADERS = dgsl/dgsl.h dgsl/gso.h gghlite/gghlite.h gghlite/misc.h
 
-MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libgpv.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
+MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libdgsl.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 
 bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike
 
@@ -44,11 +44,11 @@ nike_SOURCES = applications/nike.c applications/nike.h
 nike_LDADD = $(MY_PROGRAM_LDADD)
 nike_LDFLAGS = -no-install
 
-check_PROGRAMS = test_gpv test_resultant
+check_PROGRAMS = test_dgsl test_resultant
 
-test_gpv_SOURCES = tests/test_gpv.c
-test_gpv_LDADD = $(MY_PROGRAM_LDADD)
-test_gpv_LDFLAGS = -no-install
+test_dgsl_SOURCES = tests/test_dgsl.c
+test_dgsl_LDADD = $(MY_PROGRAM_LDADD)
+test_dgsl_LDFLAGS = -no-install
 
 test_resultant_SOURCES = tests/test_resultant.c
 test_resultant_LDADD = $(MY_PROGRAM_LDADD)

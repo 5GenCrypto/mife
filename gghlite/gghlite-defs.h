@@ -5,7 +5,7 @@
 #include <gghlite/misc.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
-#include <gpv/gpv.h>
+#include <dgsl/dgsl.h>
 
 typedef fmpz_mod_poly_t gghlite_enc_t;
 typedef fmpz_poly_t     gghlite_clr_t;
@@ -58,8 +58,8 @@ struct _gghlite_pk_struct {
   gghlite_enc_t pzt;
   gghlite_enc_t x[KAPPA][2];
   gghlite_enc_t y;
-  gpv_mp_t *D_sigma_p;
-  gpv_mp_t *D_sigma_s;
+  dgsl_mp_t *D_sigma_p;
+  dgsl_mp_t *D_sigma_s;
 };
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
