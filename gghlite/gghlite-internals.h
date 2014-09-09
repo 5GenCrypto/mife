@@ -12,7 +12,7 @@ static inline int64_t _gghlite_log_q(const long log_n, const long kappa) {
 #ifndef GGHLITE_HEURISTICS
   long log_q = (10.5*log_n + log2(kappa)/2.0 + 10.5*log2(log_n)) * (8*kappa);
 #else
-  long log_q = ( 9.0*log_n + log2(kappa)/2.0 +  8*log2(log_n)) * (8*kappa);
+  long log_q = ( 9.0*log_n + log2(kappa)/2.0 + 10.5*log2(log_n)) * (8*kappa);
 #endif
   return log_q;
 }
