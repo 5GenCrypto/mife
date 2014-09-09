@@ -89,6 +89,9 @@ int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, gmp_randstate_t state) 
   fmpz_t z_fmpz;
   fmpz_init(z_fmpz);
   
+  size_t tau = 3;
+  if (ceil(sqrt(log2((double)n))) > tau)
+    tau = ceil(sqrt(log2((double)n)));
 
   mpfr_t *b = _mpfr_vec_init(n, mpfr_get_prec(self->sigma));
 
@@ -104,7 +107,7 @@ int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, gmp_randstate_t state) 
       mpfr_div(sigma_prime, self->sigma, tmp, MPFR_RNDN);
 
       assert(mpfr_cmp_d(sigma_prime, 0.0) > 0);
-      dgs_disc_gauss_mp_t *D = dgs_disc_gauss_mp_init(sigma_prime, c_prime, 6, DGS_DISC_GAUSS_UNIFORM_ONLINE);
+      dgs_disc_gauss_mp_t *D = dgs_disc_gauss_mp_init(sigma_prime, c_prime, tau, DGS_DISC_GAUSS_UNIFORM_ONLINE);
       D->call(z, D, state);
       dgs_disc_gauss_mp_clear(D);
 
@@ -165,11 +168,15 @@ dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma,
   mpfr_t c_;
   mpfr_init2(c_, prec);
 
+  size_t tau = 3;
+  if (ceil(sqrt(log2((double)n))) > tau)
+    tau = ceil(sqrt(log2((double)n)));
+
   switch(alg) {
   case DGSL_IDENTITY:
     self->D = (dgs_disc_gauss_mp_t**)calloc(1, sizeof(dgs_disc_gauss_mp_t*));
     mpfr_set_d(c_, 0.0, MPFR_RNDN);
-    self->D[0] = dgs_disc_gauss_mp_init(self->sigma, c_, 6, DGS_DISC_GAUSS_DEFAULT);
+    self->D[0] = dgs_disc_gauss_mp_init(self->sigma, c_, tau, DGS_DISC_GAUSS_DEFAULT);
 
     self->call = dgsl_mp_call_identity;
     break;
@@ -202,7 +209,7 @@ dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma,
       assert(mpfr_cmp_d(norm, 0.0) > 0);
       mpfr_div(sigma_, self->sigma, norm, MPFR_RNDN);
       assert(mpfr_cmp_d(sigma_, 0.0) > 0);
-      self->D[i] = dgs_disc_gauss_mp_init(sigma_, c_, 6, DGS_DISC_GAUSS_DEFAULT);
+      self->D[i] = dgs_disc_gauss_mp_init(sigma_, c_, tau, DGS_DISC_GAUSS_DEFAULT);
     }
 
     mpfr_clear(sigma_);
