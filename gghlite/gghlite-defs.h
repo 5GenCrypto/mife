@@ -24,8 +24,9 @@ typedef fmpz_poly_t     gghlite_clr_t;
   - the security parameter `λ`
   - the multi-linearity parameter `κ ≤ KAPPA`
   - the rerandomisation mask such that if the `i`-th bit is set
-    then rerandomisation elements for level `i+1` are generated.
+    then rerandomisation elements for level `i+1` are generated
   - the dimension of the lattice `n`
+  - the number of bits `ℓ` in each coefficient used for extraction
   - the modulus `q`
   - Gaussian width parameter `σ`   for sampling `g`
   - Gaussian width parameter `σ'`  for sampling `b_{k,i}`
@@ -47,12 +48,14 @@ struct _gghlite_pk_struct {
   uint64_t rerand_mask;
 
   long n;
+  long ell;
   fmpz_t q;
   mpfr_t sigma;
   mpfr_t sigma_p;
   mpfr_t sigma_s;
   mpfr_t ell_b;
   mpfr_t ell_g;
+  mpfr_t ell_q;
 
   gghlite_enc_t modulus;
   gghlite_enc_t pzt;

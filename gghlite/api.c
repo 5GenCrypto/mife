@@ -69,7 +69,7 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
 
   long logq = fmpz_sizeinbase(self->q,2)-1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {
-    for(long j=0; j<logq-2*self->lambda; j++) {
+    for(long j=0; j<logq-self->ell; j++) {
       fmpz_clrbit(rop->coeffs + i, j);
     }
   }
@@ -87,12 +87,12 @@ void gghlite_print_params(const gghlite_pk_t self) {
   printf("        λ: %7ld\n",lambda);
   printf("        k: %7ld\n",kappa);
   printf("        n: %7ld\n",n);
-  printf("   log(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_check_sec(self));
-  printf("   log(σ): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
-  printf(" log(ℓ_g): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
-  printf("  log(σ'): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
-  printf(" log(ℓ_b): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
-  printf(" log(σ^*): %7.1f dp: (%7.1f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
+  printf("   log(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_pk_check_sec(self));
+  printf("   log(σ): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
+  printf(" log(ℓ_g): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
+  printf("  log(σ'): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
+  printf(" log(ℓ_b): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
+  printf(" log(σ^*): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
 
 
   mpfr_t enc;
@@ -102,25 +102,12 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_log2(enc, enc, MPFR_RNDN);
   mpfr_mul_ui(enc, enc, n, MPFR_RNDN);
 
-  printf("    |enc|: %7.1f MB\n",mpfr_get_d(enc, MPFR_RNDN)/8.0/1024.0/1024.0);
+  printf("    |enc|: %8.2f MB\n",mpfr_get_d(enc, MPFR_RNDN)/8.0/1024.0/1024.0);
 
   mpfr_t par;
   mpfr_init2(par, _gghlite_prec(self));
   mpfr_set(par, enc, MPFR_RNDN);
   mpfr_mul_ui(par, par, self->kappa*2 + 1 + 1, MPFR_RNDN);
-  printf("    |par|: %7.1f MB\n",mpfr_get_d(par, MPFR_RNDN)/8.0/1024.0/1024.0);
+  printf("    |par|: %8.2f MB\n",mpfr_get_d(par, MPFR_RNDN)/8.0/1024.0/1024.0);
 }
 
-void gghlite_check_params(const gghlite_pk_t self) {
-  mpfr_t tmp;
-  mpfr_init2(tmp, _gghlite_prec(self));
-  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
-  mpfr_mul_ui(tmp, tmp, 3, MPFR_RNDN);
-  mpfr_mul(tmp, tmp, self->sigma_s, MPFR_RNDN);
-  mpfr_mul(tmp, tmp, self->sigma_p, MPFR_RNDN);
-  mpfr_pow_ui(tmp, tmp, 8*self->kappa, MPFR_RNDN);
-  mpfr_log2(tmp, tmp, MPFR_RNDN);
-
-  printf("(8κ)·log((m+1)·n^{3/2}·σ^*σ') ≤ log(q): %10.2f ≤ %7ld\n", mpfr_get_d(tmp, MPFR_RNDN), fmpz_sizeinbase(self->q, 2));
-  printf("                      8/3·n/λ ≥ log(q): %10.2f ≥ %7ld\n", 8.0/3.0 * self->n / (double)self->lambda, fmpz_sizeinbase(self->q, 2));
-}

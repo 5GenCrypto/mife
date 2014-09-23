@@ -14,6 +14,7 @@ libdgsl_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 libgghlite_la_SOURCES = gghlite/gghlite.c \
                         gghlite/gghlite_pk.c \
                         gghlite/misc.c \
+                        gghlite/lattice_reduction.c \
                         gghlite/gghlite.h \
                         gghlite/misc.h \
                         gghlite/ggh-defs.h \

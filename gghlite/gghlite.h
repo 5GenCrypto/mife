@@ -88,14 +88,6 @@ void gghlite_clear(gghlite_t self, int clear_pk);
 void gghlite_print_params(const gghlite_pk_t self);
 
 /**
-   Print checks to STDOUT to inspect if parameters satisfy constraints.
-
-   :param self: assumes ``gghlite_pk_init_params(self,·,·,·)`` was called
-*/
-
-void gghlite_check_params(const gghlite_pk_t self);
-
-/**
    Initialise encoding to zero at level 0.
 
    :param op:   uninitialised polynomial
@@ -210,5 +202,14 @@ static inline void gghlite_mult(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_
 */
 
 void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
+
+/**
+   Check if security constraints are satisfied.
+
+   :param self:      initialise GGHLite public key
+
+*/
+
+int gghlite_pk_check_sec(const gghlite_pk_t self);
 
 #endif //_GGHLITE_H_

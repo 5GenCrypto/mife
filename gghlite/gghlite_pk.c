@@ -3,58 +3,105 @@
 #include "gghlite-internals.h"
 #include "gghlite.h"
 
-void _gghlite_pk_zero(gghlite_pk_t self) {
+void _gghlite_pk_initzero(gghlite_pk_t self, size_t lambda, size_t kappa) {
   memset(self, 0, sizeof(struct _gghlite_struct));
+
+  self->lambda = lambda;
+  self->kappa = kappa;
+
+  mpfr_init2(self->sigma, _gghlite_prec(self));
+  mpfr_init2(self->ell_g, _gghlite_prec(self));
+  mpfr_init2(self->sigma_p, _gghlite_prec(self));
+  mpfr_init2(self->ell_b, _gghlite_prec(self));
+  mpfr_init2(self->sigma_s, _gghlite_prec(self));
+  mpfr_init2(self->ell_q, _gghlite_prec(self));
 }
 
-void _gghlite_pk_set_n_q(gghlite_pk_t self) {
-  const int64_t lambda = self->lambda;
-  const int64_t kappa  = self->kappa;
-  int64_t n_base = kappa * lambda * ceil(log2(lambda));
+void _gghlite_pk_set_ell(gghlite_pk_t self) {
+  assert(self->n > 0);
+  assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
-  int64_t c     = 1;
-  int64_t log_n = ceil(log2(c*n_base));
-  int64_t n     = ((int64_t)(1))<<log_n;
-  int64_t log_q = _gghlite_log_q(log_n, kappa);
+  mpfr_t tmp;
+  mpfr_init2(tmp, _gghlite_prec(self));
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_mul(tmp, tmp, self->sigma, MPFR_RNDN);
+  mpfr_mul_ui(tmp, tmp, 8, MPFR_RNDN);
+  mpfr_log2(tmp, tmp, MPFR_RNDN);
+  self->ell = ceil(mpfr_get_d(tmp, MPFR_RNDN));
+  mpfr_clear(tmp);
+}
 
-  /* increase n until security check passes */
-  while(1) {
-    printf("log(n): %ld, log(q): %ld, sec: %d, func: %d\n", log_n, log_q, _gghlite_check_sec(log_q, n, lambda), _gghlite_check_func(log_q, n, lambda, kappa));
-    if (_gghlite_check_sec(log_q, n, lambda) && _gghlite_check_func(log_q, n, lambda, kappa))
-      break;
-    c*=2;
-    log_n = ceil(log2(c*n_base));
-    n = ((int64_t)(1))<<log_n;
-    log_q = _gghlite_log_q(log_n, kappa);
-  }
-  printf("\n");
+void _gghlite_pk_set_q(gghlite_pk_t self) {
+  const size_t lambda = self->lambda;
+  const size_t kappa  = self->kappa;
 
-  self->n = n;
-  fmpz_init_set_ui(self->q, 2);
-  fmpz_pow_ui(self->q, self->q, log_q);
+  mpfr_t q_base;
+  mpfr_init2(q_base, _gghlite_prec(self));
 
-#if 0
-  /* increase q until it is probably prime and q % n == 1*/
+  mpfr_t tmp;
+  mpfr_init2(tmp, _gghlite_prec(self));
 
-  fmpz_t zeta;
-  fmpz_init(zeta);
-  fmpz_sub_ui(self->q, self->q, 1);
-  fmpz_divexact_si(zeta, self->q, self->n);
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+  mpfr_pow_ui(tmp, tmp, 3, MPFR_RNDN);
+  mpfr_mul(tmp, tmp, self->sigma_p, MPFR_RNDN);
+  mpfr_mul(tmp, tmp, self->sigma_p, MPFR_RNDN);
 
-  fmpz_t tmp;
-  fmpz_init(tmp);
-  while(1) {
-    fmpz_mul_ui(tmp, zeta, self->n);
-    fmpz_add_ui(tmp, tmp, 1);
-    if (fmpz_is_probabprime(tmp)) {
-      fmpz_set(self->q, tmp);
-      break;
-    }
-    fmpz_add_ui(zeta, zeta, 1);
-  }
-  fmpz_clear(tmp);
-  fmpz_clear(zeta);
-#else
+  mpfr_set(q_base, tmp, MPFR_RNDN); //(σ')^2 * n^(1.5)
+
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+  mpfr_pow_ui(tmp, tmp, 3, MPFR_RNDN);
+
+  mpfr_mul(tmp, tmp, self->sigma_p, MPFR_RNDN);
+  mpfr_mul(tmp, tmp, self->sigma_s, MPFR_RNDN);
+  mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN);
+
+  mpfr_add(q_base, q_base, tmp, MPFR_RNDN); // (σ')^2 · n^(1.5) + 2σ^* · σ' · n^(1.5)
+
+  mpfr_pow_ui(q_base, q_base, kappa, MPFR_RNDN); // ((σ')^2 · n^(1.5) + 2σ^* · σ' · n^(1.5))^κ
+
+  mpfr_mul_ui(q_base, q_base, self->n, MPFR_RNDN);
+  mpfr_mul(q_base, q_base, self->ell_g, MPFR_RNDN); // n · ℓ_g · ((σ')^2 · n^(1.5) + 2σ^* · σ' · n^(1.5))^κ
+
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+  mpfr_pow_ui(tmp, tmp, kappa-1, MPFR_RNDN);
+  mpfr_mul(q_base, tmp, q_base, MPFR_RNDN); // n · ℓ_g · sqrt(n)^(κ-1) · ((σ')^2 · n^(1.5) + 2σ^* · σ' · n^(1.5))^κ
+
+  mpfr_t log_q_base;
+  mpfr_init2(log_q_base, _gghlite_prec(self));
+  mpfr_log2(log_q_base, q_base, MPFR_RNDN);
+
+  mpfr_set_ui(tmp, self->ell, MPFR_RNDN);
+  mpfr_add_ui(tmp, tmp, self->lambda, MPFR_RNDN);
+  mpfr_div_ui(tmp, tmp, 2, MPFR_RNDN);
+
+  mpfr_set(self->ell_q, tmp, MPFR_RNDN);
+
+  mpfr_set_ui(tmp, self->ell, MPFR_RNDN);
+  mpfr_add_ui(tmp, tmp, self->lambda, MPFR_RNDN);
+  mpfr_add(tmp, tmp, log_q_base, MPFR_RNDN);
+  mpfr_div(self->ell_q, self->ell_q, tmp, MPFR_RNDN);
+
+  mpfr_set(tmp, self->ell_q, MPFR_RNDN);
+  mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN);
+  mpfr_neg(tmp, tmp, MPFR_RNDN);
+  mpfr_add_ui(tmp, tmp, 1, MPFR_RNDN);
+  mpfr_ui_div(tmp, 2, tmp, MPFR_RNDN);
+
+  mpfr_pow(tmp, q_base, tmp, MPFR_RNDN);
+
+  mpz_t q;
+  mpz_init(q);
+  mpfr_get_z(q, tmp, MPFR_RNDN);
+  fmpz_set_mpz(self->q, q);
+  mpz_clear(q);
+
+  mpfr_clear(tmp);
+  mpfr_clear(log_q_base);
+  mpfr_clear(q_base);
+
   fmpz_add_ui(self->q, self->q, 1);
   while(1) {
     // TODO: use mpz_next_prime
@@ -62,7 +109,6 @@ void _gghlite_pk_set_n_q(gghlite_pk_t self) {
       break;
     fmpz_add_ui(self->q, self->q, 2);
   }
-#endif
 }
 
 #ifndef GGHLITE_HEURISTICS
@@ -74,7 +120,6 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   mpfr_init2(pi, _gghlite_prec(self));
   mpfr_const_pi(pi, MPFR_RNDN);
 
-  mpfr_init2(self->sigma, _gghlite_prec(self));
   mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
   mpfr_mul_ui(self->sigma, self->sigma, 4, MPFR_RNDN);
   mpfr_mul(self->sigma, self->sigma, pi, MPFR_RNDN);
@@ -105,8 +150,6 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
-  mpfr_init2(self->ell_g, _gghlite_prec(self));
-
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
@@ -134,7 +177,6 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
 void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   assert(self->n > 0);
 
-  mpfr_init2(self->sigma, _gghlite_prec(self));
   mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
 
   mpfr_t pi;
@@ -153,7 +195,6 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
-  mpfr_init2(self->ell_g, _gghlite_prec(self));
   mpfr_set_ui(self->ell_g, self->n, MPFR_RNDN);
   mpfr_sqrt(self->ell_g, self->ell_g, MPFR_RNDN);
   mpfr_ui_div(self->ell_g, 1, self->ell_g, MPFR_RNDN);
@@ -222,7 +263,6 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
   mpfr_mul(sigma_p1, sigma_p1, tmp, MPFR_RNDN); // `7n^{5/2}·σ · log(n)^{3/2}`
 
 
-  mpfr_init2(self->sigma_p, _gghlite_prec(self));
   if (mpfr_cmp(sigma_p1, sigma_p0) >= 0)
     mpfr_set(self->sigma_p, sigma_p1, MPFR_RNDN);
   else
@@ -246,8 +286,6 @@ void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
 void _gghlite_pk_set_ell_b(gghlite_pk_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma_p, 0)>0);
-
-  mpfr_init2(self->ell_b, _gghlite_prec(self));
 
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
@@ -294,11 +332,9 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
   mpfr_log(eps, eps, MPFR_RNDN);
   mpfr_div_ui(eps, eps, self->kappa, MPFR_RNDN); // ε_d
 
-  mpfr_init2(self->sigma_s, _gghlite_prec(self));
 
   /* `σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}` */
   mpfr_pow_ui(sigma_s0, self->sigma_p, 2, MPFR_RNDN); // σ^* := (σ')^2
-
 
   mpfr_div(tmp, pi, eps, MPFR_RNDN);  // π/ε_d
   mpfr_mul_ui(tmp, tmp, 8, MPFR_RNDN); // 8π/ε_d
@@ -349,22 +385,81 @@ void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
   self->D_sigma_s = _gghlite_dgsl_from_n(self->n, self->sigma_s);
 }
 
+int gghlite_pk_check_sec(const gghlite_pk_t self) {
+  mpfr_t target_norm;
+  mpfr_init2(target_norm, _gghlite_prec(self));
+
+  mpfr_mul_ui(target_norm, self->sigma_p, 3, MPFR_RNDN);
+  mpfr_mul(target_norm, target_norm, self->sigma_s, MPFR_RNDN);
+  mpfr_pow_ui(target_norm, target_norm, self->kappa, MPFR_RNDN); // ((m+1) · σ' · σ^*)^κ
+
+  mpfr_t tmp;
+  mpfr_init2(tmp, _gghlite_prec(self));
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_pow_ui(tmp, tmp, 2*self->kappa, MPFR_RNDN);
+  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN);
+  mpfr_mul_ui(target_norm, target_norm, 2, MPFR_RNDN); // 2 · n^(2κ) · ((m+1) · σ' · σ^*)^κ
+
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · ((m+1) · σ' · σ^*)^κ
+
+
+  _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+
+  mpfr_div(target_norm, tmp, target_norm, MPFR_RNDN);
+
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_ui_div(tmp, 1, tmp, MPFR_RNDN);
+
+  mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
+  double delta_0 = mpfr_get_d(tmp, MPFR_RNDN);
+
+  mpfr_clear(target_norm);
+  mpfr_clear(tmp);
+
+  if (delta_0 >= 1.0219)
+    return 3*log2(self->n) >= self->lambda;
+
+  int k;
+  for(k=40; k<MAX_K; k++) {
+    if (delta_from_k[k] <= delta_0)
+      break;
+  }
+  if (k == MAX_K)
+    ggh_die("Cannot establish required block size");
+
+  double rt0 = 0.3774*k + 20 + 2*log2(self->n); // BKZ + Sieving
+  double rt1 = 0.00119*k*k + 0.2275*k + 21.59 + 2*log2(self->n); // BKZ + Enumeration
+
+  return ((rt0 >= self->lambda) && (rt1 >= self->lambda));
+}
+
+
+
 void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
 
-  _gghlite_pk_zero(self);
+  _gghlite_pk_initzero(self, lambda, kappa);
 
-  self->lambda = lambda;
-  self->kappa = kappa;
   self->rerand_mask = rerand_mask;
 
-  _gghlite_pk_set_n_q(self);
-  _gghlite_pk_set_sigma(self);
-  _gghlite_pk_set_ell_g(self);
-  _gghlite_pk_set_sigma_p(self);
-  _gghlite_pk_set_ell_b(self);
-  _gghlite_pk_set_sigma_s(self);
+  for(int log_n = 8; ; log_n++) {
+    self->n = ((long)1)<<log_n;
+    _gghlite_pk_set_sigma(self);
+    _gghlite_pk_set_ell_g(self);
+    _gghlite_pk_set_ell(self);
+    _gghlite_pk_set_sigma_p(self);
+    _gghlite_pk_set_ell_b(self);
+    _gghlite_pk_set_sigma_s(self);
+    _gghlite_pk_set_q(self);
+
+    if (gghlite_pk_check_sec(self))
+      break;
+  }
+
   _gghlite_pk_set_modulus(self);
 }
 
