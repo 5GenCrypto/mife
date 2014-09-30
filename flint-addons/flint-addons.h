@@ -7,9 +7,9 @@
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
-
-#include <gghlite/misc.h>
 #include <math.h>
+
+#include "gghlite/misc.h"
 
 static inline mp_limb_t n_prevprime(mp_limb_t n, int proved) {
   n--;
@@ -161,161 +161,9 @@ static inline void fmpq_poly_mulmod(fmpq_poly_t rop, const fmpq_poly_t op1, cons
   fmpq_poly_rem(rop, rop, modulus);
 }
 
-static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, mpfr_prec_t prec) {
-  int i;
-
-  fmpq_poly_t V;
-  fmpq_poly_init(V);
-  fmpq_poly_set(V, f);
-
-  fmpq_poly_t U;
-  fmpq_poly_init(U);
-
-  /* F(x) = x^n+1 */
-  fmpq_poly_t F;
-  fmpq_poly_init(F);
-  fmpq_poly_set_coeff_si(F, 0, 1);
-  fmpq_poly_set_coeff_si(F, n, 1);
-
-  fmpq_poly_t V2;
-  fmpq_poly_init(V2);
-
-  fmpq_poly_t Se;
-  fmpq_poly_init(Se);
-  fmpq_poly_t So;
-  fmpq_poly_init(So);
-
-  fmpq_t tmp;
-  fmpq_init(tmp);
-
-  int deg;
-
-  if (n > 1) {
-    /* set V2(x) = V(-x) */
-    fmpq_poly_set(V2, V);
-    deg = fmpq_poly_degree(V2);
-    for (i = 1 ; i <= deg ; i += 2) {
-      /* negate odd coefficients */
-      fmpq_poly_get_coeff_fmpq(tmp, V2, i);
-      fmpq_neg(tmp,tmp);
-      fmpq_poly_set_coeff_fmpq(V2, i, tmp);
-    }
-
-    /* compute Se, So */
-    /* Set Se = (V(x) + V(-x))/2 */
-    for (i = 0; i <= deg/2 ; i++) {
-      fmpq_poly_get_coeff_fmpq(tmp, V2, 2*i);
-      fmpq_poly_set_coeff_fmpq(Se, i, tmp);
-    }
-    fmpq_poly_truncate(Se,deg/2+1);
-
-    /* Set So to the compressed (V(-x) - V(x))/2 */
-    for (i = 0 ; i < (deg+1)/2 ; i++) {
-      fmpq_poly_get_coeff_fmpq(tmp,V2,2*i+1);
-      fmpq_poly_set_coeff_fmpq(So,i,tmp);
-    }
-    fmpq_poly_truncate(So,deg/2+1);
-
-    /* V = V(x) * V(-x) mod f(x) */
-    fmpq_poly_mulmod(V, V, V2, F);
-
-#ifndef NDEBUG
-    /* Sanity-check: verify that the odd coeffs in V are zero */
-    for (i = 1; i < n ; i += 2) {
-      fmpq_poly_get_coeff_fmpq(tmp,V,i);
-      assert(fmpq_is_zero(tmp));
-    }
-#endif
-
-    deg = fmpq_poly_degree(V);
-    /* Compress the non-zero coeffs of V */
-    for (i = 0; i <= deg/2 ; i ++) {
-      fmpq_poly_get_coeff_fmpq(tmp,V,2*i);
-      fmpq_poly_set_coeff_fmpq(V,i,tmp);
-    }
-    fmpq_poly_truncate(V,deg/2+1);
-
-    /* V2 = Inverse3(V,q,n/2) */
-    _fmpq_poly_invert_mod_cnf2pow_approx(V2,V,n/2, prec);
-
-    deg = fmpq_poly_degree(V2);
-    /* Te=G*Se, To = G*So */
-    fmpq_poly_mul(V,V2,Se);
-    fmpq_poly_mul(U,V2,So);
-
-    deg = fmpq_poly_degree(V);
-
-    for (int i = 0 ; i <= deg ; i ++) {
-      fmpq_poly_get_coeff_fmpq(tmp,V,i);
-      fmpq_poly_set_coeff_fmpq(f_inv,2*i,tmp);
-    }
-    deg = fmpq_poly_degree(U);
-    for (int i = 0 ; i <= deg ; i ++) {
-      fmpq_poly_get_coeff_fmpq(tmp,U,i);
-      fmpq_poly_set_coeff_fmpq(f_inv,2*i+1,tmp);
-    }
-    fmpq_poly_truncate(f_inv,2*deg+2);
-    fmpq_poly_rem(f_inv,f_inv,F);
-
-    /* truncate results on the precision required by algorithm */
-    fmpq_poly_truncate_prec(f_inv, prec);
-  } else {
-    f_inv->length = 1;
-    fmpz_set(f_inv->coeffs, f->den);
-    fmpz_set(f_inv->den, f->coeffs);
-  }
-
-  /* free memory */
-  fmpq_clear(tmp);
-  fmpq_poly_clear(Se);
-  fmpq_poly_clear(So);
-  fmpq_poly_clear(V2);
-  fmpq_poly_clear(F);
-  fmpq_poly_clear(U);
-  fmpq_poly_clear(V);
-}
-
-static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, int n, mp_bitcnt_t prec) {
-  fmpq_poly_t tmp;
-  fmpq_poly_init(tmp);
-  fmpq_poly_t modulus;
-  fmpq_poly_init(modulus);
-  fmpq_poly_set_coeff_si(modulus, 0, 1);
-  fmpq_poly_set_coeff_si(modulus, n, 1);
-
-  mpfr_t norm;
-  mpfr_init2(norm, 2*prec);
-
-  fmpq_t c;
-  fmpq_init(c);
-
-  /** we check for distance < 2^-prec with precision 2*prec **/
-  mpfr_t bound;
-  mpfr_init2(bound, 2*prec);
-  mpfr_set_ui(bound, 1, MPFR_RNDN);
-  mpfr_div_2exp(bound, bound, prec, MPFR_RNDN);
-
-  for(long b=ceil(log2(prec)); ; b++) {
-    _fmpq_poly_invert_mod_cnf2pow_approx(f_inv, f, n, (1<<b));
-    fmpq_poly_mulmod(tmp, f_inv, f, modulus);
-
-    fmpq_poly_get_coeff_fmpq(c, tmp, 0);
-    fmpq_sub_si(c, c, 1);
-    fmpq_poly_set_coeff_fmpq(tmp, 0, c);
-
-    _fmpq_vec_2norm_mpfr(norm, tmp->coeffs, tmp->den, fmpq_poly_length(tmp));
-    if(mpfr_cmp(norm, bound) <= 0)
-      break;
-  }
-  fmpq_poly_clear(tmp);
-  fmpq_poly_clear(modulus);
-  mpfr_clear(norm);
-  mpfr_clear(bound);
-  fmpq_clear(c);
-}
 
 
-static inline void fmpq_polq_invert_mod(fmpq_poly_t f_inv, fmpq_poly_t f, const fmpz_poly_t g) {
+static inline void fmpq_poly_invert_mod(fmpq_poly_t f_inv, fmpq_poly_t f, const fmpz_poly_t g) {
   fmpq_poly_t r; fmpq_poly_init(r);
   fmpq_poly_t t; fmpq_poly_init(t);
 
