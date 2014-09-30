@@ -23,11 +23,11 @@ libgghlite_la_SOURCES = gghlite/gghlite.c \
 
 libgghlite_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
-include_HEADERS = dgsl/dgsl.h dgsl/gso.h gghlite/gghlite.h gghlite/misc.h
+include_HEADERS = dgsl/dgsl.h dgsl/gso.h gghlite/gghlite.h gghlite/gghlite-defs.h gghlite/gghlite-internals.h gghlite/misc.h flint-addons/flint-addons.h flint-addons/cyclotomic-2power.h
 
 MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libdgsl.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 
-bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike
+bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike test_misc
 
 gghlite_params_SOURCES = applications/gghlite_params.c applications/common.h
 gghlite_params_LDADD = $(MY_PROGRAM_LDADD)
@@ -44,6 +44,10 @@ gghlite_noise_dist_LDFLAGS = -no-install
 nike_SOURCES = applications/nike.c applications/nike.h
 nike_LDADD = $(MY_PROGRAM_LDADD)
 nike_LDFLAGS = -no-install
+
+test_misc_SOURCES = tests/test_misc.c
+test_misc_LDADD = $(MY_PROGRAM_LDADD)
+test_misc_LDFLAGS = -no-install
 
 check_PROGRAMS = test_dgsl test_resultant
 
