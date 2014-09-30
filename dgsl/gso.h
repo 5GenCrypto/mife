@@ -94,4 +94,10 @@ static inline void _mpfr_vec_2norm(mpfr_t rop, mpfr_t *vec, long n, const mpfr_r
   mpfr_sqrt(rop, rop, rnd);
 }
 
+static inline void _mpfr_vec_add(mpfr_t *rop, mpfr_t *op1, mpfr_t *op2, const long n, mpfr_rnd_t rnd) {
+  for(long i=0; i<n; i++) {
+    mpfr_add(rop[i], op1[i], op2[i], rnd);
+  }
+}
+
 #endif
