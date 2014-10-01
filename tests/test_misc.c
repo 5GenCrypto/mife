@@ -44,6 +44,26 @@ int test_inv_approx(long n, long prec) {
   return 0;
 }
 
+int test_sqrt_approx(long n, long prec) {
+  flint_rand_t randstate;
+  flint_randinit_seed(randstate, 0x1337, 1);
+
+  fmpz_poly_t f;
+  fmpz_poly_init(f);
+
+  mpfr_t sigma;
+  mpfr_init2(sigma, prec);
+  mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
+
+  fmpz_poly_sample_sigma(f, n, sigma, randstate);
+
+  fmpq_poly_t Sigma_sqrt;
+  fmpq_poly_init(Sigma_sqrt);
+
+  _dgsl_rot_mp_sqrt_sigma_2(Sigma_sqrt, f, sigma, ceil(2*log2(n)), n, prec);
+  return 0;
+}
+
 
 
 int main(int argc, char *argv[]) {
@@ -51,27 +71,44 @@ int main(int argc, char *argv[]) {
   const long n    = atol(argv[1]);
   const long prec = atol(argv[2]);
 
+  /* test_inv_approx(n, prec); */
+  /* return 0; */
 
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
-  
-  fmpz_poly_t f;
-  fmpz_poly_init(f);
+
+  fmpz_poly_t g;
+  fmpz_poly_init(g);
 
   mpfr_t sigma;
   mpfr_init2(sigma, prec);
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
-  
-  fmpz_poly_sample_sigma(f, n, sigma, randstate);
-  fmpq_poly_t g;
-  fmpq_poly_init(g);
-  fmpq_poly_set_fmpz_poly(g, f);
 
-  fmpq_poly_t g_sqrt;
-  fmpq_poly_init(g_sqrt);
-  
-  fmpq_poly_sqrt_mod_cnf2power_approx(g_sqrt, g, n, prec);
+  fmpz_poly_sample_sigma(g, n, sigma, randstate);
 
-  
+  mpfr_t sigma_p;
+  mpfr_init2(sigma_p, prec);
+  mpfr_set_d(sigma_p, _gghlite_sigma_p(n), MPFR_RNDN);
+
+  fmpq_poly_t c;
+  fmpq_poly_init(c);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, g, sigma_p, c, DGSL_INLATTICE);
+
+  fmpz_poly_t r;
+  fmpz_poly_init(r);
+
+
+   for(size_t i=0; i<4; i++) {
+    D->call(r, D, randstate->gmp_state);
+   }
+
+  fmpz_poly_clear(r);
+  fmpq_poly_clear(c);
+  dgsl_rot_mp_clear(D);
+  mpfr_clear(sigma_p);
+  mpfr_clear(sigma);
+  fmpz_poly_clear(g);
+  flint_randclear(randstate);
+
   return 0;
 }
