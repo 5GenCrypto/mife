@@ -61,8 +61,8 @@ struct _gghlite_pk_struct {
   gghlite_enc_t pzt;
   gghlite_enc_t x[KAPPA][2];
   gghlite_enc_t y;
-  dgsl_mp_t *D_sigma_p;
-  dgsl_mp_t *D_sigma_s;
+  dgsl_rot_mp_t *D_sigma_p;
+  dgsl_rot_mp_t *D_sigma_s;
 };
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];

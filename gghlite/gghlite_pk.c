@@ -476,10 +476,10 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   }
 
   fmpz_mod_poly_clear(self->modulus);
-  dgsl_mp_clear(self->D_sigma_s);
+  dgsl_rot_mp_clear(self->D_sigma_s);
   mpfr_clear(self->sigma_s);
   mpfr_clear(self->ell_b);
-  dgsl_mp_clear(self->D_sigma_p);
+  dgsl_rot_mp_clear(self->D_sigma_p);
   mpfr_clear(self->sigma_p);
   mpfr_clear(self->ell_g);
   mpfr_clear(self->sigma);
