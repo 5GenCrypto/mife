@@ -21,6 +21,7 @@ void _gghlite_pk_set_ell(gghlite_pk_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
+#if 0
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
@@ -29,10 +30,12 @@ void _gghlite_pk_set_ell(gghlite_pk_t self) {
   mpfr_log2(tmp, tmp, MPFR_RNDN);
   self->ell = ceil(mpfr_get_d(tmp, MPFR_RNDN));
   mpfr_clear(tmp);
+#else
+  self->ell = 1;
+#endif
 }
 
 void _gghlite_pk_set_q(gghlite_pk_t self) {
-  const size_t lambda = self->lambda;
   const size_t kappa  = self->kappa;
 
   mpfr_t q_base;
@@ -97,6 +100,9 @@ void _gghlite_pk_set_q(gghlite_pk_t self) {
   mpfr_get_z(q, tmp, MPFR_RNDN);
   fmpz_set_mpz(self->q, q);
   mpz_clear(q);
+
+  /** check theat ell = 1 is correct **/
+  assert( (mpfr_get_d(self->ell_q, MPFR_RNDN)-1) * fmpz_sizeinbase(self->q, 2) - log2(8*self->n * mpfr_get_d(self->sigma, MPFR_RNDN))<0 );
 
   mpfr_clear(tmp);
   mpfr_clear(log_q_base);
