@@ -123,21 +123,23 @@ static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const
   fmpq_poly_clear(V);
 }
 
-static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, int n, mp_bitcnt_t prec) {
+static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, int n, mpfr_prec_t prec) {
   fmpq_poly_t tmp;
   fmpq_poly_init(tmp);
   fmpq_poly_t modulus;
   fmpq_poly_init_cyc2power_modulus(modulus, n);
   
   mpfr_t norm;
-  mpfr_init2(norm, 2*prec);
+
+  const mpfr_prec_t realprec = (2*prec < 53) ? 53 : 2*prec;
+  mpfr_init2(norm, realprec);
 
   fmpq_t c;
   fmpq_init(c);
 
   /** we check for distance < 2^-prec with precision 2*prec **/
   mpfr_t bound;
-  mpfr_init2(bound, 2*prec);
+  mpfr_init2(bound, realprec);
   mpfr_set_ui(bound, 1, MPFR_RNDN);
   mpfr_div_2exp(bound, bound, prec, MPFR_RNDN);
 
@@ -161,7 +163,7 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const 
 }
 
 
-static inline void fmpq_poly_sqrt_mod_cnf2power_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
+static inline void fmpq_poly_sqrt_mod_cnf2power_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t boundbits) {
 
   fmpq_poly_t y; fmpq_poly_init(y); fmpq_poly_set(y, f);
   fmpq_poly_t z; fmpq_poly_init(z); fmpq_poly_set_coeff_si(z, 0, 1);
@@ -173,27 +175,27 @@ static inline void fmpq_poly_sqrt_mod_cnf2power_approx(fmpq_poly_t f_sqrt, const
 
   fmpq_poly_t modulus;
   fmpq_poly_init_cyc2power_modulus(modulus, n);
-  
+
   mpfr_t norm;
-  mpfr_init2(norm, 2*prec);
+  mpfr_init2(norm, prec);
 
   mpfr_t tmp_f;
   mpfr_init2(tmp_f, prec);
   
   mpfr_t bound;
-  mpfr_init2(bound, 2*prec);
+  mpfr_init2(bound, prec);
   mpfr_set_ui(bound, 1, MPFR_RNDN);
-  mpfr_div_2exp(bound, bound, prec, MPFR_RNDN);
+  mpfr_div_2exp(bound, bound, boundbits, MPFR_RNDN);
   
   for(long i=0; ; i++) {
     uint64_t t = ggh_walltime(0);
     fmpq_poly_set(y_next, z);
-    _fmpq_poly_invert_mod_cnf2pow_approx(y_next, y_next, n, 2*prec);
+    _fmpq_poly_invert_mod_cnf2pow_approx(y_next, y_next, n, prec);
     fmpq_poly_add(y_next, y_next, y);
     fmpq_poly_scalar_div_si(y_next, y_next, 2);
 
     fmpq_poly_set(z_next, y);
-    _fmpq_poly_invert_mod_cnf2pow_approx(z_next, z_next, n, 2*prec);
+    _fmpq_poly_invert_mod_cnf2pow_approx(z_next, z_next, n, prec);
     fmpq_poly_add(z_next, z_next, z);
     fmpq_poly_scalar_div_si(z_next, z_next, 2);
     
