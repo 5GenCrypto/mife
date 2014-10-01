@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
 int ret = 0;
   for(int i=1; i<cmdline_params->N; i++) {
     printf("s_%d == s_%d: ",0, i);
+    assert(!fmpz_poly_is_zero(s[i]));
     if (gghlite_clr_equal(s[i], s[0])) {
       printf("TRUE\n");
     } else {
