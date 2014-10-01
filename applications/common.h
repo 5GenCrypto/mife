@@ -2,6 +2,9 @@
 #define _COMMON_H_
 
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <gmp.h>
 
 #define DEFAULT_KAPPA   2
 #define DEFAULT_LAMBDA 16

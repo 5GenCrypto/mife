@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <mpfr.h>
 #include <dgs/dgs.h>
 #include <flint/fmpz_mat.h>

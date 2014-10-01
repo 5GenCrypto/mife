@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <stdio.h>
 #include "gghlite.h"
 #include "gghlite-internals.h"
 

@@ -1,6 +1,7 @@
 #ifndef _GGHLITE_H_
 #define _GGHLITE_H_
 
+#include <stdio.h>
 #include <stdint.h>
 #include <math.h>
 
