@@ -4,8 +4,8 @@
 
 We rely on
 
- * (FLINT)[http://flintlib.org/] for pretty much everything
- * (DGS)[https://bitbucket.org/malb/dgs] for sampling from discrete Gausisans
+ * [FLINT](http://flintlib.org/) for pretty much everything
+ * [DGS](https://bitbucket.org/malb/dgs) for sampling from discrete Gausisans
    over the Integers
 
 We ship these libraries as submodules.
