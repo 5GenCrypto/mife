@@ -303,7 +303,7 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
       fmpq_clear(c_i);
     }
     mpfr_mat_t G;
-    mpfr_mat_init(G, n, n, 80);
+    mpfr_mat_init(G, n, n, self->prec);
     mpfr_mat_set_fmpz_poly(G, B);
     mpfr_mat_gso(G, MPFR_RNDN);
 
