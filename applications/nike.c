@@ -2,22 +2,22 @@
 
 #include "nike.h"
 
-int main(int argc, char *argv[]) {  
+int main(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
   parse_cmdline(cmdline_params, argc, argv);
-  
+
   printf("####################################################################\n");
   printf("%s\n", name);
-  printf(" λ: %3d, N: %2d                              seed: 0x%016lx\n",
+  printf(" λ: %3ld, N: %2ld                              seed: 0x%016lx\n",
          cmdline_params->lambda,
          cmdline_params->N,
          cmdline_params->seed);
   printf("#############################################all logs are base two##\n\n");
-  
+
   flint_rand_t randstate;
   flint_randinit_seed(randstate, cmdline_params->seed, 1);
-  
+
   print_intro();
 
   printf("------------------------------------\n");
@@ -25,11 +25,11 @@ int main(int argc, char *argv[]) {
   printf("------------------------------------\n");
 
   uint64_t t = ggh_walltime(0);
-  
+
   gghlite_t self;
   gghlite_pk_init_params(self->pk, cmdline_params->lambda, cmdline_params->N-1, 1<<0);
   gghlite_print_params(self->pk);
-  printf("\n---\n");  
+  printf("\n---\n");
   gghlite_init_instance(self, randstate);
 
   gghlite_pk_t params;
@@ -37,14 +37,14 @@ int main(int argc, char *argv[]) {
   gghlite_clear(self, 0);
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
 
   printf("------------------------------------\n");
   printf("Step 2: \n");
   printf("------------------------------------\n");
 
   t = ggh_walltime(0);
-  
+
   gghlite_enc_t *e = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
   gghlite_enc_t *u = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
   gghlite_clr_t *s = calloc(cmdline_params->N, sizeof(gghlite_clr_t));
@@ -60,14 +60,14 @@ int main(int argc, char *argv[]) {
   }
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
 
   printf("------------------------------------\n");
   printf("Step 3: \n");
   printf("------------------------------------\n");
 
   t = ggh_walltime(0);
-  
+
   gghlite_enc_t tmp;
   for(int i=0; i<cmdline_params->N; i++) {
     printf("%8s computes: s_%d = ", agents[i], i);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   }
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0); 
+  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
   printf("------------------------------------\n");
   printf("Check: \n");
   printf("------------------------------------\n");
@@ -112,7 +112,7 @@ int ret = 0;
     gghlite_clr_clear(s[i]);
   }
   gghlite_pk_clear(params);
-  
+
   flint_randclear(randstate);
   mpfr_free_cache();
   return ret;

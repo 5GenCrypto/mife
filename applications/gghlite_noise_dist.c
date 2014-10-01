@@ -9,17 +9,17 @@ int main(int argc, char *argv[]) {
   cmdline_params_t params;
   parse_cmdline(params, argc, argv, "GGHLite Instance Generator", NULL);
 
-  print_header("GGHLite Instance Generator", params);
-  
+  print_header("GGHLite Noise Distribution", params);
+
   flint_rand_t randstate;
   flint_randinit_seed(randstate, params->seed, 1);
-    
+
   gghlite_t self;
   gghlite_pk_init_params(self->pk, params->lambda, params->kappa, 1<<0);
   gghlite_print_params(self->pk);
 
   printf("\n---\n");
-  
+
   gghlite_init_instance(self, randstate);
 
   printf("\n---\n");
@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
   mpfr_t max;
   mpfr_init2(max, _gghlite_prec(self->pk));
   mpfr_set_ui(max, 0, MPFR_RNDN);
-  
-  for(int k=0; k<params->kappa; k++) 
+
+  for(int k=0; k<params->kappa; k++)
       gghlite_enc_init(u[k], self->pk);
-  
+
   for(int i=0; i<NTRIALS; i++) {
     gghlite_enc_set_ui(tmp, 1);
     for(int k=0; k<params->kappa; k++) {

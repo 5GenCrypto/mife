@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <gghlite/gghlite-defs.h>
-
+#include "flint-addons/cyclotomic-2power.h"
 
 /**
    Check if `|g^-1| ≤ ℓ_g`

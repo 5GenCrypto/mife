@@ -39,11 +39,11 @@ static inline void print_header(const char *name, cmdline_params_t params) {
 
   printf("####################################################################\n");
   printf("%s\n", name);
-  printf(" λ: %3d, κ: %2d, heutistics: %d               seed: 0x%016lx\n",params->lambda, params->kappa, heuristics,  params->seed);
+  printf(" λ: %3ld, κ: %2ld, heutistics: %d               seed: 0x%016lx\n",params->lambda, params->kappa, heuristics,  params->seed);
   printf("#############################################all logs are base two##\n\n");
 }
 
-static inline int parse_cmdline(cmdline_params_t params, int argc, char *argv[], const char *name, const char *extra) {
+static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[], const char *name, const char *extra) {
   params->kappa  =  DEFAULT_KAPPA;
   params->lambda =  DEFAULT_LAMBDA;
   params->seed   =  DEFAULT_SEED;

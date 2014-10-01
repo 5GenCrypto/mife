@@ -39,7 +39,7 @@ typedef fmpz_poly_t     gghlite_clr_t;
   - one level-1 encoding of 1
   - the discrete Gaussian distribution `D_{R,σ'}`
   - the discrete Gaussian distribution `D_{R,σ^*}`
-   
+
 */
 
 struct _gghlite_pk_struct {

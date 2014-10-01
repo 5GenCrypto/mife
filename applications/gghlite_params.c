@@ -1,4 +1,4 @@
-#include <gghlite/gghlite.h>
+#include "gghlite/gghlite.h"
 #include "common.h"
 
 int main(int argc, char *argv[]) {

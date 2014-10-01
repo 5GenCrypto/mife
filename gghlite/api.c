@@ -55,12 +55,6 @@ void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t
   gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
 }
 
-/**
-   .. todo:
-
-       pick l as suggested in GGHLite paper
-*/
-
 void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   fmpz_mod_poly_t t;
   gghlite_enc_init(t, self);
@@ -68,7 +62,7 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   fmpz_poly_set_fmpz_mod_poly(rop, t);
   fmpz_mod_poly_clear(t);
 
-  long logq = fmpz_sizeinbase(self->q,2)-1;
+  long logq = fmpz_sizeinbase(self->q,2) - 1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {
     for(long j=0; j<logq-self->ell; j++) {
       fmpz_clrbit(rop->coeffs + i, j);

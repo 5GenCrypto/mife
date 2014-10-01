@@ -55,6 +55,7 @@ static inline int parse_cmdline(cmdline_params_t cmdline_params, int argc, char 
     print_help_and_exit(name, NULL);
   if (cmdline_params->lambda<1)
     print_help_and_exit(name, NULL);
+  return 0;
 }
 
 

@@ -5,7 +5,7 @@
 int test_inv_approx(long n, long prec) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
-  
+
   fmpz_poly_t f;
   fmpz_poly_init(f);
 
@@ -19,7 +19,7 @@ int test_inv_approx(long n, long prec) {
   mpfr_t sigma;
   mpfr_init2(sigma, prec);
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
-  
+
   fmpz_poly_sample_sigma(f, n, sigma, randstate);
 
   fmpq_poly_t f_q; fmpq_poly_init(f_q);
@@ -27,16 +27,16 @@ int test_inv_approx(long n, long prec) {
   fmpq_poly_t f_inv1; fmpq_poly_init(f_inv1);
   uint64_t t1 = ggh_walltime(0);
   _fmpq_poly_invert_mod_cnf2pow_approx(f_inv1, f_q, n, prec);
-  t1 = ggh_walltime(t1);  
+  t1 = ggh_walltime(t1);
   printf("CATALIN t: %7.1f\n", t1/1000000.0);
 
   fmpq_poly_t f_inv2; fmpq_poly_init(f_inv2);
   uint64_t t2 = ggh_walltime(0);
   fmpq_poly_invert_mod_cnf2pow_approx(f_inv2, f_q, n, prec);
-  t2 = ggh_walltime(t2);  
+  t2 = ggh_walltime(t2);
   printf("ITERCAT t: %7.1f\n", t2/1000000.0);
 
-  fmpq_poly_t f_inv0; fmpq_poly_init(f_inv0);  
+  fmpq_poly_t f_inv0; fmpq_poly_init(f_inv0);
   uint64_t t0 = ggh_walltime(0);
   fmpz_poly_invert_mod_fmpq(f_inv0, f, modulus_z);
   t0 = ggh_walltime(t0);
