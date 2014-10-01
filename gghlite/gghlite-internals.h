@@ -261,7 +261,7 @@ void gghlite_print_times(const gghlite_t self);
 
 #define S_TO_SIGMA 0.398942280401433 /* 1/sqrt(2*pi) */
 
-dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, mpfr_t *c, dgsl_alg_t algorithm);
+dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t c, dgsl_alg_t algorithm);
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma);
 

@@ -85,12 +85,12 @@ struct _gghlite_struct {
   gghlite_pk_t pk;
 
   gghlite_clr_t g;
-  fmpq_poly_t g_inv;
   gghlite_enc_t z;
   gghlite_clr_t h;
   gghlite_clr_t a;
   gghlite_clr_t b[KAPPA][2];
 
+  dgsl_rot_mp_t *D_g;
 
   uint64_t t_is_prime;
   uint64_t t_is_subideal;

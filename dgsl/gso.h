@@ -18,7 +18,7 @@ typedef mpfr_mat_struct mpfr_mat_t[1];
 
 void mpfr_mat_init(mpfr_mat_t mat, long rows, long cols, mpfr_prec_t prec);
 void mpfr_mat_set_fmpz_mat(mpfr_mat_t rop, const fmpz_mat_t op);
-void mpfr_mat_set_fmpz_mat_rot(mpfr_mat_t rop, const fmpz_mat_t op);
+void mpfr_mat_set_fmpz_poly(mpfr_mat_t rop, const fmpz_poly_t op);
 void mpfr_mat_clear(mpfr_mat_t mat);
 
 static inline int mpfr_mat_is_empty(const mpfr_mat_t mat) {

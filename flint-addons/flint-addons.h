@@ -141,6 +141,12 @@ static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len)
   mpz_clear(tmp);
 }
 
+static inline void fmpz_poly_mulmod(fmpz_poly_t rop, const fmpz_poly_t op1, const fmpz_poly_t op2, const fmpz_poly_t modulus) {
+  fmpz_poly_mul(rop, op1, op2);
+  fmpz_poly_rem(rop, rop, modulus);
+}
+
+
 static inline void fmpq_poly_truncate_prec(fmpq_poly_t op, mp_bitcnt_t prec) {
   mpq_t tmp_q; mpq_init(tmp_q);
   mpf_t tmp_f; mpf_init2(tmp_f, prec);
@@ -156,7 +162,7 @@ static inline void fmpq_poly_truncate_prec(fmpq_poly_t op, mp_bitcnt_t prec) {
   mpq_clear(tmp_q);
 }
 
-static inline void fmpq_poly_mulmod(fmpq_poly_t rop, const fmpq_poly_t op1, const fmpq_poly_t op2, fmpq_poly_t modulus) {
+static inline void fmpq_poly_mulmod(fmpq_poly_t rop, const fmpq_poly_t op1, const fmpq_poly_t op2, const fmpq_poly_t modulus) {
   fmpq_poly_mul(rop, op1, op2);
   fmpq_poly_rem(rop, rop, modulus);
 }
@@ -340,7 +346,7 @@ static inline void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly
   }
 }
 
-static inline int fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t modulus) {
+static inline void fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t modulus) {
   mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
   mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
   fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
@@ -351,7 +357,6 @@ static inline int fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t m
  */
 
 static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1, fmpz_poly_t modulus) {
-  const long n = fmpz_poly_degree(modulus);
   fmpz_t det;
   fmpz_init(det);
   fmpz_poly_ideal_norm(det, g, modulus);
@@ -382,13 +387,11 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
 */
 
 static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t op, fmpz_poly_t modulus) {
-  fmpz_t det;
-  fmpz_init(det);
-
-  fmpz_poly_ideal_norm(det, op, modulus);
-
-  int r = fmpz_is_probabprime(det);
-  fmpz_clear(det);
+  fmpz_t norm;
+  fmpz_init(norm);
+  fmpz_poly_ideal_norm(norm, op, modulus);
+  int r = fmpz_is_probabprime(norm);
+  fmpz_clear(norm);
   return r;
 }
 
