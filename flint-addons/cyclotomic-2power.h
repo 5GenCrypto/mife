@@ -153,7 +153,6 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const 
     if(mpfr_cmp(norm, bound) <= 0)
       break;
   }
-  printf("\n");
   fmpq_poly_clear(tmp);
   fmpq_poly_clear(modulus);
   mpfr_clear(norm);
