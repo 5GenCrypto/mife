@@ -68,13 +68,16 @@ int main(int argc, char *argv[]) {
   mpfr_log2(max, max, MPFR_RNDN);
   mpfr_log2(acc, acc, MPFR_RNDN);
 
-  printf("\n  log(avg): %7.1f\n  log(max): %7.1f\n", mpfr_get_d(acc, MPFR_RNDN), mpfr_get_d(max, MPFR_RNDN));
 
-  for(int k=0; k<params->kappa; k++) 
+  const double bound = (1.0-mpfr_get_d(self->pk->ell_g, MPFR_RNDN)) * fmpz_sizeinbase(self->pk->q,2);
+
+  printf("\n  log(avg): %6.1f\n  log(max): %6.1f ?< %6.1f\n", mpfr_get_d(acc, MPFR_RNDN), mpfr_get_d(max, MPFR_RNDN), bound);
+
+  for(int k=0; k<params->kappa; k++)
       gghlite_enc_clear(u[k]);
 
   free(u);
-  
+
   gghlite_clear(self, 1);
 
   flint_randclear(randstate);
