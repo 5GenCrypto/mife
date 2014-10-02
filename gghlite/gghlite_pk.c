@@ -437,13 +437,14 @@ int gghlite_pk_check_sec(const gghlite_pk_t self) {
 
 
 
-void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask) {
+void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, uint64_t flags) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
 
   _gghlite_pk_initzero(self, lambda, kappa);
 
   self->rerand_mask = rerand_mask;
+  self->flags = flags;
 
   for(int log_n = 8; ; log_n++) {
     self->n = ((long)1)<<log_n;

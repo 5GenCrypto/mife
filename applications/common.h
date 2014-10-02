@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gmp.h>
+#include <gghlite/gghlite-defs.h>
 
 #define DEFAULT_KAPPA   2
 #define DEFAULT_LAMBDA 16
@@ -16,6 +17,8 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("####################################################################\n");
   printf("-l   security parameter λ > 0 (default: %d)\n", DEFAULT_LAMBDA);
   printf("-k   multi-linearity parameter k > 1 (default: %d)\n", DEFAULT_KAPPA);
+  printf("-f   skip some expensive tests (default: False)\n");
+  printf("-v   be more verbose (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   if (extra)
     printf("%s\n", extra);
@@ -25,6 +28,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
 struct _cmdline_params_struct{
   long lambda;
   long kappa;
+  uint64_t flags;
   mp_limb_t seed;
 };
 
@@ -47,9 +51,10 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
   params->kappa  =  DEFAULT_KAPPA;
   params->lambda =  DEFAULT_LAMBDA;
   params->seed   =  DEFAULT_SEED;
+  params->flags  =  GGHLITE_FLAGS_DEFAULT;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:s:")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:s:vf")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -59,6 +64,12 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
       break;
     case 's':
       params->seed = (long)atol(optarg);
+      break;
+    case 'f':
+      params->flags |= GGHLITE_FLAGS_SLOPPY;
+      break;
+    case 'v':
+      params->flags |= GGHLITE_FLAGS_VERBOSE;
       break;
     case ':':  /* without operand */
       print_help_and_exit(name, extra);

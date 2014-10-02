@@ -10,6 +10,12 @@
 typedef fmpz_mod_poly_t gghlite_enc_t;
 typedef fmpz_poly_t     gghlite_clr_t;
 
+typedef enum {
+  GGHLITE_FLAGS_DEFAULT  = 0x0,
+  GGHLITE_FLAGS_SLOPPY  =  0x1,
+  GGHLITE_FLAGS_VERBOSE =  0x2,
+} gghlite_flags_t;
+
 /**
    Maximum supported multi-linearity level.
 */
@@ -24,6 +30,7 @@ typedef fmpz_poly_t     gghlite_clr_t;
   - the security parameter `λ`
   - the multi-linearity parameter `κ ≤ KAPPA`
   - the rerandomisation mask such that if the `i`-th bit is set
+  - flags which control the behaviour of instance generation
     then rerandomisation elements for level `i+1` are generated
   - the dimension of the lattice `n`
   - the number of bits `ℓ` in each coefficient used for extraction
@@ -46,6 +53,7 @@ struct _gghlite_pk_struct {
   size_t lambda;
   size_t kappa;
   uint64_t rerand_mask;
+  uint64_t flags;
 
   long n;
   long ell;

@@ -126,16 +126,16 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
       fmpz_poly_sample_D(self->b[k][1], self->D_g, randstate);
       self->t_sample += ggh_walltime(t);
 
-#ifndef GGHLITE_SLOPPY
-      t = ggh_walltime(0);
-      if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1], modulus) != 0) {
-        fail[0]++;
-        self->t_is_subideal += ggh_walltime(t);
-        continue;
-      } else {
-        self->t_is_subideal += ggh_walltime(t);
+      if (!(self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
+        t = ggh_walltime(0);
+        if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1], modulus) != 0) {
+          fail[0]++;
+          self->t_is_subideal += ggh_walltime(t);
+          continue;
+        } else {
+          self->t_is_subideal += ggh_walltime(t);
+        }
       }
-#endif
 
       _fmpz_vec_set(B->coeffs+0, self->b[k][0]->coeffs, n);
       _fmpz_vec_set(B->coeffs+n, self->b[k][1]->coeffs, n);
@@ -247,17 +247,17 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
       fail[0]++;
       continue;
     }
-#ifndef GGHLITE_SLOPPY
-    /* 1. check if prime */
-    t = ggh_walltime(0);
-    if (!fmpz_poly_ideal_is_probaprime(self->g, modulus)) {
-      fail[1]++;
-      self->t_is_prime += ggh_walltime(t);
-      continue;
-    } else {
-      self->t_is_prime += ggh_walltime(t);
+    if(!(self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
+      /* 1. check if prime */
+      t = ggh_walltime(0);
+      if (!fmpz_poly_ideal_is_probaprime(self->g, modulus)) {
+        fail[1]++;
+        self->t_is_prime += ggh_walltime(t);
+        continue;
+      } else {
+        self->t_is_prime += ggh_walltime(t);
+      }
     }
-#endif
     /* 2. check norm of inverse */
     fmpq_poly_set_fmpz_poly(g_q, self->g);
     _fmpq_poly_invert_mod_cnf2pow_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);
@@ -319,9 +319,8 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->lambda);
   assert(self->pk->kappa);
 
-#ifdef GGHLITE_SLOPPY
-  fprintf(stderr, "#### WARNING: GGHLITE_SLOPPY is set.####\n");
-#endif
+  if (self->pk->flags & GGHLITE_FLAGS_SLOPPY)
+    fprintf(stderr, "#### WARNING: GGHLITE_FLAGS_SLOPPY is set.####\n");
 
   _gghlite_sample_g(self, randstate);
   _gghlite_sample_z(self, randstate);
@@ -340,9 +339,9 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
 }
 
 void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa,
-                  const uint64_t rerand_mask, flint_rand_t randstate) {
+                  const uint64_t rerand_mask, const uint64_t flags, flint_rand_t randstate) {
   _gghlite_zero(self);
-  gghlite_pk_init_params(self->pk, lambda, kappa, rerand_mask);
+  gghlite_pk_init_params(self->pk, lambda, kappa, rerand_mask, flags);
   gghlite_init_instance(self, randstate);
 }
 

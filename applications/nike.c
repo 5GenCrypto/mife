@@ -27,7 +27,8 @@ int main(int argc, char *argv[]) {
   uint64_t t = ggh_walltime(0);
 
   gghlite_t self;
-  gghlite_pk_init_params(self->pk, cmdline_params->lambda, cmdline_params->N-1, 1<<0);
+  gghlite_pk_init_params(self->pk, cmdline_params->lambda, cmdline_params->N-1, 1<<0,
+                         cmdline_params->flags);
   gghlite_print_params(self->pk);
   printf("\n---\n");
   gghlite_init_instance(self, randstate);
