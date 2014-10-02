@@ -426,12 +426,27 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   fmpq_add_si(tmp, tmp, -1);
   fmpq_poly_set_coeff_fmpq(x, 0, tmp);
   fmpq_poly_neg(x,x);
+  fmpq_clear(tmp);
+
+  /* TODO: check if this indeed has the right distribution, we are only getting
+     one sample, but still, might as well do this right.
+   */
+  fmpq_poly_t B_inv;
+  fmpq_poly_init(B_inv);
+  fmpq_poly_t B;
+  fmpq_poly_init(B);
+  fmpq_poly_set_fmpz_poly(B, self->B);
+  fmpq_poly_invert_mod_cnf2pow_approx(B_inv, B, n, self->prec);
+  fmpq_poly_sub(x, x, B_inv);
+  fmpq_poly_clear(B_inv);
+  fmpq_poly_clear(B);
 
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
   fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
   fmpz_poly_neg(rop, rop);
   fmpz_add_ui(rop->coeffs, rop->coeffs, 1);
 
+  fmpq_poly_clear(x);
   return 0;
 }
 
