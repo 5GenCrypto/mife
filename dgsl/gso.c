@@ -25,8 +25,9 @@ void mpfr_mat_init(mpfr_mat_t mat, long rows, long cols, mpfr_prec_t prec) {
 }
 
 void mpfr_mat_set_fmpz_poly(mpfr_mat_t rop, const fmpz_poly_t op) {
-  assert((rop->r == op->alloc) && (rop->c == op->alloc));
-  const long n = fmpz_poly_length(op);
+  assert(rop->r == rop->c);
+  assert(fmpz_poly_length(op) <= rop->r);
+  const long n = rop->r;
 
   mpz_t t_g;
   mpz_init(t_g);
@@ -34,6 +35,7 @@ void mpfr_mat_set_fmpz_poly(mpfr_mat_t rop, const fmpz_poly_t op) {
   fmpz_poly_t tmp;
   fmpz_poly_init(tmp);
   fmpz_poly_set(tmp, op);
+  fmpz_poly_realloc(tmp, rop->r);
 
   for(long i=0; i<n; i++) {
     for(long j=0; j<n; j++) {

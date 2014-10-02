@@ -216,7 +216,7 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
 
     fmpq_poly_mulmod(tmp, y, y, modulus);
     fmpq_poly_sub(tmp, tmp, f);
-    _fmpq_vec_2norm_mpfr(norm, tmp->coeffs, tmp->den, n);
+    _fmpq_vec_2norm_mpfr(norm, tmp->coeffs, tmp->den, tmp->length);
     mpfr_log2(tmp_f, norm, MPFR_RNDN);
 #ifndef GGHLITE_QUIET
     mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  i: %4d,  Δ=|sqrt(Σ)^2-Σ|: %6.2Rf", i, tmp_f);

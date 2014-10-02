@@ -392,15 +392,22 @@ int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, 
   fmpz_poly_t tmp_poly;
   fmpz_poly_init(tmp_poly);
   fmpz_poly_set(tmp_poly, self->B);
+  fmpz_poly_realloc(tmp_poly, n);
+  tmp_poly->length = n;
+
+  fmpz_poly_t tmp2;
+  fmpz_poly_init(tmp2);
 
   for(long i=0; i<n; i++) {
     self->D[i]->call(tmp_z, self->D[i], state); fmpz_set_mpz(tmp, tmp_z);
-    fmpz_poly_scalar_addmul_fmpz(rop, tmp_poly, tmp);
-    _fmpz_vec_rot_left_neg(rop->coeffs, rop->coeffs, n);
+    fmpz_poly_scalar_mul_fmpz(tmp2, tmp_poly, tmp);
+    fmpz_poly_add(rop, rop, tmp2);
+    _fmpz_vec_rot_left_neg(tmp_poly->coeffs, tmp_poly->coeffs, n);
   }
   fmpz_poly_clear(tmp_poly);
   fmpz_poly_add(rop, rop, self->c_z);
 
+  fmpz_poly_clear(tmp2);
   mpz_clear(tmp_z);
   fmpz_clear(tmp);
   return 0;

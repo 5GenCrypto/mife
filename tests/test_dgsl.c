@@ -14,13 +14,13 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
   fmpz_mat_t B;
   fmpz_mat_init(B, nrows, ncols);
   fmpz_mat_randtest(B, state, bits);
-  
+
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
 
   mpfr_t *c_ = _mpfr_vec_init(ncols, 53);
   mpfr_set_si(c_[0], c, MPFR_RNDN);
-  
+
   dgsl_mp_t *D = dgsl_mp_init(B, sigma_, c_, DGSL_INLATTICE);
 
   _mpfr_vec_clear(c_, ncols);
@@ -30,7 +30,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
   mpfr_t tmp, acc;
   mpfr_init(tmp);
   mpfr_init_set_ui(acc, 0, MPFR_RNDN);
-  
+
   for(size_t i=0; i<ntrials; i++) {
     D->call(v, D, state->gmp_state);
     _fmpz_vec_2norm_mpfr(tmp, v, ncols);
@@ -70,7 +70,7 @@ double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
 
   mpfr_t tmp;
   mpfr_init2(tmp, mpfr_get_prec(D->sigma));
-  
+
   fmpz_t tmp_z;
   fmpz_init(tmp_z);
 
@@ -90,7 +90,7 @@ double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
     norms[j] /= ntrials;
     norms[j] = sqrt(norms[j]);
   }
-  
+
   mpfr_clear(tmp);
   fmpz_clear(tmp_z);
   _fmpz_vec_clear(v, n);
@@ -162,7 +162,7 @@ double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, flint_rand_t state) {
 
   mpfr_t tmp;
   mpfr_init2(tmp, mpfr_get_prec(D->sigma));
-  
+
   fmpz_t tmp_z;
   fmpz_init(tmp_z);
 
@@ -178,17 +178,32 @@ double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, flint_rand_t state) {
   }
 
   norms[0] /= ntrials;
+
   for (size_t j=1; j<=n; j++) {
     norms[j] /= ntrials;
     norms[j] = sqrt(norms[j]);
   }
-  
+
   mpfr_clear(tmp);
   fmpz_clear(tmp_z);
   fmpz_poly_clear(v);
   return norms;
 }
 
+double max_min_norm_ratio(double *norms, long n, double *min, double *max) {
+  double min_norm = norms[1];
+  double max_norm = norms[1];
+  for (size_t j=1; j<=n; j++) {
+    if (norms[j] < min_norm)
+      min_norm = norms[j];
+    if (norms[j] > max_norm)
+      max_norm = norms[j];
+  }
+  *min = min_norm;
+  *max = max_norm;
+  double ratio = max_norm/min_norm;
+  return ratio;
+}
 
 int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, flint_rand_t state) {
   assert(ncols>0);
@@ -200,19 +215,25 @@ int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, flint_rand_
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   dgsl_rot_mp_t *D = dgsl_rot_mp_init(ncols, B, sigma_, NULL, DGSL_IDENTITY);
 
   double *norms = dist_rot_norms(D, ntrials, state);
+  double min; double max;
+  double ratio = max_min_norm_ratio(norms, ncols, &min, &max);
 
-  printf("ZZ^n::          n: %4ld, σ: %10.4lf :: log(E[|v|]): %8.2lf, log(E[|v_0|]): %8.2f, log(E[|v_{n-1}|]): %8.2lf",
-         ncols, sigma, log2(norms[0]), log2(norms[1]), log2(norms[ncols]));
+  printf("ZZ^n::          n: %4ld, log(σ): %6.2lf :: log(E[|v|]): %6.2lf, log(E[v_min]): %6.2f, log(E[|v_max|]): %6.2lf, log(E[v_max]/E[|v_min|]): %6.2lf",
+         ncols, log2(sigma), log2(norms[0]), log2(min), log2(max), log2(ratio));
 
   free(norms);
   dgsl_rot_mp_clear(D);
   mpfr_clear(sigma_);
   fmpz_poly_clear(B);
-  return 0;
+  if (ratio < 1.2)
+    return 0;
+  else
+    return 1;
 }
 
 int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntrials, flint_rand_t state, int gpv) {
@@ -224,7 +245,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   fmpz_poly_init(B);
 
   mpfr_t sigma_;
-  mpfr_init2(sigma_, 160);
+  mpfr_init2(sigma_, 80);
   mpfr_set_d(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
@@ -233,7 +254,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   mpfr_t sigma_p_;
   mpfr_init_set_d(sigma_p_, sigma_p, MPFR_RNDN);
   mpfr_mul_d(sigma_p_, sigma_p_, 0.398942280401433, MPFR_RNDN);
-  
+
   dgsl_rot_mp_t *D;
   if (gpv)
     D = dgsl_rot_mp_init(ncols, B, sigma_p_, NULL, DGSL_GPV_INLATTICE);
@@ -241,16 +262,22 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
     D = dgsl_rot_mp_init(ncols, B, sigma_p_, NULL, DGSL_INLATTICE);
 
   double *norms = dist_rot_norms(D, ntrials, state);
+  double min; double max;
+  double ratio = max_min_norm_ratio(norms, ncols, &min, &max);
 
-  printf("<g>:: n: %4ld, log(σ): %6.2lf, log(σ'): %6.2lf :: log(E[|v|]): %6.2lf ?< σ·sqrt(n): %6.2lf, log(E[|v_0|]): %6.2f, log(E[|v_{n-1}|]): %6.2lf gpv: %d",
-         ncols, log2(sigma), log2(sigma_p), log2(norms[0]), log2(sigma_p*sqrt(ncols)), log2(norms[1]), log2(norms[ncols]), gpv);
+  printf("<g>:: n: %4ld, log(σ): %6.2lf, log(σ'): %6.2lf", ncols, log2(sigma), log2(sigma_p));
+  printf(" p:: log(E[|v|]): %6.2lf ?< σ'·sqrt(n): %6.2lf,",log2(norms[0]), log2(sigma_p*sqrt(ncols)));
+  printf(" log(E[|v_min|]): %6.2lf, log(E[|v_max|]): %6.2lf, log(E[|v_max|/E[|v_min|]): %6.2lf, gpv: %d",log2(min), log2(max), log2(ratio), gpv);
 
   free(norms);
   dgsl_rot_mp_clear(D);
   mpfr_clear(sigma_);
   mpfr_clear(sigma_p_);
   fmpz_poly_clear(B);
-  return 0;
+  if (ratio < 1.2)
+    return 0;
+  else
+    return 1;
 }
 
 
@@ -307,26 +334,28 @@ int main(int argc, char *argv[]) {
   status += test_dgsl_run( test_dist_identity( 512,  512, 30.0, 1<<10, randstate) );
   printf("\n");
 
-  status += test_dgsl_run( test_dist_rot_identity(  10,  3.0, 1<<14, randstate) );
-  status += test_dgsl_run( test_dist_rot_identity( 100,  3.0, 1<<14, randstate) );
-  status += test_dgsl_run( test_dist_rot_identity( 100, 25.2, 1<<12, randstate) );
-  status += test_dgsl_run( test_dist_rot_identity( 512, 30.0, 1<<10, randstate) );
+  status += test_dgsl_run( test_dist_rot_identity(  16,    100000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_rot_identity(  32,  10000000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_rot_identity(  64,  10000000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_rot_identity( 128, 100000000.0, 1<<12, randstate) );
   printf("\n");
-  
-  status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,   100000.0, 1<<14, randstate, 0) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,   100000.0, 1<<14, randstate, 1) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0, 10000000.0, 1<<14, randstate, 0) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0, 10000000.0, 1<<14, randstate, 1) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0, 10000000.0, 1<<14, randstate, 0) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0, 10000000.0, 1<<14, randstate, 1) );
+
+  status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,    100000.0, 1<<12, randstate, 0) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0,  10000000.0, 1<<12, randstate, 0) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0,  10000000.0, 1<<12, randstate, 0) );
+  status += test_dgsl_run( test_dist_rot_inlattice(    128,  1000.0, 100000000.0, 1<<12, randstate, 0) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,    100000.0, 1<<12, randstate, 1) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0,  10000000.0, 1<<12, randstate, 1) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0,  10000000.0, 1<<12, randstate, 1) );
+  status += test_dgsl_run( test_dist_rot_inlattice(    128,  1000.0, 100000000.0, 1<<12, randstate, 1) );
   printf("\n");
-  
+
   status += test_dgsl_run( test_dist_inlattice(30, 30,  2,  1849.0, 1<<14, randstate) );
   status += test_dgsl_run( test_dist_inlattice(10, 10,  3,   255.0, 1<<14, randstate) );
   status += test_dgsl_run( test_dist_inlattice(13, 13,  4, 24145.0, 1<<14, randstate) );
   status += test_dgsl_run( test_dist_inlattice(20, 20, 10, 24145.0, 1<<14, randstate) );
   printf("\n");
-  
+
   {
     long   M[16] = {-1, 0,-1,-1,
                      5,-7,-1,-8,
