@@ -169,16 +169,13 @@ static inline void fmpq_poly_mulmod(fmpq_poly_t rop, const fmpq_poly_t op1, cons
 
 
 
-static inline void fmpq_poly_invert_mod(fmpq_poly_t f_inv, fmpq_poly_t f, const fmpz_poly_t g) {
+static inline void fmpq_poly_invert_mod(fmpq_poly_t f_inv, const fmpq_poly_t f, const fmpq_poly_t g) {
   fmpq_poly_t r; fmpq_poly_init(r);
   fmpq_poly_t t; fmpq_poly_init(t);
 
-  fmpq_poly_t g_; fmpq_poly_init(g_); fmpq_poly_set_fmpz_poly(g_, g);
-
-  fmpq_poly_xgcd(r, f_inv, t, f, g_);
+  fmpq_poly_xgcd(r, f_inv, t, f, g);
   assert(fmpq_poly_is_one(r));
 
-  fmpq_poly_clear(g_);
   fmpq_poly_clear(t);
   fmpq_poly_clear(r);
 }

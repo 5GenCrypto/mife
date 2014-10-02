@@ -139,7 +139,7 @@ int test_dist_identity(long nrows, long ncols, double sigma, size_t ntrials, fli
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
-  /* mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN); */
+  mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   dgsl_mp_t *D = dgsl_mp_init(B, sigma_, NULL, DGSL_DETECT);
 
@@ -255,6 +255,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   fmpz_poly_sample_sigma(B, ncols, sigma_, state);
 
   mpfr_t sigma_p_;
+  mpfr_init2(sigma_p_, 80);
   mpfr_init_set_d(sigma_p_, sigma_p, MPFR_RNDN);
   mpfr_mul_d(sigma_p_, sigma_p_, 0.398942280401433, MPFR_RNDN);
 

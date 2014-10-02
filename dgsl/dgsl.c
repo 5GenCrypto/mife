@@ -338,7 +338,7 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
     fmpz_poly_init_cyc2pow_modulus(self->modulus_z, n);
 
     fmpq_poly_init(self->sigma_sqrt);
-    long r= ceil(2*sqrt(log2(n)));
+    long r= 2*ceil(sqrt(log(n)));
 
     _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec);
     mpfr_init2(self->r_f, self->prec);
@@ -425,9 +425,11 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   fmpq_poly_get_coeff_fmpq(tmp, x, 0);
   fmpq_add_si(tmp, tmp, -1);
   fmpq_poly_set_coeff_fmpq(x, 0, tmp);
+  fmpq_poly_neg(x,x);
 
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
   fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
+  fmpz_poly_neg(rop, rop);
   fmpz_add_ui(rop->coeffs, rop->coeffs, 1);
 
   return 0;
@@ -439,7 +441,9 @@ int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_r
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
   fmpq_poly_mulmod(x, self->sigma_sqrt, x, self->modulus_q);
+  fmpq_poly_neg(x, x);
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
+  fmpz_poly_neg(rop, rop);
   fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
   return 0;
 }
@@ -478,8 +482,10 @@ void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const m
   const long n = fmpq_poly_length(x);
   const size_t tau = (ceil(2*sqrt(log2((double)n))) > 3) ? ceil(2*sqrt(log2((double)n))) : 3;
 
+  fmpz_poly_zero(rop);
+
   for(int i=0; i<n; i++) {
-    fmpq_poly_get_coeff_mpq(xi_q, x, 0);
+    fmpq_poly_get_coeff_mpq(xi_q, x, i);
     mpf_set_q(xi_f, xi_q);
     mpfr_set_f(xi, xi_f, MPFR_RNDN);
 
@@ -542,45 +548,55 @@ void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, gmp_randstate_t
 }
 
 /**
-   sqrt(Σ_2) with Σ_2 = Σ - Σ_1 = σ^2·g^-1·g^-T - r^2·I
+   sqrt(Σ_2) with Σ_2 = Σ - Σ_1 = σ^2·g^-T·g^-1 - r^2·I
 */
 
 void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma, const int r, const long n, const mpfr_prec_t prec) {
-  fmpq_t tmp;
-  fmpq_init(tmp);
 
-  mpf_t tmp_f;
-  mpq_t tmp_q;
-  mpf_init2(tmp_f, mpfr_get_prec(sigma));
-  mpq_init(tmp_q);
+  fmpq_poly_t modulus;
+  fmpq_poly_init_cyc2pow_modulus(modulus, n);
 
   fmpq_poly_zero(rop);
 
-  fmpq_set_si(tmp, r, 1);
-  fmpq_mul(tmp, tmp, tmp);
-  fmpq_neg(tmp, tmp);
-  fmpq_poly_set_coeff_fmpq(rop, 0, tmp);
+  fmpq_t r_q2;
+  fmpq_init(r_q2);
+  fmpq_set_si(r_q2, r, 1);
+  fmpq_mul(r_q2, r_q2, r_q2);
+  fmpq_neg(r_q2, r_q2);
+  fmpq_poly_set_coeff_fmpq(rop, 0, r_q2);
+  fmpq_clear(r_q2);
 
-  mpfr_get_f(tmp_f, sigma, MPFR_RNDN);
-  mpq_set_f(tmp_q, tmp_f);
-  fmpq_set_mpq(tmp, tmp_q);
-  fmpq_pow_si(tmp, tmp, 2);
-  mpf_clear(tmp_f);
-  mpq_clear(tmp_q);
 
-  fmpq_poly_t g_q;
-  fmpq_poly_init(g_q);
+  fmpq_poly_t g_q; fmpq_poly_init(g_q);
   fmpq_poly_set_fmpz_poly(g_q, g);
-  fmpq_poly_t g_inv;
-  fmpq_poly_init(g_inv);
+
+  fmpq_poly_t g_inv; fmpq_poly_init(g_inv);
   fmpq_poly_invert_mod_cnf2pow_approx(g_inv, g_q, n, prec);
-  fmpq_poly_mulmod_cnf2pow_transpose(g_inv, g_inv, n);
-  fmpq_poly_scalar_mul_fmpq(g_inv, g_inv, tmp);
+
+  fmpq_poly_t g_inv_t;
+  fmpq_poly_init(g_inv_t);
+  fmpq_poly_transpose_cnf2pow(g_inv_t, g_inv, n);
+  fmpq_poly_mulmod(g_inv, g_inv_t, g_inv, modulus);
+
+  fmpq_t sigma2;
+  fmpq_init(sigma2);
+  mpf_t sigma2_f;  mpf_init2(sigma2_f, mpfr_get_prec(sigma));
+  mpq_t sigma2_q;  mpq_init(sigma2_q);
+  mpfr_get_f(sigma2_f, sigma, MPFR_RNDN);
+  mpq_set_f(sigma2_q, sigma2_f);
+  fmpq_set_mpq(sigma2, sigma2_q);
+  fmpq_mul(sigma2, sigma2, sigma2);
+  mpf_clear(sigma2_f);
+  mpq_clear(sigma2_q);
+  fmpq_poly_scalar_mul_fmpq(g_inv, g_inv, sigma2);
+  fmpq_clear(sigma2);
+
   fmpq_poly_add(rop, rop, g_inv);
 
   fmpq_poly_sqrt_mod_cnf2pow_approx(rop, rop, n, 2*prec, prec);
 
   fmpq_poly_clear(g_q);
   fmpq_poly_clear(g_inv);
-  fmpq_clear(tmp);
+  fmpq_poly_clear(g_inv_t);
+  fmpq_poly_clear(modulus);
 }
