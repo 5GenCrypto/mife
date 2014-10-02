@@ -21,6 +21,7 @@ missing
 /gghlite_params
 /gghlite_instance
 /gghlite_noise_dist
+/gghlite_false_friends
 /nike
 */.dirstamp
 */*.lo

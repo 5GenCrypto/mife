@@ -70,6 +70,44 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   }
 }
 
+int gghlite_is_zero(gghlite_pk_t self, fmpz_mod_poly_t op) {
+  fmpz_mod_poly_t t;
+  gghlite_enc_init(t, self);
+  fmpz_mod_poly_mulmod(t, self->pzt, op, self->modulus);
+
+  mpfr_t norm;
+  mpfr_init2(norm, _gghlite_prec(self));
+  _fmpz_vec_2norm_mpfr(norm, t->coeffs, self->n);
+  gghlite_enc_clear(t);
+
+
+  mpfr_t bound;
+  mpfr_init2(bound, _gghlite_prec(self));
+  mpz_t q_z;
+  mpz_init(q_z);
+  fmpz_get_mpz(q_z, self->q);
+  mpfr_set_z(bound, q_z, MPFR_RNDN);
+  mpz_clear(q_z);
+
+  mpfr_t ex;
+  mpfr_init2(ex, _gghlite_prec(self));
+  mpfr_set_ui(ex, 1, MPFR_RNDN);
+  mpfr_sub(ex, ex, self->ell_q, MPFR_RNDN);
+  mpfr_pow(bound, bound, ex, MPFR_RNDN);
+  mpfr_clear(ex);
+
+  int r = mpfr_cmp(norm, bound);
+
+  mpfr_clear(bound);
+  mpfr_clear(norm);
+
+  if (r<=0)
+    return 1;
+  else
+    return 0;
+}
+
+
 void gghlite_print_params(const gghlite_pk_t self) {
   assert(self->lambda);
   assert(self->kappa);
@@ -105,4 +143,3 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_mul_ui(par, par, self->kappa*2 + 1 + 1, MPFR_RNDN);
   printf("    |par|: %8.2f MB\n",mpfr_get_d(par, MPFR_RNDN)/8.0/1024.0/1024.0);
 }
-

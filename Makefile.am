@@ -27,7 +27,7 @@ include_HEADERS = dgsl/dgsl.h dgsl/gso.h gghlite/gghlite.h gghlite/gghlite-defs.
 
 MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libdgsl.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
 
-bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike test_misc
+bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike test_misc gghlite_false_friends
 
 gghlite_params_SOURCES = applications/gghlite_params.c applications/common.h
 gghlite_params_LDADD = $(MY_PROGRAM_LDADD)
@@ -40,6 +40,10 @@ gghlite_instance_LDFLAGS = -no-install
 gghlite_noise_dist_SOURCES = applications/gghlite_noise_dist.c applications/common.h
 gghlite_noise_dist_LDADD = $(MY_PROGRAM_LDADD)
 gghlite_noise_dist_LDFLAGS = -no-install
+
+gghlite_false_friends_SOURCES = applications/gghlite_false_friends.c applications/common.h
+gghlite_false_friends_LDADD = $(MY_PROGRAM_LDADD)
+gghlite_false_friends_LDFLAGS = -no-install
 
 nike_SOURCES = applications/nike.c applications/nike.h
 nike_LDADD = $(MY_PROGRAM_LDADD)

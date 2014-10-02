@@ -208,6 +208,15 @@ static inline void gghlite_mult(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_
 void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
 
 /**
+   Return 1 if op is an encoding of zero at level κ
+
+   :param self:      initialise GGHLite public key
+   :param op:        valid encoding at level-`k`
+*/
+
+int gghlite_is_zero(gghlite_pk_t self, gghlite_enc_t op);
+
+/**
    Check if security constraints are satisfied.
 
    :param self:      initialise GGHLite public key
