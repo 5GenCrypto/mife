@@ -57,7 +57,8 @@ typedef struct _dgsl_mp_t{
 } dgsl_mp_t;
 
 /**
-   @param B basis matrix (copied), if matrix is 1 x n it is assumed that it represents a rotational basis mod X^n + 1
+   @param B basis matrix (copied), if matrix is 1 x n it is assumed that it
+          represents a rotational basis mod X^n + 1
    @param sigma Gaussian width parameter (copied)
    @param c center
    @param algorithm
@@ -67,21 +68,30 @@ dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const dgsl_
 
 dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm);
 
-/**
-   Simple sampling when B is the identity
-
-   @param rop return value (pre-allocated)
-   @param self sampler
-   @param state entropy source
-
-*/
 int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
 int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
+/**
+   Return a fresh sample when B is the identity
+
+   @param rop return value (pre-allocated)
+   @param self sampler with self->call == dgsl_mp_call_identity
+   @param state entropy source
+*/
+
 int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
+
+/**
+   Return a fresh sample when B is the identity
+
+   @param rop return value (pre-allocated)
+   @param self sampler with self->call == dgsl_mp_call_identity
+   @param state entropy source
+*/
+
 int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
 void dgsl_mp_clear(dgsl_mp_t *self);
