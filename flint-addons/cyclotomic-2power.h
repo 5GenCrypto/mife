@@ -230,7 +230,7 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
       break;
   }
 #ifndef GGHLITE_QUIET
-  printf("\n");
+  fprintf(stderr, "\n");
 #endif
   mpfr_clear(tmp_f);
   fmpq_poly_set(f_sqrt, y);
