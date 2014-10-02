@@ -17,6 +17,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   mpfr_t *c_ = _mpfr_vec_init(ncols, 53);
   mpfr_set_si(c_[0], c, MPFR_RNDN);
@@ -47,7 +48,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
   double rght = mpfr_get_d(tmp, MPFR_RNDN);
   double quality = fabs(log2(left/rght));
 
-  printf(" B+c:: m: %4ld, n: %4ld, bits: %3ld, σ: %10.4lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f", nrows, ncols, bits, sigma, left, rght, quality);
+  printf(" B+c:: m: %4ld, n: %4ld, bits: %3ld, log(σ): %6.2lf :: want: %8.2lf, have: %8.2lf, |log₂(want/have)|: %8.4f", nrows, ncols, bits, log2(sigma), left, rght, quality);
 
   dgsl_mp_clear(D);
   _fmpz_vec_clear(v, ncols);
@@ -111,13 +112,14 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+  mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   dgsl_mp_t *D = dgsl_mp_init(B, sigma_, NULL, DGSL_INLATTICE);
 
   double *norms = dist_norms(D, ntrials, state);
 
-  printf("  B:: m: %4ld, n: %4ld, bits: %3ld, σ: %10.4lf :: log(E[|v|]): %8.2lf, log(E[|v_0|]): %8.2f, log(E[|v_{n-1}|]): %8.2lf",
-         nrows, ncols, bits, sigma, log2(norms[0]), log2(norms[1]), log2(norms[ncols]));
+  printf("  B:: m: %4ld, n: %4ld, bits: %3ld, log(σ): %6.2lf :: log(E[|v|]): %8.2lf, log(E[|v_0|]): %8.2f, log(E[|v_{n-1}|]): %8.2lf",
+         nrows, ncols, bits, log2(sigma), log2(norms[0]), log2(norms[1]), log2(norms[ncols]));
 
   free(norms);
   dgsl_mp_clear(D);
@@ -137,13 +139,14 @@ int test_dist_identity(long nrows, long ncols, double sigma, size_t ntrials, fli
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+  /* mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN); */
 
   dgsl_mp_t *D = dgsl_mp_init(B, sigma_, NULL, DGSL_DETECT);
 
   double *norms = dist_norms(D, ntrials, state);
 
-  printf("ZZ^n:: m: %4ld, n: %4ld, σ: %10.4lf :: log(E[|v|]): %8.2lf, log(E[|v_0|]): %8.2f, log(E[|v_{n-1}|]): %8.2lf",
-         nrows, ncols, sigma, log2(norms[0]), log2(norms[1]), log2(norms[ncols]));
+  printf("ZZ^n:: m: %4ld, n: %4ld, log(σ): %6.2lf :: log(E[|v|]): %6.2lf, log(E[|v_0|]): %6.2f, log(E[|v_{n-1}|]): %6.2lf",
+         nrows, ncols, log2(sigma), log2(norms[0]), log2(norms[1]), log2(norms[ncols]));
 
   free(norms);
   dgsl_mp_clear(D);
@@ -328,10 +331,10 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
 
-  status += test_dgsl_run( test_dist_identity(  10,   10,  3.0, 1<<14, randstate) );
-  status += test_dgsl_run( test_dist_identity( 100,  100,  3.0, 1<<14, randstate) );
-  status += test_dgsl_run( test_dist_identity( 100,  100, 25.2, 1<<12, randstate) );
-  status += test_dgsl_run( test_dist_identity( 512,  512, 30.0, 1<<10, randstate) );
+  status += test_dgsl_run( test_dist_identity(  16,  16,    100000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_identity(  32,  32,  10000000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_identity(  64,  64,  10000000.0, 1<<12, randstate) );
+  status += test_dgsl_run( test_dist_identity( 128, 128, 100000000.0, 1<<12, randstate) );
   printf("\n");
 
   status += test_dgsl_run( test_dist_rot_identity(  16,    100000.0, 1<<12, randstate) );
@@ -344,6 +347,8 @@ int main(int argc, char *argv[]) {
   status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0,  10000000.0, 1<<12, randstate, 0) );
   status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0,  10000000.0, 1<<12, randstate, 0) );
   status += test_dgsl_run( test_dist_rot_inlattice(    128,  1000.0, 100000000.0, 1<<12, randstate, 0) );
+  printf("\n");
+
   status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,    100000.0, 1<<12, randstate, 1) );
   status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0,  10000000.0, 1<<12, randstate, 1) );
   status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0,  10000000.0, 1<<12, randstate, 1) );
