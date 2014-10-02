@@ -20,6 +20,11 @@ static inline void fmpq_poly_init_cyc2pow_modulus(fmpq_poly_t f, const long n) {
 static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, mpfr_prec_t prec) {
   int i;
 
+  if(f_inv == f)
+    ggh_die("_fmpq_poly_invert_mod_cnf2pow_approx does not support parameter aliasing");
+
+  fmpq_poly_zero(f_inv);
+
   fmpq_poly_t V;
   fmpq_poly_init(V);
   fmpq_poly_set(V, f);
@@ -89,8 +94,7 @@ static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const
     }
     fmpq_poly_truncate(V,deg/2+1);
 
-    /* V2 = Inverse3(V,q,n/2) */
-    _fmpq_poly_invert_mod_cnf2pow_approx(V2,V,n/2, prec);
+    _fmpq_poly_invert_mod_cnf2pow_approx(V2, V, n/2, prec);
 
     deg = fmpq_poly_degree(V2);
     /* Te=G*Se, To = G*So */
@@ -134,11 +138,15 @@ static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const
   fmpq_poly_clear(V);
 }
 
-static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, int n, mpfr_prec_t prec) {
+static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t rop, const fmpq_poly_t f, int n, mpfr_prec_t prec) {
   fmpq_poly_t tmp;
   fmpq_poly_init(tmp);
   fmpq_poly_t modulus;
   fmpq_poly_init_cyc2pow_modulus(modulus, n);
+
+
+  fmpq_poly_t f_inv;
+  fmpq_poly_init(f_inv);
 
   mpfr_t norm;
 
@@ -186,6 +194,9 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const 
   mpfr_clear(tmp_f);
 #endif
 
+  fmpq_poly_set(rop, f_inv);
+  fmpq_poly_clear(f_inv);
+
   fmpq_poly_clear(tmp);
   fmpq_poly_clear(modulus);
   mpfr_clear(norm);
@@ -196,13 +207,11 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const 
 
 static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t boundbits) {
 
-  fmpq_poly_t y; fmpq_poly_init(y); fmpq_poly_set(y, f);
-  fmpq_poly_t z; fmpq_poly_init(z); fmpq_poly_set_coeff_si(z, 0, 1);
-
+  fmpq_poly_t y;      fmpq_poly_init(y);
   fmpq_poly_t y_next; fmpq_poly_init(y_next);
-  fmpq_poly_t z_next; fmpq_poly_init(z_next);
+  fmpq_poly_set(y, f);
 
-  fmpq_poly_t tmp; fmpq_poly_init(tmp);
+  fmpq_poly_t f_approx; fmpq_poly_init(f_approx);
 
   fmpq_poly_t modulus;
   fmpq_poly_init_cyc2pow_modulus(modulus, n);
@@ -210,69 +219,54 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
   mpfr_t norm;
   mpfr_init2(norm, prec);
 
-  mpfr_t tmp_f;
-  mpfr_init2(tmp_f, prec);
-
   mpfr_t bound;
   mpfr_init2(bound, prec);
   mpfr_set_ui(bound, 1, MPFR_RNDN);
   mpfr_div_2exp(bound, bound, boundbits, MPFR_RNDN);
 
 #ifndef GGHLITE_QUIET
+  mpfr_t log_f;
+  mpfr_init2(log_f, prec);
   uint64_t t = ggh_walltime(0);
 #endif
+
   for(long i=0; ; i++) {
-#if 0
-    fmpq_poly_set(y_next, z);
-    fmpq_poly_invert_mod(y_next, y_next, modulus_z);
-    /* _fmpq_poly_invert_mod_cnf2pow_approx(y_next, y_next, n, 2*prec); */
-    fmpq_poly_add(y_next, y_next, y);
-    fmpq_poly_scalar_div_si(y_next, y_next, 2);
-    fmpq_poly_truncate_prec(y_next, prec);
-
-    fmpq_poly_set(z_next, y);
-    fmpq_poly_invert_mod(z_next, z_next, modulus_z);
-    /* _fmpq_poly_invert_mod_cnf2pow_approx(z_next, z_next, n, 2*prec); */
-    fmpq_poly_add(z_next, z_next, z);
-    fmpq_poly_scalar_div_si(z_next, z_next, 2);
-    fmpq_poly_truncate_prec(z_next, prec);
-
-    fmpq_poly_set(y, y_next);
-    fmpq_poly_set(z, z_next);
-#else
-    fmpq_poly_invert_mod(y_next, y, modulus);
+    /** The Babylonian Method seems to converge faster than Denman-Beavers for
+        our examples **/
+    _fmpq_poly_invert_mod_cnf2pow_approx(y_next, y, n, prec);
     fmpq_poly_mulmod(y_next, f, y_next, modulus);
     fmpq_poly_add(y_next, y_next, y);
     fmpq_poly_scalar_div_si(y_next, y_next, 2);
-    fmpq_poly_truncate_prec(y_next, prec);
     fmpq_poly_set(y, y_next);
-#endif
-    fmpq_poly_mulmod(tmp, y, y, modulus);
-    fmpq_poly_sub(tmp, tmp, f);
-    _fmpq_vec_2norm_mpfr(norm, tmp->coeffs, tmp->den, tmp->length);
-    mpfr_log2(tmp_f, norm, MPFR_RNDN);
+
+    fmpq_poly_mulmod(f_approx, y, y, modulus);
+    fmpq_poly_sub(f_approx, f_approx, f);
+    _fmpq_vec_2norm_mpfr(norm, f_approx->coeffs, f_approx->den, f_approx->length);
+
 #ifndef GGHLITE_QUIET
-    mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  i: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", i, tmp_f);
-    mpfr_log2(tmp_f, bound, MPFR_RNDN);
-    mpfr_fprintf(stderr, " <? %6.2Rf, ", tmp_f);
+    mpfr_log2(log_f, norm, MPFR_RNDN);
+    mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  i: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", i, log_f);
+    mpfr_log2(log_f, bound, MPFR_RNDN);
+    mpfr_fprintf(stderr, " <? %6.2Rf, ", log_f);
     fprintf(stderr, "t: %8.2fs",ggh_walltime(t)/1000000.0);
     fflush(0);
 #endif
-    fflush(0);
+
     if(mpfr_cmp(norm, bound) < 0)
       break;
   }
+
 #ifndef GGHLITE_QUIET
   fprintf(stderr, "\n");
+  mpfr_clear(log_f);
 #endif
-  mpfr_clear(tmp_f);
   fmpq_poly_set(f_sqrt, y);
   mpfr_clear(bound);
   mpfr_clear(norm);
+  fmpq_poly_clear(f_approx);
+  fmpq_poly_clear(y);
+  fmpq_poly_clear(y_next);
   fmpq_poly_clear(modulus);
-  fmpq_poly_clear(tmp);
-  fmpq_poly_clear(y); fmpq_poly_clear(y_next);
-  fmpq_poly_clear(z); fmpq_poly_clear(z_next);
 }
 
 /*
