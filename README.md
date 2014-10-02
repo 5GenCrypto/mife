@@ -15,7 +15,9 @@ We ship these libraries as submodules.
     git clone --recursive https://bitbucket.org/malb/gghlite-flint
     cd gghlite-flint
     mkdir m4
+    mkdir dgs/m4
     autoreconf -i
+    export CFLAGS="-O3"
     ./configure
     make -j2
 
