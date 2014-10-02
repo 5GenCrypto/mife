@@ -82,7 +82,7 @@ void gghlite_print_params(const gghlite_pk_t self) {
   printf("        λ: %7ld\n",lambda);
   printf("        k: %7ld\n",kappa);
   printf("        n: %7ld\n",n);
-  printf("   log(q): %7ld (check: %d)\n", fmpz_sizeinbase(self->q, 2), gghlite_pk_check_sec(self));
+  printf("   log(q): %7ld ℓ_q:  %8.6f\n", fmpz_sizeinbase(self->q, 2), mpfr_get_d(self->ell_q, MPFR_RNDN));
   printf("   log(σ): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
   printf(" log(ℓ_g): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
   printf("  log(σ'): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
