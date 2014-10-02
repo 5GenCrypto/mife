@@ -1,4 +1,4 @@
-# GGHLite Implementation #
+# An Implementation of GGHLite #
 
 ## Prerequisits ##
 
@@ -12,8 +12,8 @@ We ship these libraries as submodules.
 
 ## Installation ##
 
-    git clone --recursive https://bitbucket.org/malb/ggh-flint
-    cd ggh-flint
+    git clone --recursive https://bitbucket.org/malb/gghlite-flint
+    cd gghlite-flint
     mkdir m4
     autoreconf -i
     ./configure
