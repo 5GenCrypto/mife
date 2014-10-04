@@ -130,8 +130,8 @@ static inline void _fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t f_inv, const
 
   /* free memory */
   fmpq_clear(tmp);
-  fmpq_poly_clear(Se);
   fmpq_poly_clear(So);
+  fmpq_poly_clear(Se);
   fmpq_poly_clear(V2);
   fmpq_poly_clear(F);
   fmpq_poly_clear(U);
@@ -144,13 +144,12 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t rop, const fm
   fmpq_poly_t modulus;
   fmpq_poly_init_cyc2pow_modulus(modulus, n);
 
-
   fmpq_poly_t f_inv;
   fmpq_poly_init(f_inv);
 
-  mpfr_t norm;
-
   const mpfr_prec_t realprec = (2*prec < 53) ? 53 : 2*prec;
+
+  mpfr_t norm;
   mpfr_init2(norm, realprec);
 
   fmpq_t c;
@@ -197,20 +196,24 @@ static inline void fmpq_poly_invert_mod_cnf2pow_approx(fmpq_poly_t rop, const fm
   fmpq_poly_set(rop, f_inv);
   fmpq_poly_clear(f_inv);
 
-  fmpq_poly_clear(tmp);
-  fmpq_poly_clear(modulus);
-  mpfr_clear(norm);
   mpfr_clear(bound);
   fmpq_clear(c);
+  mpfr_clear(norm);
+  fmpq_poly_clear(modulus);
+  fmpq_poly_clear(tmp);
 }
 
-
+// TODO: allow flag to choose method
 static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t boundbits) {
 
   fmpq_poly_t y;      fmpq_poly_init(y);
   fmpq_poly_t y_next; fmpq_poly_init(y_next);
   fmpq_poly_set(y, f);
 
+  fmpq_poly_t z; fmpq_poly_init(z);
+  fmpq_poly_t z_next; fmpq_poly_init(z_next);
+  fmpq_poly_set_coeff_si(z, 0, 1);
+  
   fmpq_poly_t f_approx; fmpq_poly_init(f_approx);
 
   fmpq_poly_t modulus;
@@ -230,19 +233,38 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
   uint64_t t = ggh_walltime(0);
 #endif
 
-  for(long i=0; ; i++) {
-    /** The Babylonian Method seems to converge faster than Denman-Beavers for
-        our examples **/
+  long i = 0;
+  for(i=0; i<100; i++) {
+#if 1
+#pragma omp parallel sections
+    {
+#pragma omp section
+      {
+        _fmpq_poly_invert_mod_cnf2pow_approx(y_next, z, n, prec);
+        fmpq_poly_add(y_next, y_next, y);
+        fmpq_poly_scalar_div_si(y_next, y_next, 2);
+      }
+#pragma omp section
+      {
+        _fmpq_poly_invert_mod_cnf2pow_approx(z_next, y, n, 2*prec);
+        fmpq_poly_add(z_next, z_next, z);
+        fmpq_poly_scalar_div_si(z_next, z_next, 2);
+      }
+    }
+    fmpq_poly_set(y, y_next);
+    fmpq_poly_set(z, z_next);
+#else
+    /** The Babylonian Method is more forgiving about precision **/
     _fmpq_poly_invert_mod_cnf2pow_approx(y_next, y, n, prec);
     fmpq_poly_mulmod(y_next, f, y_next, modulus);
     fmpq_poly_add(y_next, y_next, y);
     fmpq_poly_scalar_div_si(y_next, y_next, 2);
     fmpq_poly_set(y, y_next);
-
+#endif
     fmpq_poly_mulmod(f_approx, y, y, modulus);
     fmpq_poly_sub(f_approx, f_approx, f);
     _fmpq_vec_2norm_mpfr(norm, f_approx->coeffs, f_approx->den, f_approx->length);
-
+    
 #ifndef GGHLITE_QUIET
     mpfr_log2(log_f, norm, MPFR_RNDN);
     mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  i: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", i, log_f);
@@ -256,17 +278,23 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
       break;
   }
 
+  if(i==100)
+    ggh_die("sqrt not converging fast enough, consider increasing precision or use Babylonian method.");
+  
 #ifndef GGHLITE_QUIET
   fprintf(stderr, "\n");
   mpfr_clear(log_f);
 #endif
   fmpq_poly_set(f_sqrt, y);
+
   mpfr_clear(bound);
   mpfr_clear(norm);
-  fmpq_poly_clear(f_approx);
-  fmpq_poly_clear(y);
-  fmpq_poly_clear(y_next);
   fmpq_poly_clear(modulus);
+  fmpq_poly_clear(f_approx);
+  fmpq_poly_clear(y_next);
+  fmpq_poly_clear(y);
+  fmpq_poly_clear(z_next);
+  fmpq_poly_clear(z);
 }
 
 /*
@@ -293,8 +321,8 @@ static inline void fmpq_poly_transpose_cnf2pow(fmpq_poly_t fT, const fmpq_poly_t
   fmpq_neg(t0, t0);
   fmpq_poly_set_coeff_fmpq(fT, n/2, t0);
 
-  fmpq_clear(t0);
   fmpq_clear(t1);
+  fmpq_clear(t0);
 }
 
 #endif /* _CYCLOTOMIC_2POWER_H_ */
