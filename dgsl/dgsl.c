@@ -456,9 +456,9 @@ int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_r
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
   fmpq_poly_mulmod(x, self->sigma_sqrt, x, self->modulus_q);
-  fmpq_poly_neg(x, x);
+  /* fmpq_poly_neg(x, x); */
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
-  fmpz_poly_neg(rop, rop);
+  /* fmpz_poly_neg(rop, rop); */
   fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
   return 0;
 }
