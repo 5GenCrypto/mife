@@ -81,31 +81,22 @@ int main(int argc, char *argv[]) {
   fmpz_poly_init(g);
 
   mpfr_t sigma;
-  mpfr_init2(sigma, prec);
+  mpfr_init2(sigma, 80);
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
 
-  fmpz_poly_sample_sigma(g, n, sigma, randstate);
-
-  mpfr_t sigma_p;
-  mpfr_init2(sigma_p, prec);
-  mpfr_set_d(sigma_p, _gghlite_sigma_p(n), MPFR_RNDN);
-
-  fmpq_poly_t c;
-  fmpq_poly_init(c);
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, g, sigma_p, c, DGSL_INLATTICE);
-
-  fmpz_poly_t r;
-  fmpz_poly_init(r);
-
-
-   for(size_t i=0; i<4; i++) {
-    D->call(r, D, randstate->gmp_state);
-   }
-
-  fmpz_poly_clear(r);
-  fmpq_poly_clear(c);
-  dgsl_rot_mp_clear(D);
-  mpfr_clear(sigma_p);
+  fmpz_poly_t modulus;
+  fmpz_poly_init_cyc2pow_modulus(modulus, n);
+  
+  uint64_t t = ggh_walltime(0);
+  for(size_t i=0; i<prec; i++) {
+    printf("\ri: %3d",i);
+    fflush(0);
+    fmpz_poly_sample_sigma(g, n, sigma, randstate);
+    fmpz_poly_ideal_is_probaprime(g, modulus);
+  }
+  t = ggh_walltime(t);
+  printf("\nDONE: n: %5d, t: %8.6fs\n", t/1000000.0/prec);
+  
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
   flint_randclear(randstate);
