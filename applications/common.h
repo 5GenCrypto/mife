@@ -8,7 +8,7 @@
 #include <gghlite/gghlite-defs.h>
 
 #define DEFAULT_KAPPA   2
-#define DEFAULT_LAMBDA 16
+#define DEFAULT_LAMBDA 24
 #define DEFAULT_SEED    0
 
 static inline void print_help_and_exit(const char *name, const char *extra) {
