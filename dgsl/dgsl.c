@@ -84,7 +84,7 @@ int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, gmp_randstate_t state) 
 
   const long m = fmpz_mat_nrows(self->B);
   for(long j=0; j<m; j++) {
-    long i = m-i-1;
+    long i = m-j-1;
     _mpfr_vec_dot_product(c_prime, c,                self->G->rows[i], n, MPFR_RNDN);
     _mpfr_vec_dot_product(tmp,     self->G->rows[i], self->G->rows[i], n, MPFR_RNDN);
     mpfr_div(c_prime, c_prime, tmp, MPFR_RNDN);
