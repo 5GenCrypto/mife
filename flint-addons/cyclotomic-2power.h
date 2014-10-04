@@ -246,7 +246,7 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
       }
 #pragma omp section
       {
-        _fmpq_poly_invert_mod_cnf2pow_approx(z_next, y, n, 2*prec);
+        _fmpq_poly_invert_mod_cnf2pow_approx(z_next, y, n, prec);
         fmpq_poly_add(z_next, z_next, z);
         fmpq_poly_scalar_div_si(z_next, z_next, 2);
       }
