@@ -383,15 +383,15 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
 
 */
 
-static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g) {
+static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy) {
   int r = 1;
 
   nmod_poly_t f_mod;
   nmod_poly_t g_mod;
 
-  mp_limb_t small_primes[3] = {2, 197, 257};
+  mp_limb_t small_primes[2] = {2, 65537};
 
-  for(int i=0; i<3; i++) {
+  for(int i=0; i<2; i++) {
     mp_limb_t p = small_primes[i];
 
     // TODO: use _nmod_vec and check conditions manually
