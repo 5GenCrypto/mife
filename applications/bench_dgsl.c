@@ -14,11 +14,11 @@ int main(int argc, char *argv[]) {
   flint_randinit_seed(randstate, 0x1337, 1);
 
   mpfr_t sigma;
-  mpfr_init2(sigma, 160);
+  mpfr_init2(sigma, 80);
   mpfr_set_d(sigma, _gghlite_sigma(n) * 0.398942280401433, MPFR_RNDN);
 
   mpfr_t sigma_p;
-  mpfr_init2(sigma_p, 160);
+  mpfr_init2(sigma_p, 80);
   mpfr_set_d(sigma_p, _gghlite_sigma_p(n) * 0.398942280401433, MPFR_RNDN);
 
   fmpz_poly_t g;

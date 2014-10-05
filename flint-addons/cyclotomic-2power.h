@@ -222,6 +222,9 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
   mpfr_t norm;
   mpfr_init2(norm, prec);
 
+  mpfr_t prev_norm;
+  mpfr_init2(prev_norm, prec);
+
   mpfr_t bound;
   mpfr_init2(bound, prec);
   mpfr_set_ui(bound, 1, MPFR_RNDN);
@@ -264,7 +267,7 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
     fmpq_poly_mulmod(f_approx, y, y, modulus);
     fmpq_poly_sub(f_approx, f_approx, f);
     _fmpq_vec_2norm_mpfr(norm, f_approx->coeffs, f_approx->den, f_approx->length);
-    
+        
 #ifndef GGHLITE_QUIET
     mpfr_log2(log_f, norm, MPFR_RNDN);
     mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  i: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", i, log_f);
@@ -276,6 +279,13 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
 
     if(mpfr_cmp(norm, bound) < 0)
       break;
+
+    mpfr_div_ui(prev_norm, prev_norm, 2, MPFR_RNDN);
+    if (i>0 && mpfr_cmp(norm, prev_norm) >= 0) {
+      // we don't converge any more
+      break;
+    }
+    mpfr_set(prev_norm, norm, MPFR_RNDN);
   }
 
   if(i==100)
@@ -289,6 +299,7 @@ static inline void fmpq_poly_sqrt_mod_cnf2pow_approx(fmpq_poly_t f_sqrt, const f
 
   mpfr_clear(bound);
   mpfr_clear(norm);
+  mpfr_clear(prev_norm);
   fmpq_poly_clear(modulus);
   fmpq_poly_clear(f_approx);
   fmpq_poly_clear(y_next);
