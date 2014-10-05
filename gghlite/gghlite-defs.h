@@ -40,6 +40,7 @@ typedef enum {
   - Gaussian width parameter `σ^*` for sampling `ρ_i`
   - the bound `ℓ_b` on `σ_n(rot(B^(k)))`
   - the bound `ℓ_g` on `|g^-1|`
+  - the fraction `ζ` of `q` used for zero-testing
   - the modulus `x^n + 1` to specify the cyclotomic ring `ZZ[x]/(x^n+1)`
   - the zero-testing parameter `p_{zt}`
   - level-`k` encodings of zero `x_{k,i}` for each level `k` specified by rerandomisation mask
@@ -63,7 +64,7 @@ struct _gghlite_pk_struct {
   mpfr_t sigma_s;
   mpfr_t ell_b;
   mpfr_t ell_g;
-  mpfr_t ell_q;
+  mpfr_t zeta;
 
   gghlite_enc_t modulus;
   gghlite_enc_t pzt;

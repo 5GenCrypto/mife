@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   mpfr_log2(acc, acc, MPFR_RNDN);
 
 
-  const double bound = (1.0-mpfr_get_d(self->pk->ell_q, MPFR_RNDN)) * fmpz_sizeinbase(self->pk->q,2);
+  const double bound = (1.0-mpfr_get_d(self->pk->zeta, MPFR_RNDN)) * fmpz_sizeinbase(self->pk->q,2);
 
   printf("\n  log(avg): %6.1f\n  log(max): %6.1f ?< %6.1f\n", mpfr_get_d(acc, MPFR_RNDN), mpfr_get_d(max, MPFR_RNDN), bound);
 

@@ -217,6 +217,16 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
 int gghlite_is_zero(gghlite_pk_t self, gghlite_enc_t op);
 
 /**
+   Return root-Hermite factor `δ_0` required to break the scheme
+
+   :param self:      initialise GGHLite public key
+
+*/
+
+double gghlite_pk_get_delta_0(const gghlite_pk_t self);
+
+
+/**
    Check if security constraints are satisfied.
 
    :param self:      initialise GGHLite public key
