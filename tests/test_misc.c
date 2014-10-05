@@ -21,6 +21,7 @@ int test_inv_approx(long n, long prec) {
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
 
   fmpz_poly_sample_sigma(f, n, sigma, randstate);
+  printf("log(sigma): %lf\n",log2(mpfr_get_d(sigma, MPFR_RNDN)));
 
   fmpq_poly_t f_q; fmpq_poly_init(f_q);
   fmpq_poly_set_fmpz_poly(f_q, f);
@@ -28,13 +29,19 @@ int test_inv_approx(long n, long prec) {
   uint64_t t1 = ggh_walltime(0);
   _fmpq_poly_invert_mod_cnf2pow_approx(f_inv1, f_q, n, prec);
   t1 = ggh_walltime(t1);
-  printf("CATALIN t: %7.1f\n", t1/1000000.0);
+  printf("prec %ld t: %7.1f\n", prec, t1/1000000.0);
 
   fmpq_poly_t f_inv2; fmpq_poly_init(f_inv2);
   uint64_t t2 = ggh_walltime(0);
   fmpq_poly_invert_mod_cnf2pow_approx(f_inv2, f_q, n, prec);
   t2 = ggh_walltime(t2);
-  printf("ITERCAT t: %7.1f\n", t2/1000000.0);
+  printf("iter prec %ld t: %7.1f\n", prec, t2/1000000.0);
+
+  fmpq_poly_t f_inv3; fmpq_poly_init(f_inv3);
+  uint64_t t3 = ggh_walltime(0);
+  _fmpq_poly_invert_mod_cnf2pow_approx(f_inv3, f_q, n, 0);
+  t3 = ggh_walltime(t3);
+  printf("CATALIN t: %7.1f\n", t3/1000000.0);
 
   fmpq_poly_t f_inv0; fmpq_poly_init(f_inv0);
   uint64_t t0 = ggh_walltime(0);
@@ -71,9 +78,6 @@ int main(int argc, char *argv[]) {
   const long n    = atol(argv[1]);
   const long prec = atol(argv[2]);
 
-  /* test_inv_approx(n, prec); */
-  /* return 0; */
-
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
 
@@ -86,16 +90,51 @@ int main(int argc, char *argv[]) {
 
   fmpz_poly_t modulus;
   fmpz_poly_init_cyc2pow_modulus(modulus, n);
-  
+
+  mp_limb_t p = 1;
+
+  nmod_poly_t g_mod;
+  nmod_poly_t m_mod;
+
+  mp_limb_t small_primes[1024];
+  int c = 0;
+  int k = 0;
   uint64_t t = ggh_walltime(0);
+
+  int r = 0;
   for(size_t i=0; i<prec; i++) {
-    printf("\ri: %3d",i);
-    fflush(0);
     fmpz_poly_sample_sigma(g, n, sigma, randstate);
-    fmpz_poly_ideal_is_probaprime(g, modulus);
+
+    /* p = 0; */
+    /* for(int j=0; j<10000; j++) { */
+    /*   p = n_nextprime(p, 0); */
+      
+    /*   // TODO: use _nmod_vec and check conditions manually */
+    /*   nmod_poly_init(g_mod, p); fmpz_poly_get_nmod_poly(g_mod, g); */
+    /*   nmod_poly_init(m_mod, p); fmpz_poly_get_nmod_poly(m_mod, modulus); */
+
+    /*   if (nmod_poly_resultant(g_mod, m_mod) == 0) { */
+    /*     for(k=0; k<c; k++) */
+    /*       if (small_primes[k] == p) */
+    /*         break; */
+    /*     if (k == c) { */
+    /*       small_primes[k] = p; */
+    /*       c++; */
+    /*     } */
+    /*   } */
+    /*   nmod_poly_clear(g_mod); */
+    /*   nmod_poly_clear(m_mod); */
+    /* } */
+    r += fmpz_poly_ideal_is_probaprime(g, modulus, 1);
+    /* for(k=0; k<c; k++) { */
+    /*   printf("%ld, ",small_primes[k]); */
+    /* } */
+    /* printf("\n"); */
+    printf("%d ",r); fflush(0);
   }
+  printf("\n");
+
   t = ggh_walltime(t);
-  printf("\nDONE: n: %5d, t: %8.6fs\n", t/1000000.0/prec);
   
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
