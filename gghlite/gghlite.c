@@ -247,17 +247,17 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
       fail[0]++;
       continue;
     }
-    if(!(self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
-      /* 1. check if prime */
-      t = ggh_walltime(0);
-      if (!fmpz_poly_ideal_is_probaprime(self->g, modulus)) {
-        fail[1]++;
-        self->t_is_prime += ggh_walltime(t);
-        continue;
-      } else {
-        self->t_is_prime += ggh_walltime(t);
-      }
+
+    /* 1. check if prime */
+    t = ggh_walltime(0);
+    if (!fmpz_poly_ideal_is_probaprime(self->g, modulus, self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
+      fail[1]++;
+      self->t_is_prime += ggh_walltime(t);
+      continue;
+    } else {
+      self->t_is_prime += ggh_walltime(t);
     }
+
     /* 2. check norm of inverse */
     fmpq_poly_set_fmpz_poly(g_q, self->g);
     _fmpq_poly_invert_mod_cnf2pow_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);

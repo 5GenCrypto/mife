@@ -408,6 +408,10 @@ static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, in
     nmod_poly_clear(g_mod);
   }
 
+  if (sloppy) {
+    return r;
+  }
+
   if (r) {
     fmpz_t norm;
     fmpz_init(norm);
