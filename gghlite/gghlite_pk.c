@@ -14,7 +14,7 @@ void _gghlite_pk_initzero(gghlite_pk_t self, size_t lambda, size_t kappa) {
   mpfr_init2(self->sigma_p, _gghlite_prec(self));
   mpfr_init2(self->ell_b, _gghlite_prec(self));
   mpfr_init2(self->sigma_s, _gghlite_prec(self));
-  mpfr_init2(self->zeta, _gghlite_prec(self));
+  mpfr_init2(self->xi, _gghlite_prec(self));
 }
 
 void _gghlite_pk_set_ell(gghlite_pk_t self) {
@@ -76,14 +76,14 @@ void _gghlite_pk_set_q(gghlite_pk_t self) {
   mpfr_add_ui(tmp, tmp, self->lambda, MPFR_RNDN);
   mpfr_div_ui(tmp, tmp, 2, MPFR_RNDN);
 
-  mpfr_set(self->zeta, tmp, MPFR_RNDN);
+  mpfr_set(self->xi, tmp, MPFR_RNDN);
 
   mpfr_set_ui(tmp, self->ell, MPFR_RNDN);
   mpfr_add_ui(tmp, tmp, self->lambda, MPFR_RNDN);
   mpfr_add(tmp, tmp, log_q_base, MPFR_RNDN);
-  mpfr_div(self->zeta, self->zeta, tmp, MPFR_RNDN);
+  mpfr_div(self->xi, self->xi, tmp, MPFR_RNDN);
 
-  mpfr_set(tmp, self->zeta, MPFR_RNDN);
+  mpfr_set(tmp, self->xi, MPFR_RNDN);
   mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN);
   mpfr_neg(tmp, tmp, MPFR_RNDN);
   mpfr_add_ui(tmp, tmp, 1, MPFR_RNDN);
