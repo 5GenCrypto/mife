@@ -1,6 +1,6 @@
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-internals.h>
-#include <flint-addons/cyclotomic-2power.h>
+#include <oz/oz.h>
 
 int test_inv_approx(long n, long prec) {
   flint_rand_t randstate;
@@ -27,19 +27,19 @@ int test_inv_approx(long n, long prec) {
   fmpq_poly_set_fmpz_poly(f_q, f);
   fmpq_poly_t f_inv1; fmpq_poly_init(f_inv1);
   uint64_t t1 = ggh_walltime(0);
-  _fmpq_poly_invert_mod_cnf2pow_approx(f_inv1, f_q, n, prec);
+  _fmpq_poly_oz_invert_approx(f_inv1, f_q, n, prec);
   t1 = ggh_walltime(t1);
   printf("prec %ld t: %7.1f\n", prec, t1/1000000.0);
 
   fmpq_poly_t f_inv2; fmpq_poly_init(f_inv2);
   uint64_t t2 = ggh_walltime(0);
-  fmpq_poly_invert_mod_cnf2pow_approx(f_inv2, f_q, n, prec);
+  fmpq_poly_oz_invert_approx(f_inv2, f_q, n, prec, OZ_VERBOSE);
   t2 = ggh_walltime(t2);
   printf("iter prec %ld t: %7.1f\n", prec, t2/1000000.0);
 
   fmpq_poly_t f_inv3; fmpq_poly_init(f_inv3);
   uint64_t t3 = ggh_walltime(0);
-  _fmpq_poly_invert_mod_cnf2pow_approx(f_inv3, f_q, n, 0);
+  _fmpq_poly_oz_invert_approx(f_inv3, f_q, n, 0);
   t3 = ggh_walltime(t3);
   printf("CATALIN t: %7.1f\n", t3/1000000.0);
 
@@ -67,7 +67,7 @@ int test_sqrt_approx(long n, long prec) {
   fmpq_poly_t Sigma_sqrt;
   fmpq_poly_init(Sigma_sqrt);
 
-  _dgsl_rot_mp_sqrt_sigma_2(Sigma_sqrt, f, sigma, ceil(2*log2(n)), n, prec);
+  _dgsl_rot_mp_sqrt_sigma_2(Sigma_sqrt, f, sigma, ceil(2*log2(n)), n, prec, OZ_VERBOSE);
   return 0;
 }
 
@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
 
+  test_inv_approx(n, prec);
+  
   fmpz_poly_t g;
   fmpz_poly_init(g);
 
@@ -89,52 +91,20 @@ int main(int argc, char *argv[]) {
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
 
   fmpz_poly_t modulus;
-  fmpz_poly_init_cyc2pow_modulus(modulus, n);
+  fmpz_poly_oz_init_modulus(modulus, n);
 
-  mp_limb_t p = 1;
-
-  nmod_poly_t g_mod;
-  nmod_poly_t m_mod;
-
-  mp_limb_t small_primes[1024];
-  int c = 0;
-  int k = 0;
   uint64_t t = ggh_walltime(0);
 
   int r = 0;
   for(size_t i=0; i<prec; i++) {
     fmpz_poly_sample_sigma(g, n, sigma, randstate);
-
-    /* p = 0; */
-    /* for(int j=0; j<10000; j++) { */
-    /*   p = n_nextprime(p, 0); */
-      
-    /*   // TODO: use _nmod_vec and check conditions manually */
-    /*   nmod_poly_init(g_mod, p); fmpz_poly_get_nmod_poly(g_mod, g); */
-    /*   nmod_poly_init(m_mod, p); fmpz_poly_get_nmod_poly(m_mod, modulus); */
-
-    /*   if (nmod_poly_resultant(g_mod, m_mod) == 0) { */
-    /*     for(k=0; k<c; k++) */
-    /*       if (small_primes[k] == p) */
-    /*         break; */
-    /*     if (k == c) { */
-    /*       small_primes[k] = p; */
-    /*       c++; */
-    /*     } */
-    /*   } */
-    /*   nmod_poly_clear(g_mod); */
-    /*   nmod_poly_clear(m_mod); */
-    /* } */
-    r += fmpz_poly_ideal_is_probaprime(g, modulus, 1);
-    /* for(k=0; k<c; k++) { */
-    /*   printf("%ld, ",small_primes[k]); */
-    /* } */
-    /* printf("\n"); */
+    r += fmpz_poly_ideal_is_probaprime(g, modulus, 0);
     printf("%d ",r); fflush(0);
   }
   printf("\n");
 
   t = ggh_walltime(t);
+  printf("t: %.6f\n",t/1000000.0/prec);
   
   mpfr_clear(sigma);
   fmpz_poly_clear(g);

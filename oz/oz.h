@@ -1,0 +1,64 @@
+#ifndef _OZ_H_
+#define _OZ_H_
+
+#include <stdio.h>
+#include <stdint.h>
+#include <mpfr.h>
+#include <flint/fmpz_poly.h>
+#include <flint/fmpq_poly.h>
+
+typedef enum {
+  OZ_VERBOSE    = 0x1, //< print debug messages
+  OZ_BABYLONIAN = 0x2, //< use Babylonian method for sqrt
+} oz_flag_t;
+
+static inline void fmpz_poly_oz_init_modulus(fmpz_poly_t f, const long n) {
+  fmpz_poly_init(f);
+  fmpz_poly_set_coeff_si(f, 0, 1);
+  fmpz_poly_set_coeff_si(f, n, 1);
+}
+
+
+static inline void fmpq_poly_oz_init_modulus(fmpq_poly_t f, const long n) {
+  fmpq_poly_init(f);
+  fmpq_poly_set_coeff_si(f, 0, 1);
+  fmpq_poly_set_coeff_si(f, n, 1);
+}
+
+void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n);
+
+void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n);
+
+static inline void fmpz_poly_oz_mul(fmpz_poly_t rop, const fmpz_poly_t op1, const fmpz_poly_t op2, const long n) {
+  fmpz_poly_mul(rop, op1, op2);
+  fmpz_poly_oz_rem(rop, rop, n);
+}
+
+static inline void fmpq_poly_oz_mul(fmpq_poly_t rop, const fmpq_poly_t op1, const fmpq_poly_t op2, const long n) {
+  fmpq_poly_mul(rop, op1, op2);
+  fmpq_poly_oz_rem(rop, rop, n);
+}
+
+void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, const mpfr_prec_t prec);
+
+void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const uint64_t flags);
+
+int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags);
+
+/*
+  Set `fT` to the conjugate of `f`.
+
+  This is equivalent to taking the transpose of the matrix associated with `f`.
+*/
+
+void fmpz_poly_oz_conjugate(fmpz_poly_t fT, const fmpz_poly_t f, const long n);
+
+/*
+  Set `fT` to the conjugate of `f`.
+
+  This is equivalent to taking the transpose of the matrix associated with `f`.
+*/
+
+void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n);
+
+#endif /* _OZ_H_ */

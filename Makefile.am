@@ -1,15 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
-ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = flint dgs
+ACLOCAL_AMFLAGS = -I m4 --install
+SUBDIRS = flint oz dgs dgsl
 
 AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(srcdir)/dgs/ -I$(srcdir)/flint #-I$(srcdir)/flint/flint
 
-lib_LTLIBRARIES = libdgsl.la libgghlite.la
+lib_LTLIBRARIES = libgghlite.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
-
-libdgsl_la_SOURCES = dgsl/dgsl.c dgsl/gso.c
-libdgsl_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
 libgghlite_la_SOURCES = gghlite/gghlite.c \
                         gghlite/gghlite_pk.c \
@@ -23,9 +20,13 @@ libgghlite_la_SOURCES = gghlite/gghlite.c \
 
 libgghlite_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
-include_HEADERS = dgsl/dgsl.h dgsl/gso.h gghlite/gghlite.h gghlite/gghlite-defs.h gghlite/gghlite-internals.h gghlite/misc.h flint-addons/flint-addons.h flint-addons/cyclotomic-2power.h
+include_HEADERS = gghlite/gghlite.h gghlite/gghlite-defs.h gghlite/gghlite-internals.h gghlite/misc.h
 
-MY_PROGRAM_LDADD=$(srcdir)/libgghlite.la $(srcdir)/dgs/libdgs.la $(srcdir)/libdgsl.la $(srcdir)/flint/libflint.a -lgmp -lmpfr -lm
+MY_PROGRAM_LDADD= $(srcdir)/libgghlite.la \
+		  $(top_builddir)/dgs/libdgs.la \
+		  $(top_builddir)/oz/liboz.la \
+                  $(top_builddir)/dgsl/libdgsl.la \
+                  $(top_builddir)/flint/libflint.a -lgmp -lmpfr -lm 
 
 bin_PROGRAMS = gghlite_params gghlite_instance gghlite_noise_dist nike test_misc gghlite_false_friends bench_dgsl
 

@@ -77,7 +77,7 @@ int gghlite_is_zero(gghlite_pk_t self, fmpz_mod_poly_t op) {
 
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self));
-  _fmpz_vec_2norm_mpfr(norm, t->coeffs, self->n);
+  fmpz_mod_poly_eucl_norm_mpfr(norm, t, MPFR_RNDN);
   gghlite_enc_clear(t);
 
 

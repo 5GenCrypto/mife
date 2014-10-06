@@ -1,6 +1,6 @@
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_poly.h>
-#include <flint-addons/flint-addons.h>
+#include <oz/flint-addons.h>
 #include <dgsl/dgsl.h>
 #include <dgsl/gso.h>
 #include <math.h>
@@ -34,7 +34,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
 
   for(size_t i=0; i<ntrials; i++) {
     D->call(v, D, state->gmp_state);
-    _fmpz_vec_2norm_mpfr(tmp, v, ncols);
+    _fmpz_vec_eucl_norm_mpfr(tmp, v, ncols, MPFR_RNDN);
     mpfr_add(acc, acc, tmp, MPFR_RNDN);
   }
 
@@ -77,7 +77,7 @@ double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
 
   for(size_t i=0; i<ntrials; i++) {
     D->call(v, D, state->gmp_state);
-    _fmpz_vec_2norm_mpfr(tmp, v, n);
+    _fmpz_vec_eucl_norm_mpfr(tmp, v, n, MPFR_RNDN);
     norms[0] += mpfr_get_d(tmp, MPFR_RNDN);
     for (size_t j=0; j<n; j++) {
       fmpz_set(tmp_z, v + j);
@@ -171,7 +171,7 @@ double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, flint_rand_t state) {
 
   for(size_t i=0; i<ntrials; i++) {
     D->call(v, D, state->gmp_state);
-    _fmpz_vec_2norm_mpfr(tmp, v->coeffs, n);
+    fmpz_poly_eucl_norm_mpfr(tmp, v, MPFR_RNDN);
     norms[0] += mpfr_get_d(tmp, MPFR_RNDN);
     for (size_t j=0; j<n; j++) {
       fmpz_set(tmp_z, v->coeffs + j);
@@ -217,7 +217,8 @@ int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, flint_rand_
   fmpz_poly_one(B);
 
   mpfr_t sigma_;
-  mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
+  mpfr_init2(sigma_, 80);
+  mpfr_set_d(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   dgsl_rot_mp_t *D = dgsl_rot_mp_init(ncols, B, sigma_, NULL, DGSL_IDENTITY);
@@ -248,14 +249,14 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   fmpz_poly_init(B);
 
   mpfr_t sigma_;
-  mpfr_init2(sigma_, 80);
+  mpfr_init2(sigma_, 160);
   mpfr_set_d(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, 0.398942280401433, MPFR_RNDN);
 
   fmpz_poly_sample_sigma(B, ncols, sigma_, state);
 
   mpfr_t sigma_p_;
-  mpfr_init2(sigma_p_, 80);
+  mpfr_init2(sigma_p_, 160);
   mpfr_init_set_d(sigma_p_, sigma_p, MPFR_RNDN);
   mpfr_mul_d(sigma_p_, sigma_p_, 0.398942280401433, MPFR_RNDN);
 

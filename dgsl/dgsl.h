@@ -7,6 +7,7 @@
 #include <flint/fmpz_vec.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpq_poly.h>
+#include <oz/oz.h>
 #include "gso.h"
 
 /**
@@ -32,9 +33,6 @@ typedef struct _dgsl_rot_mp_t{
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
 
   int (*call) (fmpz_poly_t rop,  const struct _dgsl_rot_mp_t *self, gmp_randstate_t state); //< call this function
-
-  fmpq_poly_t modulus_q;
-  fmpz_poly_t modulus_z;
 
   long   r;
   mpfr_t r_f;
@@ -72,7 +70,7 @@ int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t st
 int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
 int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, uint64_t flags);
 
 /**
    Return a fresh sample when B is the identity
@@ -118,7 +116,7 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_ran
 static inline void fmpz_poly_sample_D_plus1(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_rand_t randstate) {
   assert(D); assert(randstate->gmp_init);
   assert(D->call == dgsl_rot_mp_call_inlattice);
-  dgsl_rot_mp_call_plus1(f, D, randstate->gmp_state);
+  dgsl_rot_mp_call_plus1(f, D, randstate->gmp_state, OZ_VERBOSE);
 }
 
 static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
@@ -145,7 +143,8 @@ static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma,
   fmpz_poly_clear(I);
 }
 
-void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma, const int r, const long n, const mpfr_prec_t prec);
+void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma,
+                              const int r, const long n, const mpfr_prec_t prec, const uint64_t flags);
 
 void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, gmp_randstate_t randstate);
 

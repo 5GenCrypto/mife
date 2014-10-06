@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     fmpz_mod_poly_mulmod(tmp, self->pk->pzt, tmp, self->pk->modulus);
     fmpz_poly_set_fmpz_mod_poly(out, tmp);
-    _fmpz_vec_2norm_mpfr(norm, out->coeffs, self->pk->n);
+    fmpz_poly_eucl_norm_mpfr(norm, out, MPFR_RNDN);
     mpfr_add(acc, acc, norm, MPFR_RNDN);
     if (mpfr_cmp(norm, max)>0)
       mpfr_set(max, norm, MPFR_RNDN);

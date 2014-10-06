@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <gghlite/gghlite-defs.h>
-#include "flint-addons/cyclotomic-2power.h"
+#include "oz/oz.h"
 
 /**
    Check if `|g^-1| ≤ ℓ_g`
@@ -12,7 +12,7 @@
 static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
   mpfr_t g_inv_norm;
   mpfr_init2(g_inv_norm, mpfr_get_prec(self->ell_g));
-  _fmpq_vec_2norm_mpfr(g_inv_norm, fmpq_poly_numref(g_inv), fmpq_poly_denref(g_inv), self->n);
+  fmpq_poly_eucl_norm_mpfr(g_inv_norm, g_inv, MPFR_RNDN);
   int r = (mpfr_cmp(g_inv_norm, self->ell_g) <= 0);
   mpfr_clear(g_inv_norm);
   return r;

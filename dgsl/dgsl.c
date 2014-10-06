@@ -3,8 +3,8 @@
 #include <dgs/dgs.h>
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_vec.h>
-#include <flint-addons/flint-addons.h>
-#include <flint-addons/cyclotomic-2power.h>
+#include <oz/flint-addons.h>
+#include <oz/oz.h>
 #include "dgsl.h"
 #include "gso.h"
 
@@ -334,13 +334,10 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
     break;
   }
   case DGSL_INLATTICE: {
-    fmpq_poly_init_cyc2pow_modulus(self->modulus_q, n);
-    fmpz_poly_init_cyc2pow_modulus(self->modulus_z, n);
-
     fmpq_poly_init(self->sigma_sqrt);
     long r= 2*ceil(sqrt(log(n)));
 
-    _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec);
+    _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec, OZ_VERBOSE);
     mpfr_init2(self->r_f, self->prec);
     mpfr_set_ui(self->r_f, r, MPFR_RNDN);
 
@@ -413,12 +410,12 @@ int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, 
   return 0;
 }
 
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, uint64_t flags) {
   const long n = self->n;
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
-  fmpq_poly_mulmod(x, self->sigma_sqrt, x, self->modulus_q);
+  fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
 
   fmpq_t tmp;
   fmpq_init(tmp);
@@ -436,13 +433,14 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   fmpq_poly_t B;
   fmpq_poly_init(B);
   fmpq_poly_set_fmpz_poly(B, self->B);
-  fmpq_poly_invert_mod_cnf2pow_approx(B_inv, B, n, self->prec);
+  /** TODO: This should be done only once **/
+  fmpq_poly_oz_invert_approx(B_inv, B, n, self->prec, flags);
   fmpq_poly_sub(x, x, B_inv);
   fmpq_poly_clear(B_inv);
   fmpq_poly_clear(B);
 
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
-  fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
+  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   fmpz_poly_neg(rop, rop);
   fmpz_add_ui(rop->coeffs, rop->coeffs, 1);
 
@@ -455,11 +453,11 @@ int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_r
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
-  fmpq_poly_mulmod(x, self->sigma_sqrt, x, self->modulus_q);
+  fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
   /* fmpq_poly_neg(x, x); */
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
   /* fmpz_poly_neg(rop, rop); */
-  fmpz_poly_mulmod(rop, self->B, rop, self->modulus_z);
+  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   return 0;
 }
 
@@ -566,11 +564,8 @@ void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, gmp_randstate_t
    sqrt(Σ_2) with Σ_2 = Σ - Σ_1 = σ^2·g^-T·g^-1 - r^2·I
 */
 
-void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma, const int r, const long n, const mpfr_prec_t prec) {
-
-  fmpq_poly_t modulus;
-  fmpq_poly_init_cyc2pow_modulus(modulus, n);
-
+void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma,
+                              const int r, const long n, const mpfr_prec_t prec, const uint64_t flags) {
   fmpq_poly_zero(rop);
 
   fmpq_t r_q2;
@@ -586,12 +581,12 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   fmpq_poly_set_fmpz_poly(g_q, g);
 
   fmpq_poly_t g_inv; fmpq_poly_init(g_inv);
-  fmpq_poly_invert_mod_cnf2pow_approx(g_inv, g_q, n, prec);
+  fmpq_poly_oz_invert_approx(g_inv, g_q, n, prec, flags);
 
   fmpq_poly_t g_inv_t;
   fmpq_poly_init(g_inv_t);
-  fmpq_poly_transpose_cnf2pow(g_inv_t, g_inv, n);
-  fmpq_poly_mulmod(g_inv, g_inv_t, g_inv, modulus);
+  fmpq_poly_oz_conjugate(g_inv_t, g_inv, n);
+  fmpq_poly_oz_mul(g_inv, g_inv_t, g_inv, n);
 
   fmpq_t sigma2;
   fmpq_init(sigma2);
@@ -608,10 +603,9 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
 
   fmpq_poly_add(rop, rop, g_inv);
 
-  fmpq_poly_sqrt_mod_cnf2pow_approx(rop, rop, n, 2*prec, prec);
+  fmpq_poly_oz_sqrt_approx(rop, rop, n, 2*prec, prec, flags);
 
   fmpq_poly_clear(g_q);
   fmpq_poly_clear(g_inv);
   fmpq_poly_clear(g_inv_t);
-  fmpq_poly_clear(modulus);
 }

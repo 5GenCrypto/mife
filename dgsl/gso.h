@@ -5,7 +5,7 @@
 #include <mpfr.h>
 #include <dgs/dgs.h>
 #include <flint/fmpz_mat.h>
-#include "flint-addons/flint-addons.h"
+#include "oz/flint-addons.h"
 
 typedef struct {
     mpfr_t * entries;
