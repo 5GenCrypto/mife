@@ -385,6 +385,9 @@ void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
 }
 
 double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
+
+  /* Finding a short d·g in <g> */
+  
   mpfr_t target_norm;
   mpfr_init2(target_norm, _gghlite_prec(self));
 
@@ -413,11 +416,33 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_ui_div(tmp, 1, tmp, MPFR_RNDN);
 
   mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
-  double delta_0 = mpfr_get_d(tmp, MPFR_RNDN);
+  double delta_0_g = mpfr_get_d(tmp, MPFR_RNDN);
 
+  _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
+  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+
+  mpfr_set_ui(target_norm, 2, MPFR_RNDN);
+  mpfr_mul_ui(target_norm, target_norm, self->n, MPFR_RNDN);
+  mpfr_sqrt(target_norm, target_norm, MPFR_RNDN); //< sqrt(2n)
+  mpfr_mul(target_norm, target_norm, self->sigma_p, MPFR_RNDN); //< sqrt(2n) · σ'
+  mpfr_mul_d(target_norm, target_norm, 0.3, MPFR_RNDN); // TODO: Don't hardcode this
+  mpfr_ui_div(target_norm, 1, target_norm, MPFR_RNDN); //< 1/(sqrt(2n) · σ' · τ)
+  mpfr_mul(target_norm, tmp, target_norm, MPFR_RNDN); //< sqrt(q)/(sqrt(2n) · σ' · τ)
+
+  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+  mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN);
+  mpfr_ui_div(tmp, 1, tmp, MPFR_RNDN);
+
+  mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
+  double delta_0_ntru = mpfr_get_d(tmp, MPFR_RNDN);
+  
   mpfr_clear(target_norm);
   mpfr_clear(tmp);
-  return delta_0;
+
+  if (delta_0_g > delta_0_ntru)
+    return delta_0_g;
+  else
+    return delta_0_ntru;
 }
 
 int gghlite_pk_check_sec(const gghlite_pk_t self) {
