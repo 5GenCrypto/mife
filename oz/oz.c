@@ -274,7 +274,7 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
       mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
       mpfr_log2(log_f, bound, MPFR_RNDN);
       mpfr_fprintf(stderr, " <? %6.2Rf, ", log_f);
-      fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs", oz_walltime(t)/1000000.0);
       fflush(0);
     }
 
