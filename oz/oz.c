@@ -186,13 +186,42 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
     fmpq_poly_init(z_next);
     fmpq_poly_set_coeff_si(z, 0, 1);
   }
-  
-  fmpq_poly_t f_approx;
-  fmpq_poly_init(f_approx);
 
   mpfr_t norm;
   mpfr_init2(norm, prec);
 
+  /* We scale by about |det(y) · det(z)|^(-1/(2n)) to make it converge faster */
+  mpfr_t gamma;
+  mpfr_init2(gamma, prec);
+
+  fmpq_t gamma_q;
+  fmpq_init(gamma_q);
+
+  /* det(y) */
+  fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
+  mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
+  mpfr_set(gamma, norm, MPFR_RNDN);
+
+  /* det(y) · det(z) */
+  fmpq_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
+  mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
+  mpfr_mul(gamma, gamma, norm, MPFR_RNDN);
+
+  /* (det(y) · det(z))^(-1/(2n)) */
+  mpfr_root(gamma, gamma, 2*n, MPFR_RNDN);
+  mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
+
+  fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+
+  fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
+  fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
+
+  fmpq_clear(gamma_q);
+  mpfr_clear(gamma);  
+
+  fmpq_poly_t f_approx;
+  fmpq_poly_init(f_approx);
+  
   mpfr_t prev_norm;
   mpfr_init2(prev_norm, prec);
 
