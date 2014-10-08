@@ -17,6 +17,8 @@ missing
 /.libs/libgpv.la
 /.libs/libgpv.lai
 /Makefile
+/oz/Makefile
+/dgsl/Makefile
 /config.status
 /gghlite_params
 /gghlite_instance
@@ -31,6 +33,7 @@ missing
 */.deps/
 test_dgsl
 test_resultant
+bench_dgsl
 callgrind.*
 *~
 .libs/
