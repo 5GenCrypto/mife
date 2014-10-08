@@ -147,10 +147,10 @@ void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long
 
     if (flags & OZ_VERBOSE) {
       mpfr_log2(tmp_f, norm, MPFR_RNDN);
-      mpfr_fprintf(stderr, "\r   Computing f^-1::  b: %4d,     Δ=|f^-1·f-1|: %7.2Rf", b, tmp_f);
+      mpfr_fprintf(stderr, "   Computing f^-1::  b: %4d,     Δ=|f^-1·f-1|: %7.2Rf", b, tmp_f);
       mpfr_log2(tmp_f, bound, MPFR_RNDN);
       mpfr_fprintf(stderr, " <? %6.2Rf, ", tmp_f);
-      fprintf(stderr, "t: %8.2fs",oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n",oz_walltime(t)/1000000.0);
       fflush(0);
     }
 
@@ -177,7 +177,11 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   fmpq_poly_init(y);
   fmpq_poly_init(y_next);
   fmpq_poly_set(y, f);
-  
+
+  mpfr_t f_norm;
+  mpfr_init2(f_norm, prec);
+  fmpq_poly_eucl_norm_mpfr(f_norm, f, MPFR_RNDN);
+
   fmpq_poly_t z;
   fmpq_poly_t z_next;
 
@@ -197,31 +201,40 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   fmpq_t gamma_q;
   fmpq_init(gamma_q);
 
-  /* det(y) */
-  fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
-  mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
-  mpfr_set(gamma, norm, MPFR_RNDN);
 
-  /* det(y) · det(z) */
-  fmpq_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
-  mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
-  mpfr_mul(gamma, gamma, norm, MPFR_RNDN);
+  if((flags & OZ_BABYLONIAN)) {
+    /* det(y)^(-1/n) */
+    fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
+    mpfr_set(gamma, norm, MPFR_RNDN);
+    mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
+    fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+    fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
+  } else {
+    /* det(y) */
+    fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
+    mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
+    mpfr_set(gamma, norm, MPFR_RNDN);
 
-  /* (det(y) · det(z))^(-1/(2n)) */
-  mpfr_root(gamma, gamma, 2*n, MPFR_RNDN);
-  mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
+    /* det(y) · det(z) */
+    fmpq_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
+    mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
+    mpfr_mul(gamma, gamma, norm, MPFR_RNDN);
 
-  fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+    /* (det(y) · det(z))^(-1/(2n)) */
+    mpfr_root(gamma, gamma, 2*n, MPFR_RNDN);
+    mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
 
-  fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
-  fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
+    fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+    fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
+    fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
+  }
 
   fmpq_clear(gamma_q);
-  mpfr_clear(gamma);  
+  mpfr_clear(gamma);
 
   fmpq_poly_t f_approx;
   fmpq_poly_init(f_approx);
-  
+
   mpfr_t prev_norm;
   mpfr_init2(prev_norm, prec);
 
@@ -233,10 +246,10 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   mpfr_t log_f;
   mpfr_init2(log_f, prec);
   uint64_t t = oz_walltime(0);
-  
+
   int r = 0;
   for(long k=0; ; k++) {
-    if(!(flags & OZ_BABYLONIAN)) {      
+    if(!(flags & OZ_BABYLONIAN)) {
 #pragma omp parallel sections
       {
 #pragma omp section
@@ -254,27 +267,25 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
       }
       fmpq_poly_set(y, y_next);
       fmpq_poly_set(z, z_next);
-      
     } else {
-      
       _fmpq_poly_oz_invert_approx(y_next, y, n, prec);
       fmpq_poly_oz_mul(y_next, f, y_next, n);
       fmpq_poly_add(y_next, y_next, y);
       fmpq_poly_scalar_div_si(y_next, y_next, 2);
       fmpq_poly_set(y, y_next);
-      
     }
-    
+
     fmpq_poly_oz_mul(f_approx, y, y, n);
     fmpq_poly_sub(f_approx, f_approx, f);
     fmpq_poly_eucl_norm_mpfr(norm, f_approx, MPFR_RNDN);
-        
+    mpfr_div(norm, norm, f_norm, MPFR_RNDN);
+
     if(flags & OZ_VERBOSE) {
       mpfr_log2(log_f, norm, MPFR_RNDN);
-      mpfr_fprintf(stderr, "\rComputing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
+      mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
       mpfr_log2(log_f, bound, MPFR_RNDN);
       mpfr_fprintf(stderr, " <? %6.2Rf, ", log_f);
-      fprintf(stderr, "t: %8.2fs", oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
       fflush(0);
     }
 
@@ -282,7 +293,7 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
       r = 0;
       break;
     }
-    
+
     mpfr_div_ui(prev_norm, prev_norm, 2, MPFR_RNDN);
     if (k>0 && mpfr_cmp(norm, prev_norm) >= 0) {
       /*  we don't converge any more */
@@ -291,7 +302,7 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
     }
     mpfr_set(prev_norm, norm, MPFR_RNDN);
   }
-  
+
   if(flags & OZ_VERBOSE)
     fprintf(stderr, "\n");
   mpfr_clear(log_f);
@@ -299,6 +310,7 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   fmpq_poly_set(f_sqrt, y);
 
   mpfr_clear(bound);
+  mpfr_clear(f_norm);
   mpfr_clear(norm);
   mpfr_clear(prev_norm);
   fmpq_poly_clear(f_approx);
@@ -311,14 +323,14 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   return r;
 }
 
-void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n) {  
+void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n) {
   fmpz_poly_set(rem, f);
   fmpz_t lead; fmpz_init(lead);
   fmpz_t coef; fmpz_init(coef);
   for(long d=fmpz_poly_degree(rem); d>=n; d--) {
     fmpz_poly_get_coeff_fmpz(lead, rem, d);
     fmpz_poly_get_coeff_fmpz(coef, rem, d-n);
-    fmpz_sub(coef, coef, lead);    
+    fmpz_sub(coef, coef, lead);
     fmpz_poly_set_coeff_si(rem, d, 0);
     fmpz_poly_set_coeff_fmpz(rem, d-n, coef);
   }
