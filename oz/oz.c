@@ -194,8 +194,8 @@ void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long
     if(mpfr_cmp(norm, bound) <= 0)
       break;
   }
-  if(flags & OZ_VERBOSE)
-    fprintf(stderr, "\n");
+  /* if(flags & OZ_VERBOSE) */
+  /*   fprintf(stderr, "\n"); */
   mpfr_clear(tmp_f);
 
   fmpq_poly_set(rop, f_inv);
