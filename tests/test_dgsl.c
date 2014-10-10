@@ -287,7 +287,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
 
 
 int test_gso(long m, long n, long *M, double *GSO) {
-  double quality;
+  double quality = 0.0;
   fmpz_mat_t B;
   fmpz_mat_init(B, m, n);
 
