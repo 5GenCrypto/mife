@@ -26,7 +26,7 @@ static inline mp_limb_t n_prevprime(mp_limb_t n, int proved) {
   return n;
 }
 
-static inline void fmpq_set_mpfr(fmpq_t rop, mpfr_t op, mpfr_rnd_t rnd) {
+static inline void fmpq_set_mpfr(fmpq_t rop, const mpfr_t op, mpfr_rnd_t rnd) {
   mpf_t  op_f;
   mpf_init2(op_f, mpfr_get_prec(op));
   mpfr_get_f(op_f, op, rnd);
