@@ -2,6 +2,43 @@
 #include "util.h"
 #include "oz.h"
 
+void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
+  if (prec == 0) {
+    fmpq_poly_t modulus;
+    fmpq_poly_oz_init_modulus(modulus, n);
+    // TODO: patch FLINT to accept a bound on the norm
+    fmpq_poly_resultant(norm, f, modulus);
+    fmpq_poly_clear(modulus);
+  } else {
+    mpfr_t norm_f;
+    mpfr_init2(norm_f, prec);
+    fmpq_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
+    mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
+    fmpq_set_mpfr(norm, norm_f, MPFR_RNDN);
+    mpfr_clear(norm_f);
+  }
+}
+
+void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec) {
+  if (prec == 0) {    
+    fmpz_poly_t modulus;
+    fmpz_poly_oz_init_modulus(modulus, n);
+    fmpz_poly_ideal_norm(norm, f, modulus);
+    fmpz_poly_clear(modulus);
+  } else {
+    mpfr_t norm_f;
+    mpfr_init2(norm_f, prec);
+    fmpz_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
+    mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
+    mpz_t norm_z;
+    mpz_init(norm_z);
+    mpfr_get_z(norm_z, norm_f, MPFR_RNDN);
+    fmpz_set_mpz(norm, norm_z);
+    mpfr_clear(norm_f);
+    mpz_clear(norm_z);
+  }
+}
+
 void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, const mpfr_prec_t prec) {
   if(f_inv == f)
     oz_die("_fmpq_poly_invert_mod_cnf2pow_approx does not support parameter aliasing");
@@ -170,13 +207,17 @@ void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long
   fmpq_poly_clear(tmp);
 }
 
-int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags) {
+int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;
   fmpq_poly_t y_next;
 
   fmpq_poly_init(y);
   fmpq_poly_init(y_next);
-  fmpq_poly_set(y, f);
+  if (init) {
+    fmpq_poly_set(y, init);
+  } else {
+    fmpq_poly_set(y, f);
+  }
 
   mpfr_t f_norm;
   mpfr_init2(f_norm, prec);
@@ -188,7 +229,13 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   if (!(flags & OZ_BABYLONIAN)) {
     fmpq_poly_init(z);
     fmpq_poly_init(z_next);
-    fmpq_poly_set_coeff_si(z, 0, 1);
+    if (init) {
+      // z = y/x
+      _fmpq_poly_oz_invert_approx(z, f, n, prec);
+      fmpq_poly_oz_mul(z, z, y, n);
+    } else {
+      fmpq_poly_set_coeff_si(z, 0, 1);
+    }
   }
 
   mpfr_t norm;
@@ -202,33 +249,33 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   fmpq_init(gamma_q);
 
 
-  if((flags & OZ_BABYLONIAN)) {
-    /* det(y)^(-1/n) */
-    fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
-    mpfr_set(gamma, norm, MPFR_RNDN);
-    mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
-    fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
-    fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
-  } else {
-    /* det(y) */
-    fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
-    mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
-    mpfr_set(gamma, norm, MPFR_RNDN);
+  if (!init) {
+    if((flags & OZ_BABYLONIAN)) {
+      /* det(y)^(-1/n) */
+      fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
+      mpfr_set(gamma, norm, MPFR_RNDN);
+      mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
+      fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+      fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
+    } else {
+      /* det(y) */
+      fmpq_poly_oz_ideal_norm(gamma_q, y, n, prec);
+      fmpq_get_mpfr(gamma, gamma_q, MPFR_RNDN);
 
-    /* det(y) · det(z) */
-    fmpq_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
-    mpfr_pow_ui(norm, norm, n, MPFR_RNDN);
-    mpfr_mul(gamma, gamma, norm, MPFR_RNDN);
+      /* det(y) · det(z) */
+      fmpq_poly_oz_ideal_norm(gamma_q, z, n, prec);
+      fmpq_get_mpfr(norm, gamma_q, MPFR_RNDN);
+      mpfr_mul(gamma, gamma, norm, MPFR_RNDN);
 
-    /* (det(y) · det(z))^(-1/(2n)) */
-    mpfr_root(gamma, gamma, 2*n, MPFR_RNDN);
-    mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
+      /* (det(y) · det(z))^(-1/(2n)) */
+      mpfr_root(gamma, gamma, 2*n, MPFR_RNDN);
+      mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
 
-    fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
-    fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
-    fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
+      fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+      fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
+      fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
+    }
   }
-
   fmpq_clear(gamma_q);
   mpfr_clear(gamma);
 
@@ -303,8 +350,8 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
     mpfr_set(prev_norm, norm, MPFR_RNDN);
   }
 
-  if(flags & OZ_VERBOSE)
-    fprintf(stderr, "\n");
+  /* if(flags & OZ_VERBOSE) */
+  /*   fprintf(stderr, "\n"); */
   mpfr_clear(log_f);
 
   fmpq_poly_set(f_sqrt, y);

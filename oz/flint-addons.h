@@ -185,7 +185,7 @@ static inline void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly
   }
 }
 
-static inline void fmpz_poly_ideal_norm(fmpz_t norm, fmpz_poly_t f, fmpz_poly_t modulus) {
+static inline void fmpz_poly_ideal_norm(fmpz_t norm, const fmpz_poly_t f, fmpz_poly_t modulus) {
   mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
   mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
   fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);

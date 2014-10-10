@@ -576,30 +576,52 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   fmpq_poly_set_coeff_fmpq(rop, 0, r_q2);
   fmpq_clear(r_q2);
 
-
   fmpq_poly_t g_q; fmpq_poly_init(g_q);
   fmpq_poly_set_fmpz_poly(g_q, g);
 
-  fmpq_poly_t g_inv; fmpq_poly_init(g_inv);
-  fmpq_poly_oz_invert_approx(g_inv, g_q, n, prec, flags);
+  fmpq_poly_t ng; fmpq_poly_init(ng);
+  fmpq_poly_oz_invert_approx(ng, g_q, n, prec, flags);
 
-  fmpq_poly_t g_inv_t;
-  fmpq_poly_init(g_inv_t);
-  fmpq_poly_oz_conjugate(g_inv_t, g_inv, n);
-  fmpq_poly_oz_mul(g_inv, g_inv_t, g_inv, n);
+  fmpq_poly_t ngt;
+  fmpq_poly_init(ngt);
+  fmpq_poly_oz_conjugate(ngt, ng, n);
 
+  fmpq_poly_t nggt;
+  fmpq_poly_init(nggt);
+  fmpq_poly_oz_mul(nggt, ng, ngt, n);
+  
+  /**
+     We compute sqrt(g^-T · g^-1) to use it as the starting point for
+     convergence on sqrt(σ^2 · g^-T · g^-1 - r^2) below. We can compute the
+     former with less precision than the latter
+  */
+
+  mpfr_t norm;
+  mpfr_init2(norm, prec);
+  fmpz_poly_eucl_norm_mpfr(norm, g, MPFR_RNDN);
+  double p = mpfr_get_d(norm, MPFR_RNDN);
+  p = 3 * ceil(log2(p) + log2(log2(p)));
+  mpfr_clear(norm);
+  
+  fmpq_poly_t sqrt_start; fmpq_poly_init(sqrt_start);
+  fmpq_poly_oz_sqrt_approx(sqrt_start, nggt, n, p, prec/2, flags, NULL);
+  
   fmpq_t sigma2;
   fmpq_init(sigma2);
   fmpq_set_mpfr(sigma2, sigma, MPFR_RNDN);
+  fmpq_poly_scalar_mul_fmpq(sqrt_start, sqrt_start, sigma2);
+  
   fmpq_mul(sigma2, sigma2, sigma2);
-  fmpq_poly_scalar_mul_fmpq(g_inv, g_inv, sigma2);
+  fmpq_poly_scalar_mul_fmpq(nggt, nggt, sigma2);
   fmpq_clear(sigma2);
 
-  fmpq_poly_add(rop, rop, g_inv);
+  fmpq_poly_add(rop, rop, nggt);
 
-  fmpq_poly_oz_sqrt_approx(rop, rop, n, 2*prec, prec, flags);
+  fmpq_poly_oz_sqrt_approx(rop, rop, n, 2*prec, prec, flags, sqrt_start);
 
   fmpq_poly_clear(g_q);
-  fmpq_poly_clear(g_inv);
-  fmpq_poly_clear(g_inv_t);
+  fmpq_poly_clear(ng);
+  fmpq_poly_clear(ngt);
+  fmpq_poly_clear(nggt);
+  fmpq_poly_clear(sqrt_start);
 }
