@@ -75,11 +75,7 @@ void _gghlite_set_D_g(gghlite_t self) {
   assert(self);
   assert(self->pk);
   assert(mpfr_cmp_d(self->pk->sigma_p,0)>0);
-  mpfr_t sigma_p;
-  mpfr_init2(sigma_p, _gghlite_prec(self->pk));
-  mpfr_set(sigma_p, self->pk->sigma_p, MPFR_RNDN);
-  mpfr_mul_d(sigma_p, sigma_p, S_TO_SIGMA, MPFR_RNDN);
-  self->D_g = _gghlite_dgsl_from_poly(self->g, sigma_p, NULL, DGSL_INLATTICE);
+  self->D_g = _gghlite_dgsl_from_poly(self->g, self->pk->sigma_p, NULL, DGSL_INLATTICE);
 }
 
 void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
