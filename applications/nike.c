@@ -106,8 +106,11 @@ int ret = 0;
       ret = -1;
     }
   }
-  printf("\n");
 
+  printf("λ: %3ld, N: %2ld, seed: 0x%08lx, sloppy: %ld, success: %d, time: %.2fs\n",
+         cmdline_params->lambda, cmdline_params->N, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_SLOPPY,
+         ret==0, ggh_walltime(t)/1000000.0);
+  
   for(int i=0; i<cmdline_params->N; i++) {
     gghlite_enc_clear(e[i]);
     gghlite_enc_clear(u[i]);
