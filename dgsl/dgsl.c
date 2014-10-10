@@ -590,14 +590,8 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
 
   fmpq_t sigma2;
   fmpq_init(sigma2);
-  mpf_t sigma2_f;  mpf_init2(sigma2_f, mpfr_get_prec(sigma));
-  mpq_t sigma2_q;  mpq_init(sigma2_q);
-  mpfr_get_f(sigma2_f, sigma, MPFR_RNDN);
-  mpq_set_f(sigma2_q, sigma2_f);
-  fmpq_set_mpq(sigma2, sigma2_q);
+  fmpq_set_mpfr(sigma2, sigma, MPFR_RNDN);
   fmpq_mul(sigma2, sigma2, sigma2);
-  mpf_clear(sigma2_f);
-  mpq_clear(sigma2_q);
   fmpq_poly_scalar_mul_fmpq(g_inv, g_inv, sigma2);
   fmpq_clear(sigma2);
 
