@@ -20,7 +20,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 }
 
 void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec) {
-  if (prec == 0) {    
+  if (prec == 0) {
     fmpz_poly_t modulus;
     fmpz_poly_oz_init_modulus(modulus, n);
     fmpz_poly_ideal_norm(norm, f, modulus);
@@ -241,15 +241,14 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
   mpfr_t norm;
   mpfr_init2(norm, prec);
 
-  /* We scale by about |det(y) · det(z)|^(-1/(2n)) to make it converge faster */
-  mpfr_t gamma;
-  mpfr_init2(gamma, prec);
-
-  fmpq_t gamma_q;
-  fmpq_init(gamma_q);
-
-
   if (!init) {
+    /* We scale by about |det(y) · det(z)|^(-1/(2n)) to make it converge faster */
+    mpfr_t gamma;
+    mpfr_init2(gamma, prec);
+
+    fmpq_t gamma_q;
+    fmpq_init(gamma_q);
+
     if((flags & OZ_BABYLONIAN)) {
       /* det(y)^(-1/n) */
       fmpq_poly_eucl_norm_mpfr(norm, y, MPFR_RNDN);
@@ -275,9 +274,9 @@ int fmpq_poly_oz_sqrt_approx(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long
       fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
       fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
     }
+    fmpq_clear(gamma_q);
+    mpfr_clear(gamma);
   }
-  fmpq_clear(gamma_q);
-  mpfr_clear(gamma);
 
   fmpq_poly_t f_approx;
   fmpq_poly_init(f_approx);
