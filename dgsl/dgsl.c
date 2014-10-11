@@ -600,9 +600,14 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   mpfr_init2(norm, prec);
   fmpz_poly_eucl_norm_mpfr(norm, g, MPFR_RNDN);
   double p = mpfr_get_d(norm, MPFR_RNDN);
-  p = 3 * ceil(log2(p) + log2(log2(p)));
-  mpfr_clear(norm);
-  
+
+  /**
+     |g^-1| ~= 1/|g|
+     |g^-T| ~= |g^-1|
+     |g^-1·g^-T| ~= sqrt(n)·|g^-T|·|g^-1|
+     
+  */
+  p = 6 * ceil(log2(n*p));
   fmpq_poly_t sqrt_start; fmpq_poly_init(sqrt_start);
   fmpq_poly_oz_sqrt_approx(sqrt_start, nggt, n, p, prec/2, flags, NULL);
   
@@ -617,8 +622,11 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
 
   fmpq_poly_add(rop, rop, nggt);
 
-  fmpq_poly_oz_sqrt_approx(rop, rop, n, 2*prec, prec, flags, sqrt_start);
+  p = p + 2*log2(mpfr_get_d(sigma, MPFR_RNDN));
+  
+  fmpq_poly_oz_sqrt_approx(rop, rop, n, p, prec, flags, sqrt_start);
 
+  mpfr_clear(norm);
   fmpq_poly_clear(g_q);
   fmpq_poly_clear(ng);
   fmpq_poly_clear(ngt);
