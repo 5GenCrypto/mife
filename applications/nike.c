@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, cmdline_params->seed, 1);
 
-  print_intro();
+  if (cmdline_params->flags & GGHLITE_FLAGS_VERBOSE)
+    print_intro();
 
   printf("------------------------------------\n");
   printf("Step 1: GCHQ runs Setup:\n");
