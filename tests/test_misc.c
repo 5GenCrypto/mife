@@ -55,19 +55,30 @@ int test_sqrt_approx(long n, long prec) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
 
-  fmpz_poly_t f;
-  fmpz_poly_init(f);
+  fmpz_poly_t g;
+  fmpz_poly_init(g);
 
   mpfr_t sigma;
   mpfr_init2(sigma, prec);
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
+  mpfr_mul_d(sigma, sigma, 0.398942280401433, MPFR_RNDN);
+  
+  fmpz_poly_sample_sigma(g, n, sigma, randstate);
 
-  fmpz_poly_sample_sigma(f, n, sigma, randstate);
+  mpfr_t sigma_p;
+  mpfr_init2(sigma_p, prec);
+  mpfr_set_d(sigma_p, _gghlite_sigma_p(n), MPFR_RNDN);
+  mpfr_mul_d(sigma_p, sigma_p, 0.398942280401433, MPFR_RNDN);
 
+  
   fmpq_poly_t Sigma_sqrt;
   fmpq_poly_init(Sigma_sqrt);
 
-  _dgsl_rot_mp_sqrt_sigma_2(Sigma_sqrt, f, sigma, ceil(2*log2(n)), n, prec, OZ_VERBOSE);
+  _dgsl_rot_mp_sqrt_sigma_2(Sigma_sqrt, g, sigma_p, ceil(2*log2(n)), n, prec, OZ_VERBOSE);
+
+  fmpz_poly_clear(g);
+  fmpq_poly_clear(Sigma_sqrt);
+  
   return 0;
 }
 
@@ -81,7 +92,8 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, 0x1337, 1);
 
-  test_inv_approx(n, prec);
+  test_sqrt_approx(n, prec);
+  exit(0);
   
   fmpz_poly_t g;
   fmpz_poly_init(g);
