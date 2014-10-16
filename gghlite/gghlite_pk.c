@@ -387,7 +387,7 @@ void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
 double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
 
   /* Finding a short d·g in <g> */
-  
+
   mpfr_t target_norm;
   mpfr_init2(target_norm, _gghlite_prec(self));
 
@@ -435,7 +435,7 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
 
   mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
   double delta_0_ntru = mpfr_get_d(tmp, MPFR_RNDN);
-  
+
   mpfr_clear(target_norm);
   mpfr_clear(tmp);
 
@@ -460,11 +460,11 @@ int gghlite_pk_check_sec(const gghlite_pk_t self) {
     ggh_die("Cannot establish required block size");
 
   /*
-    See Theorem 2 in *Analyzing Blockwise Lattice Algorithms using Dynamical
+    See Theorem 1 in *Analyzing Blockwise Lattice Algorithms using Dynamical
     Systems* by Guillaume Hanrot, Xavier Pujol, and Damien Stehlé.
   */
-  
-  double c = log2(self->n) + 2*log2(self->n)  - 2*log2(k) + log2(log2(self->n));  
+
+  double c = 3*log2(self->n)  - 2*log2(k) + log2(log2(self->n));
   double rt0 = 0.3774*k + 20 + c; // BKZ + Sieving
   double rt1 = 0.00119*k*k + 0.2275*k + 21.59 + c; // BKZ + Enumeration
 
