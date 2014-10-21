@@ -65,4 +65,8 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
 void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec);
 
+mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const int k);
+
+int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy, const int k, const mp_limb_t *small_primes);
+
 #endif /* _OZ_H_ */

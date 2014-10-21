@@ -225,44 +225,6 @@ static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_pol
 
 */
 
-static inline int fmpz_poly_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy) {
-  int r = 1;
-
-  nmod_poly_t f_mod;
-  nmod_poly_t g_mod;
-
-  mp_limb_t small_primes[2] = {2, 65537};
-
-  for(int i=0; i<2; i++) {
-    mp_limb_t p = small_primes[i];
-
-    // TODO: use _nmod_vec and check conditions manually
-    nmod_poly_init(f_mod, p); fmpz_poly_get_nmod_poly(f_mod, f);
-    nmod_poly_init(g_mod, p); fmpz_poly_get_nmod_poly(g_mod, g);
-
-    if (nmod_poly_resultant(f_mod, g_mod) == 0) {
-      r = 0;
-      nmod_poly_clear(f_mod);
-      nmod_poly_clear(g_mod);
-      break;
-    }
-    nmod_poly_clear(f_mod);
-    nmod_poly_clear(g_mod);
-  }
-
-  if (sloppy) {
-    return r;
-  }
-
-  if (r) {
-    fmpz_t norm;
-    fmpz_init(norm);
-    fmpz_poly_ideal_norm(norm, f, g);
-    r = fmpz_is_probabprime(norm);
-    fmpz_clear(norm);
-  }
-  return r;
-}
 
 static inline void fmpz_poly_set_fmpz_mod_poly(fmpz_poly_t rop, fmpz_mod_poly_t op) {
   long n = fmpz_mod_poly_length(op);
