@@ -107,17 +107,22 @@ int main(int argc, char *argv[]) {
 
   uint64_t t = ggh_walltime(0);
 
+  int k = 20;
+  
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(n, k);
+  
   int r = 0;
   for(size_t i=0; i<prec; i++) {
     fmpz_poly_sample_sigma(g, n, sigma, randstate);
-    r += fmpz_poly_ideal_is_probaprime(g, modulus, 0);
+    r += fmpz_poly_oz_ideal_is_probaprime(g, modulus, 0, k, small_primes);
     printf("%d ",r); fflush(0);
   }
   printf("\n");
 
   t = ggh_walltime(t);
   printf("t: %.6f\n",t/1000000.0/prec);
-  
+
+  free(small_primes);
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
   flint_randclear(randstate);
