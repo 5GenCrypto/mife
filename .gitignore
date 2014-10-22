@@ -4,6 +4,7 @@ autom4te.cache/
 compile
 config.guess
 config.sub
+config.log
 configure
 depcomp
 install-sh
@@ -27,6 +28,7 @@ missing
 /nike
 */.dirstamp
 */*.lo
+*/*.o
 *.la
 /libtool
 */stamp-h1
