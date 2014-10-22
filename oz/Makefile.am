@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign -Wall -Wno-extra-portability
 
-AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir)
+AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir) -fopenmp
 
 lib_LTLIBRARIES = liboz.la
 
