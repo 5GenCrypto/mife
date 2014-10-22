@@ -441,3 +441,55 @@ void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n) {
   fmpq_clear(t1);
   fmpq_clear(t0);
 }
+
+mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const int k) {
+  mp_limb_t q = 1;
+  mp_limb_t *small_primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k);
+  small_primes[0] = 2;
+  
+  for(int i=1; i<k; ) {
+    q += n;
+    if (n_is_probabprime(q)) {
+      small_primes[i] = q;
+      i++;
+    }
+  }
+  return small_primes;
+}
+
+int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy, const int k, const mp_limb_t *small_primes) {
+  int r = 1;
+
+  nmod_poly_t f_mod;
+  nmod_poly_t g_mod;
+
+  for(int i=0; i<k; i++) {
+    mp_limb_t p = small_primes[i];
+
+    // TODO: use _nmod_vec and check conditions manually
+    nmod_poly_init(f_mod, p); fmpz_poly_get_nmod_poly(f_mod, f);
+    nmod_poly_init(g_mod, p); fmpz_poly_get_nmod_poly(g_mod, g);
+
+    if (nmod_poly_resultant(f_mod, g_mod) == 0) {
+      r = 0;
+      nmod_poly_clear(f_mod);
+      nmod_poly_clear(g_mod);
+      break;
+    }
+    nmod_poly_clear(f_mod);
+    nmod_poly_clear(g_mod);
+  }
+
+  if (sloppy) {
+    return r;
+  }
+
+  if (r) {
+    fmpz_t norm;
+    fmpz_init(norm);
+    fmpz_poly_ideal_norm(norm, f, g);
+    r = fmpz_is_probabprime(norm);
+    fmpz_clear(norm);
+  }
+  return r;
+}
