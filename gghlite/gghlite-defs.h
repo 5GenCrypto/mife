@@ -95,6 +95,7 @@ struct _gghlite_struct {
 
   gghlite_clr_t g;
   gghlite_enc_t z;
+  gghlite_enc_t z_inv;
   gghlite_clr_t h;
   gghlite_clr_t a;
   gghlite_clr_t b[KAPPA][2];
