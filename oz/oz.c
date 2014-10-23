@@ -3,7 +3,7 @@
 #include "oz.h"
 
 static inline mp_bitcnt_t _fmpq_poly_oz_ideal_norm_bound(const fmpq_poly_t f, const long n) {
-  mp_bitcnt_t bits1 = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length)); 
+  mp_bitcnt_t bits1 = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
   mp_bitcnt_t bound = 2*n*FLINT_BIT_COUNT((20*n + 26)/27) + 3;
   bound += (n - 1) + n*bits1;
   return bound;
@@ -11,7 +11,7 @@ static inline mp_bitcnt_t _fmpq_poly_oz_ideal_norm_bound(const fmpq_poly_t f, co
 
 void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
   fmpq_poly_t modulus;
-  
+
   if (prec == 0) {
     mp_bitcnt_t bound = _fmpq_poly_oz_ideal_norm_bound(f, n);
     fmpq_poly_oz_init_modulus(modulus, n);
@@ -37,7 +37,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
     mp_bitcnt_t bound = _fmpq_poly_oz_ideal_norm_bound(f_trunc, n);
     fmpq_poly_resultant_modular_bound(norm, f_trunc, modulus, bound);
-    
+
     fmpq_poly_clear(modulus);
     fmpq_poly_clear(f_trunc);
   }
@@ -45,7 +45,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
 void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec) {
   mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
-  mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));  
+  mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
   if (prec == 0) {
     fmpz_poly_t modulus;
     fmpz_poly_oz_init_modulus(modulus, n);
@@ -93,7 +93,7 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
   mpq_t *tmp_q = (mpq_t*)calloc(2*n, sizeof(mpq_t));
   for(int i=0; i<2*n; i++)
     mpq_init(tmp_q[i]);
-  
+
   int deg;
   if (n > 1) {
     /* set V2(x) = V(-x) */
@@ -261,14 +261,14 @@ int _fmpq_poly_oz_sqrt_approx_break(mpfr_t norm, const fmpq_poly_t f_sqrt, const
   return r;
 }
 
-void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n, const mpfr_prec_t prec) {    
+void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n, const mpfr_prec_t prec) {
   /* We scale by about |det(y) · det(z)|^(-1/(2n)) to make it converge faster */
   mpfr_t gamma;
   mpfr_init2(gamma, prec);
 
   mpfr_t tmp;
   mpfr_init2(tmp, prec);
-  
+
   fmpq_t gamma_q;
   fmpq_init(gamma_q);
 
@@ -286,7 +286,7 @@ void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n,
   mpfr_ui_div(gamma, 1, gamma, MPFR_RNDN);
   mpfr_abs(gamma, gamma, MPFR_RNDN);
 
-  
+
   fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
 
   fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
@@ -303,7 +303,7 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
 
   mpfr_t norm;      mpfr_init2(norm, prec);
   mpfr_t prev_norm; mpfr_init2(prev_norm, prec);
-  
+
   if (init) {
     fmpq_poly_set(y, init);
   } else {
@@ -324,7 +324,7 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
     fmpq_poly_set(y, y_next);
 
     r = _fmpq_poly_oz_sqrt_approx_break(norm, y, f, n, prec_bound, prec);
-    
+
     if(flags & OZ_VERBOSE) {
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
@@ -464,7 +464,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
 
   mpfr_t pi;  mpfr_init2(pi, 4*prec);
   mpfr_const_pi(pi, MPFR_RNDN);
-  
+
 #pragma omp parallel for
   for(int i=0; i<p; i++) {
     mpfr_t xi_r; mpfr_init2(xi_r, 4*prec);
@@ -497,7 +497,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
   }
 
   mpfr_clear(pi);
-  
+
   uint64_t t = oz_walltime(0);
 
   int r = 0;
@@ -516,7 +516,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
     fmpq_poly_scalar_mul_fmpq(t_[i], t_[i], xi[i]);
     _fmpq_poly_oz_invert_approx(s_[i], t_[i], n, prec);
   }
-    
+
     for(int i=1; i<p; i++)
       fmpq_poly_add(s_[0], s_[0], s_[i]);
 
@@ -567,7 +567,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
   free(c);
   free(t_);
   free(s_);
-  
+
   mpfr_clear(log_f);
   fmpq_poly_set(f_sqrt, y);
   mpfr_clear(norm);
@@ -657,7 +657,7 @@ mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const in
   mp_limb_t q = 1;
   mp_limb_t *small_primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k);
   small_primes[0] = 2;
-  
+
   for(int i=1; i<k; ) {
     q += n;
     if (n_is_probabprime(q)) {

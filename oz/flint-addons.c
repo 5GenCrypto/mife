@@ -54,7 +54,7 @@ void fmpq_poly_truncate_prec(fmpq_poly_t op, const mp_bitcnt_t prec) {
   fmpq_poly_set_array_mpq(op, (const mpq_t*)tmp_q, fmpq_poly_length(op));
 
   mpf_clear(tmp_f);
-  for (int i=0; i<fmpq_poly_length(op); i ++)    
+  for (int i=0; i<fmpq_poly_length(op); i ++)
     mpq_clear(tmp_q[i]);
   free(tmp_q);
 }
@@ -106,7 +106,7 @@ void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const sl
   /* make space for polynomials mod p */
 
   const int num_threads = omp_get_max_threads();
-  
+
   mp_ptr a[num_threads];
   mp_ptr b[num_threads];
 
@@ -122,7 +122,7 @@ void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const sl
       continue;
     parr[i++] = p;
   }
-  
+
 #pragma omp parallel for
   for (i = 0; i<num_primes; i++) {
     nmod_t mod;
@@ -188,8 +188,8 @@ void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly_t poly1,
   }
 }
 
-void _fmpq_poly_resultant_modular_bound(fmpz_t rnum, fmpz_t rden, 
-                                  const fmpz *poly1, const fmpz_t den1, slong len1, 
+void _fmpq_poly_resultant_modular_bound(fmpz_t rnum, fmpz_t rden,
+                                  const fmpz *poly1, const fmpz_t den1, slong len1,
                                   const fmpz *poly2, const fmpz_t den2, slong len2,
                                   const mp_bitcnt_t bound) {
   if (len2 == 1)  {
@@ -279,19 +279,18 @@ void fmpq_poly_resultant_modular_bound(fmpq_t r, const fmpq_poly_t f, const fmpq
     fmpq_zero(r);
   }  else {
     if (len1 >= len2) {
-      _fmpq_poly_resultant_modular_bound(fmpq_numref(r), fmpq_denref(r), 
-                                         f->coeffs, f->den, len1, 
+      _fmpq_poly_resultant_modular_bound(fmpq_numref(r), fmpq_denref(r),
+                                         f->coeffs, f->den, len1,
                                          g->coeffs, g->den, len2,
                                          bound);
     } else  {
-      _fmpq_poly_resultant_modular_bound(fmpq_numref(r), fmpq_denref(r), 
-                                         g->coeffs, g->den, len2, 
+      _fmpq_poly_resultant_modular_bound(fmpq_numref(r), fmpq_denref(r),
+                                         g->coeffs, g->den, len2,
                                          f->coeffs, f->den, len1,
                                          bound);
-      
+
       if (((len1 | len2) & WORD(1)) == WORD(0))
         fmpq_neg(r, r);
     }
   }
 }
-
