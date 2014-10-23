@@ -273,11 +273,11 @@ void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n,
   fmpq_init(gamma_q);
 
   /* det(y) */
-  fmpq_poly_oz_ideal_norm(gamma_q, y, n, 10);
+  fmpq_poly_oz_ideal_norm(gamma_q, y, n, 1);
   fmpq_get_mpfr(gamma, gamma_q, MPFR_RNDN);
 
   /* det(y) · det(z) */
-  fmpq_poly_oz_ideal_norm(gamma_q, z, n, 10);
+  fmpq_poly_oz_ideal_norm(gamma_q, z, n, 1);
   fmpq_get_mpfr(tmp, gamma_q, MPFR_RNDN);
   mpfr_mul(gamma, gamma, tmp, MPFR_RNDN);
 
@@ -380,7 +380,7 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
 
   int r = 0;
   for(long k=0; ; k++) {
-    if (k == 0)
+    if (k == 0 || mpfr_cmp_ui(prev_norm, 1) > 0)
       _fmpq_poly_oz_sqrt_approx_scale(y, z, n, prec);
 
 #pragma omp parallel sections
@@ -503,7 +503,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
   int r = 0;
   int cont = 1;
   for(long  k=0; cont; k++) {
-    if (k == 0)
+    if (k == 0 || mpfr_cmp_ui(prev_norm, 1) > 0)
       _fmpq_poly_oz_sqrt_approx_scale(y, z, n, prec);
 
     /*   T = sum([1/xi[i] * ~(Z*Y + a2[i]) for i in range(p)]) */
