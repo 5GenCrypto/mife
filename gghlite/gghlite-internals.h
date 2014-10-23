@@ -95,7 +95,7 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self);
 */
 
 static inline double _gghlite_ell_g(double n) {
-  const double ell_g = 1/sqrt(n*log(n));
+  const double ell_g = 1/sqrt(n);
   return ell_g;
 }
 
