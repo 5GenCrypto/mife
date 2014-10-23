@@ -166,65 +166,20 @@ static inline void fmpz_poly_ideal_rot_basis(fmpz_mat_t rop, fmpz_poly_t op) {
   _fmpz_vec_clear(v, n);
 }
 
+void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly_t poly1,
+                                       const fmpz_poly_t poly2, const mp_bitcnt_t bound);
+
+void fmpq_poly_resultant_modular_bound(fmpq_t r, const fmpq_poly_t f, const fmpq_poly_t g,
+                                       const mp_bitcnt_t bound);
+
 void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, slong len1,
                                         const fmpz * poly2, slong len2, mp_bitcnt_t bound);
 
-static inline void fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz_poly_t poly1,
-                                                     const fmpz_poly_t poly2, const mp_bitcnt_t bound) {
-  slong len1 = poly1->length;
-  slong len2 = poly2->length;
 
-  if (len1 == 0 || len2 == 0)
-    fmpz_zero(res);
-  else if (len1 >= len2)
-    _fmpz_poly_resultant_modular_bound(res, poly1->coeffs, len1, poly2->coeffs, len2, bound);
-  else {
-    _fmpz_poly_resultant_modular_bound(res, poly2->coeffs, len2, poly1->coeffs, len1, bound);
-    if ((len1 > 1) && (!(len1 & WORD(1)) & !(len2 & WORD(1))))
-      fmpz_neg(res, res);
-  }
-}
-
-static inline void fmpz_poly_ideal_norm(fmpz_t norm, const fmpz_poly_t f, fmpz_poly_t modulus) {
-  mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
-  mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
-  fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
-}
-
-/**
-   Decide if <b_0,b_1> = <g>
- */
-
-static inline int fmpz_poly_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1, fmpz_poly_t modulus) {
-  fmpz_t det;
-  fmpz_init(det);
-  fmpz_poly_ideal_norm(det, g, modulus);
-
-  fmpz_t det_b0, det_b1;
-  fmpz_init(det_b0);
-  fmpz_init(det_b1);
-
-  fmpz_poly_ideal_norm(det_b0, b0, modulus);
-  fmpz_poly_ideal_norm(det_b1, b1, modulus);
-
-  fmpz_t tmp;
-  fmpz_init(tmp);
-  fmpz_gcd(tmp, det_b0, det_b1);
-  fmpz_clear(det_b0);
-  fmpz_clear(det_b1);
-
-  int r = fmpz_cmp(det, tmp);
-
-  fmpz_clear(det);
-  fmpz_clear(tmp);
-  return r;
-}
-
-/**
-
-
-*/
-
+void _fmpq_poly_resultant_modular(fmpz_t rnum, fmpz_t rden, 
+                                  const fmpz *poly1, const fmpz_t den1, slong len1, 
+                                  const fmpz *poly2, const fmpz_t den2, slong len2,
+                                  const mp_bitcnt_t bound);
 
 static inline void fmpz_poly_set_fmpz_mod_poly(fmpz_poly_t rop, fmpz_mod_poly_t op) {
   long n = fmpz_mod_poly_length(op);

@@ -71,4 +71,34 @@ mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const in
 
 int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy, const int k, const mp_limb_t *small_primes);
 
+/**
+   Decide if <b_0,b_1> = <g>
+ */
+
+static inline int fmpz_poly_oz_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1, const long n) {
+  fmpz_t det;
+  fmpz_init(det);
+  fmpz_poly_oz_ideal_norm(det, g, n, 0);
+
+  fmpz_t det_b0, det_b1;
+  fmpz_init(det_b0);
+  fmpz_init(det_b1);
+
+  fmpz_poly_oz_ideal_norm(det_b0, b0, n, 0);
+  fmpz_poly_oz_ideal_norm(det_b1, b1, n, 0);
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  fmpz_gcd(tmp, det_b0, det_b1);
+  fmpz_clear(det_b0);
+  fmpz_clear(det_b1);
+
+  int r = fmpz_cmp(det, tmp);
+
+  fmpz_clear(det);
+  fmpz_clear(tmp);
+  return r;
+}
+
+
 #endif /* _OZ_H_ */

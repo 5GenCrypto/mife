@@ -130,7 +130,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 
       if (!(self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
         t = ggh_walltime(0);
-        if (fmpz_poly_ideal_subset(self->g, self->b[k][0], self->b[k][1], modulus) != 0) {
+        if (fmpz_poly_oz_ideal_subset(self->g, self->b[k][0], self->b[k][1], self->pk->n) != 0) {
           fail[0]++;
           self->t_is_subideal += ggh_walltime(t);
           continue;
