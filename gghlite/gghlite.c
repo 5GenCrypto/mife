@@ -360,7 +360,8 @@ void gghlite_clear(gghlite_t self, int clear_pk) {
   fmpz_mod_poly_clear(self->z);
   fmpz_mod_poly_clear(self->z_inv);
   fmpz_poly_clear(self->g);
-
+  dgsl_rot_mp_clear(self->D_g);
+  
   if (clear_pk)
     gghlite_pk_clear(self->pk);
 }
