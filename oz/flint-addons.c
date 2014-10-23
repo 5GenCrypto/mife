@@ -1,3 +1,4 @@
+#include <omp.h>
 #include "flint-addons.h"
 
 void _fmpz_vec_eucl_norm_mpfr(mpfr_t rop, const fmpz *vec, const long len, const mpfr_rnd_t rnd) {
