@@ -426,7 +426,7 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
   return r;
 }
 
-int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const int p, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init) {
+int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const int p, const mpfr_prec_t prec, const mpfr_prec_t bound, uint64_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;       fmpq_poly_init(y);
   fmpq_poly_t y_next;  fmpq_poly_init(y_next);
   fmpq_poly_t z;       fmpq_poly_init(z);
@@ -525,12 +525,12 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
         fmpq_poly_set(z, z_next);
       }
     }
-    cont = !_fmpq_poly_oz_sqrt_approx_break(norm, y, f, n, prec_bound, prec);
+    cont = !_fmpq_poly_oz_sqrt_approx_break(norm, y, f, n, bound, prec);
 
     if(flags & OZ_VERBOSE) {
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
-      fprintf(stderr, " <? %4ld, ", -prec_bound);
+      fprintf(stderr, " <? %4ld, ", -bound);
       fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
       fflush(0);
     }
