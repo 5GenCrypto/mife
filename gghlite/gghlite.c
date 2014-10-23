@@ -258,7 +258,6 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     /* 2. check norm of inverse */
     fmpq_poly_set_fmpz_poly(g_q, self->g);
     _fmpq_poly_oz_invert_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);
-    //fmpz_poly_invert_mod_fmpq(g_inv, self->g, modulus);
     if (!_gghlite_g_inv_check(self->pk, g_inv)) {
       fail[2]++;
       continue;
