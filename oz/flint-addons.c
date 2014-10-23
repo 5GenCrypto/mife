@@ -42,18 +42,21 @@ void _fmpq_vec_eucl_norm_mpfr(mpfr_t rop, const fmpz *num, const fmpz_t den, con
 }
 
 void fmpq_poly_truncate_prec(fmpq_poly_t op, const mp_bitcnt_t prec) {
-  mpq_t tmp_q; mpq_init(tmp_q);
+  mpq_t *tmp_q = (mpq_t*)calloc(fmpq_poly_length(op), sizeof(mpq_t));
   mpf_t tmp_f; mpf_init2(tmp_f, prec);
 
   for (int i=0; i<fmpq_poly_length(op); i ++) {
-    fmpq_poly_get_coeff_mpq(tmp_q, op, i);
-    mpf_set_q(tmp_f, tmp_q);
-    mpq_set_f(tmp_q, tmp_f);
-    fmpq_poly_set_coeff_mpq(op, i, tmp_q);
+    mpq_init(tmp_q[i]);
+    fmpq_poly_get_coeff_mpq(tmp_q[i], op, i);
+    mpf_set_q(tmp_f, tmp_q[i]);
+    mpq_set_f(tmp_q[i], tmp_f);
   }
+  fmpq_poly_set_array_mpq(op, (const mpq_t*)tmp_q, fmpq_poly_length(op));
 
   mpf_clear(tmp_f);
-  mpq_clear(tmp_q);
+  for (int i=0; i<fmpq_poly_length(op); i ++)    
+    mpq_clear(tmp_q[i]);
+  free(tmp_q);
 }
 
 void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const slong len1,
