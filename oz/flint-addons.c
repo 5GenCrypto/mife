@@ -61,15 +61,12 @@ void fmpq_poly_truncate_prec(fmpq_poly_t op, const mp_bitcnt_t prec) {
 
 void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const slong len1,
                                         const fmpz * poly2, const slong len2, const mp_bitcnt_t bound) {
-  mp_bitcnt_t pbits, curr_bits = 0;
+  mp_bitcnt_t pbits;
   slong i, num_primes;
   fmpz_comb_t comb;
   fmpz_comb_temp_t comb_temp;
-  fmpz_t ac, bc, l, modulus;
+  fmpz_t ac, bc, l;
   fmpz * A, * B, * lead_A, * lead_B;
-  mp_ptr a, b, rarr, parr;
-  mp_limb_t p;
-  nmod_t mod;
 
   /* special case, one of the polys is a constant */
   if (len2 == 1) /* if len1 == 1 then so does len2 */ {
@@ -99,37 +96,44 @@ void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const sl
 
   /* set size of first prime */
   pbits = FLINT_BITS -1;
-  p = (UWORD(1)<<pbits);
 
   num_primes = (bound + pbits - 1)/pbits;
-  parr = _nmod_vec_init(num_primes);
-  rarr = _nmod_vec_init(num_primes);
+  mp_ptr parr = _nmod_vec_init(num_primes);
+  mp_ptr rarr = _nmod_vec_init(num_primes);
 
-  fmpz_init(modulus);
-  fmpz_set_ui(modulus, 1);
   fmpz_zero(res);
 
   /* make space for polynomials mod p */
-  a = _nmod_vec_init(len1);
-  b = _nmod_vec_init(len2);
 
-  for (i = 0; curr_bits < bound; ) {
-    /* get new prime and initialise modulus */
+  const int num_threads = omp_get_max_threads();
+  
+  mp_ptr a[num_threads];
+  mp_ptr b[num_threads];
+
+  for(i=0; i<num_threads; i++) {
+    a[i] = _nmod_vec_init(len1);
+    b[i] = _nmod_vec_init(len2);
+  }
+
+  mp_limb_t p = (UWORD(1)<<pbits);
+  for(i=0; i<num_primes;) {
     p = n_prevprime(p, 0);
     if (fmpz_fdiv_ui(l, p) == 0)
       continue;
+    parr[i++] = p;
+  }
+  
+#pragma omp parallel for
+  for (i = 0; i<num_primes; i++) {
+    nmod_t mod;
+    nmod_init(&mod, parr[i]);
 
-    curr_bits += pbits;
-
-    nmod_init(&mod, p);
-
+    const int id = omp_get_thread_num();
     /* reduce polynomials modulo p */
-    _fmpz_vec_get_nmod_vec(a, A, len1, mod);
-    _fmpz_vec_get_nmod_vec(b, B, len2, mod);
-
+    _fmpz_vec_get_nmod_vec(a[id], A, len1, mod);
+    _fmpz_vec_get_nmod_vec(b[id], B, len2, mod);
     /* compute resultant over Z/pZ */
-    parr[i] = p;
-    rarr[i++] = _nmod_poly_resultant(a, len1, b, len2, mod);
+    rarr[i] = _nmod_poly_resultant(a[id], len1, b[id], len2, mod);
   }
 
   fmpz_comb_init(comb, parr, num_primes);
@@ -137,12 +141,13 @@ void _fmpz_poly_resultant_modular_bound(fmpz_t res, const fmpz * poly1, const sl
 
   fmpz_multi_CRT_ui(res, rarr, comb, comb_temp, 1);
 
-  fmpz_clear(modulus);
   fmpz_comb_temp_clear(comb_temp);
   fmpz_comb_clear(comb);
 
-  _nmod_vec_clear(a);
-  _nmod_vec_clear(b);
+  for(i=0; i<num_threads; i++) {
+    _nmod_vec_clear(a[i]);
+    _nmod_vec_clear(b[i]);
+  }
 
   _nmod_vec_clear(parr);
   _nmod_vec_clear(rarr);
