@@ -90,6 +90,10 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
   fmpq_t tmp;
   fmpq_init(tmp);
 
+  mpq_t *tmp_q = (mpq_t*)calloc(2*n, sizeof(mpq_t));
+  for(int i=0; i<2*n; i++)
+    mpq_init(tmp_q[i]);
+  
   int deg;
   if (n > 1) {
     /* set V2(x) = V(-x) */
@@ -97,24 +101,25 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
     deg = fmpq_poly_degree(V2);
     for (int i = 1 ; i <= deg ; i += 2) {
       /* negate odd coefficients */
-      fmpq_poly_get_coeff_fmpq(tmp, V2, i);
-      fmpq_neg(tmp,tmp);
-      fmpq_poly_set_coeff_fmpq(V2, i, tmp);
+      fmpz_neg(fmpq_poly_numref(V2) + i, fmpq_poly_numref(V2) + i);
     }
 
     /* compute Se, So */
     /* Set Se = (V(x) + V(-x))/2 */
     for (int i = 0; i <= deg/2 ; i++) {
-      fmpq_poly_get_coeff_fmpq(tmp, V2, 2*i);
-      fmpq_poly_set_coeff_fmpq(Se, i, tmp);
+      fmpq_poly_get_coeff_mpq(tmp_q[i], V2, 2*i);
+      /* fmpq_poly_set_coeff_fmpq(Se, i, tmp); */
     }
+    fmpq_poly_set_array_mpq(Se, (const mpq_t*)tmp_q, deg/2+1);
     fmpq_poly_truncate(Se,deg/2+1);
 
     /* Set So to the compressed (V(-x) - V(x))/2 */
+    mpq_set_si(tmp_q[(deg+1)/2], 0, 1);
     for (int i = 0 ; i < (deg+1)/2 ; i++) {
-      fmpq_poly_get_coeff_fmpq(tmp,V2,2*i+1);
-      fmpq_poly_set_coeff_fmpq(So,i,tmp);
+      fmpq_poly_get_coeff_mpq(tmp_q[i], V2, 2*i+1);
+      /* fmpq_poly_set_coeff_fmpq(So,i,tmp); */
     }
+    fmpq_poly_set_array_mpq(So,(const mpq_t*)tmp_q, deg/2+1);
     fmpq_poly_truncate(So,deg/2+1);
 
     /* V = V(x) * V(-x) mod f(x) */
@@ -123,9 +128,10 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
     deg = fmpq_poly_degree(V);
     /* Compress the non-zero coeffs of V */
     for (int i = 0; i <= deg/2 ; i ++) {
-      fmpq_poly_get_coeff_fmpq(tmp,V,2*i);
-      fmpq_poly_set_coeff_fmpq(V,i,tmp);
+      fmpq_poly_get_coeff_mpq(tmp_q[i],V,2*i);
+      //fmpq_poly_set_coeff_fmpq(V,i,tmp);
     }
+    fmpq_poly_set_array_mpq(V, (const mpq_t*)tmp_q, deg/2+1);
     fmpq_poly_truncate(V,deg/2+1);
 
     _fmpq_poly_oz_invert_approx(V2, V, n/2, prec);
@@ -136,7 +142,6 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
     fmpq_poly_mul(U,V2,So);
 
     deg = fmpq_poly_degree(V);
-
     for (int i = 0 ; i <= deg ; i ++) {
       fmpq_poly_get_coeff_fmpq(tmp,V,i);
       fmpq_poly_set_coeff_fmpq(f_inv,2*i,tmp);
@@ -163,6 +168,10 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
   }
 
   /* free memory */
+  for(int i=0; i<2*n; i++)
+    mpq_clear(tmp_q[i]);
+  free(tmp_q);
+
   fmpq_clear(tmp);
   fmpq_poly_clear(So);
   fmpq_poly_clear(Se);
@@ -279,6 +288,7 @@ void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n,
 
   
   fmpq_set_mpfr(gamma_q, gamma, MPFR_RNDN);
+
   fmpq_poly_scalar_mul_fmpq(y, y, gamma_q);
   fmpq_poly_scalar_mul_fmpq(z, z, gamma_q);
 
