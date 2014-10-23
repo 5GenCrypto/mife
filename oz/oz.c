@@ -596,12 +596,42 @@ void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n) {
 }
 
 void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n) {
-  // TODO: this is faster than the above naive method because FLINT avoids GCD
-  // calls
-  fmpq_poly_t modulus;
-  fmpq_poly_oz_init_modulus(modulus, n);
-  fmpq_poly_rem(rem, f, modulus);
-  fmpq_poly_clear(modulus);
+
+  const long d = fmpq_poly_degree(f);
+  if(d > 2*n-1) {
+    // TODO: Don't be so lazy and take care of this case as well
+    fmpq_poly_t modulus;
+    fmpq_poly_oz_init_modulus(modulus, n);
+    fmpq_poly_rem(rem, f, modulus);
+    fmpq_poly_clear(modulus);
+  } else if (d>=n) {
+    fmpq_poly_t r;
+    fmpq_poly_init(r);
+    fmpq_poly_set(r, f);
+
+    /* we get away with not canonicalising */
+    /* fmpq_poly_truncate(r, n); */
+    for (int i = n; i < r->length; i++)
+      _fmpz_demote(r->coeffs + i);
+    r->length = n;
+    
+    mpq_t *z = (mpq_t*)calloc(d-n+1, sizeof(mpq_t));
+    for (int i=0; i<d-n+1; i++) {
+      mpq_init(z[i]);
+      fmpq_poly_get_coeff_mpq(z[i], f, n+i);
+    }
+    fmpq_poly_t t;
+    fmpq_poly_init(t);
+    fmpq_poly_set_array_mpq(t, (const mpq_t*)z, d-n+1);
+    fmpq_poly_sub(r, r, t);
+    fmpq_poly_set(rem, r);
+
+    fmpq_poly_clear(t);    
+    fmpq_poly_clear(r);
+    for (int i=0; i<d-n+1; i++)
+      mpq_clear(z[i]);
+    free(z);
+  }
   return;
 }
 
