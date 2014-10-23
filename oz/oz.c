@@ -517,8 +517,8 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
     _fmpq_poly_oz_invert_approx(s_[i], t_[i], n, prec);
   }
 
-    for(int i=1; i<p; i++)
-      fmpq_poly_add(s_[0], s_[0], s_[i]);
+  for(int i=1; i<p; i++)
+    fmpq_poly_add(s_[0],   s_[0], s_[i]);
 
 #pragma omp parallel sections
     {
