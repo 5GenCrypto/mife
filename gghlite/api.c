@@ -117,15 +117,12 @@ void gghlite_print_params(const gghlite_pk_t self) {
   const long lambda = self->lambda;
   const long kappa = self->kappa;
   const long n = self->n;
-  printf("        λ: %7ld\n",lambda);
-  printf("        k: %7ld\n",kappa);
-  printf("        n: %7ld δ_0:  %8.6f\n",n, gghlite_pk_get_delta_0(self));
-  printf("   log(q): %7ld ℓ_q:  %8.6f\n", fmpz_sizeinbase(self->q, 2), mpfr_get_d(self->xi, MPFR_RNDN));
-  printf("   log(σ): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(_gghlite_sigma(n)));
-  printf(" log(ℓ_g): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)), log2(_gghlite_ell_g(n)));
-  printf("  log(σ'): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(_gghlite_sigma_p(n)));
-  printf(" log(ℓ_b): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)), log2(_gghlite_ell_b(n)));
-  printf(" log(σ^*): %8.2f dp: (%8.2f)\n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)), log2(_gghlite_sigma_s(n, lambda, kappa)));
+  printf("        λ: %9ld,          k: %9ld\n",lambda, kappa);
+  printf("        n: %9ld,        δ_0: %9.4f\n",n, gghlite_pk_get_delta_0(self));
+  printf("   log(q): %9ld,        ℓ_q: %9.4f\n", fmpz_sizeinbase(self->q, 2), mpfr_get_d(self->xi, MPFR_RNDN));
+  printf("   log(σ): %9.2f,   log(ℓ_g): %9.2f\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)));
+  printf("  log(σ'): %9.2f,   log(ℓ_b): %9.2f\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)));
+  printf(" log(σ^*): %9.2f,   \n", log2(mpfr_get_d(self->sigma_s, MPFR_RNDN)));
 
 
   mpfr_t enc;
@@ -135,11 +132,28 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_log2(enc, enc, MPFR_RNDN);
   mpfr_mul_ui(enc, enc, n, MPFR_RNDN);
 
-  printf("    |enc|: %8.2f MB\n",mpfr_get_d(enc, MPFR_RNDN)/8.0/1024.0/1024.0);
+  const char *units[3] = {"KB","MB","GB"};
+  
+  double sd = mpfr_get_d(enc, MPFR_RNDN)/8.0;
+  int i;
+  for(i=0; i<3; i++) {
+    if (sd < 1024.0)
+      break;
+    sd = sd/1024;
+  }
+  printf("    |enc|: %6.1f %s,",sd, units[i-1]);
 
   mpfr_t par;
   mpfr_init2(par, _gghlite_prec(self));
   mpfr_set(par, enc, MPFR_RNDN);
   mpfr_mul_ui(par, par, self->kappa*2 + 1 + 1, MPFR_RNDN);
-  printf("    |par|: %8.2f MB\n",mpfr_get_d(par, MPFR_RNDN)/8.0/1024.0/1024.0);
+
+  mpfr_get_d(par, MPFR_RNDN);
+  sd = mpfr_get_d(par, MPFR_RNDN)/8.0;
+  for(i=0; i<3; i++) {
+    if (sd < 1024.0)
+      break;
+    sd = sd/1024;
+  }
+  printf("      |par|: %6.1f %s\n", sd, units[i-1]);
 }

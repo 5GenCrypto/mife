@@ -6,9 +6,13 @@ int main(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
   parse_cmdline(cmdline_params, argc, argv);
+  int verbose = (cmdline_params->flags & GGHLITE_FLAGS_VERBOSE);
 
   printf("####################################################################\n");
-  printf("%s\n", name);
+  if (verbose)
+    printf("%s\n", name);
+  else
+    printf("NIKE\n");
   printf(" λ: %3ld, N: %2ld                              seed: 0x%016lx\n",
          cmdline_params->lambda,
          cmdline_params->N,
@@ -18,12 +22,13 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, cmdline_params->seed, 1);
 
-  if (cmdline_params->flags & GGHLITE_FLAGS_VERBOSE)
+  
+  if (verbose)
     print_intro();
 
-  printf("------------------------------------\n");
+  printf("-----------------------------------------------------\n");
   printf("Step 1: GCHQ runs Setup:\n");
-  printf("------------------------------------\n");
+  printf("-----------------------------------------------------\n");
 
   uint64_t t = ggh_walltime(0);
   uint64_t t_total = ggh_walltime(0);
@@ -42,9 +47,10 @@ int main(int argc, char *argv[]) {
   printf("\n");
   printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
 
-  printf("------------------------------------\n");
-  printf("Step 2: \n");
-  printf("------------------------------------\n");
+  printf("-----------------------------------------------------\n");
+  printf("Step 2: Publish");
+  if (verbose)
+    printf("\n-----------------------------------------------------\n");
 
   t = ggh_walltime(0);
 
@@ -53,61 +59,87 @@ int main(int argc, char *argv[]) {
   gghlite_clr_t *s = calloc(cmdline_params->N, sizeof(gghlite_clr_t));
 
   for(int i=0; i<cmdline_params->N; i++) {
-    printf("%8s samples e_%d,",agents[i],i);
+    if (verbose)
+      printf("%8s samples e_%d, ",agents[i],i);
     gghlite_enc_init(e[i], params);
     gghlite_sample(e[i], params, 0, randstate);
 
-    printf("computes u_%d and publishes it\n", i);
+    if (verbose)
+      printf("computes u_%d and publishes it\n", i);
     gghlite_enc_init(u[i], params);
     gghlite_elevate(u[i], params, e[i], 1, 0, 1, randstate);
   }
 
-  printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
+  if (verbose)
+    printf("\n");
+  else
+    printf("  ");
+  t = ggh_walltime(t);
+  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/cmdline_params->N);
 
-  printf("------------------------------------\n");
-  printf("Step 3: \n");
-  printf("------------------------------------\n");
+  printf("-----------------------------------------------------\n");
+  printf("Step 3: KeyGen");
+  if (verbose)
+    printf("\n-----------------------------------------------------\n");
 
   t = ggh_walltime(0);
 
   gghlite_enc_t tmp;
   for(int i=0; i<cmdline_params->N; i++) {
-    printf("%8s computes: s_%d = ", agents[i], i);
+    if (verbose)
+      printf("%8s computes: s_%d = ", agents[i], i);
     gghlite_enc_init(tmp, params);
     gghlite_enc_set_ui(tmp, 1);
     for(int j=0; j<cmdline_params->N; j++) {
       if (i==j) {
-        gghlite_mult(tmp, params, tmp, e[j]); printf("e_%d",j);
+        gghlite_mult(tmp, params, tmp, e[j]);
+        if (verbose)
+          printf("e_%d",j);
       } else {
-        gghlite_mult(tmp, params, tmp, u[j]); printf("u_%d",j);
+        gghlite_mult(tmp, params, tmp, u[j]);
+        if (verbose)
+          printf("u_%d",j);
       }
       if(j<cmdline_params->N-1)
-        printf("·");
+        if (verbose)
+          printf("·");
     }
-    printf("\n");
+    if (verbose)
+      printf("\n");
     gghlite_clr_init(s[i]);
     gghlite_extract(s[i], params, tmp);
     gghlite_enc_clear(tmp);
   }
 
-  printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
-  printf("------------------------------------\n");
-  printf("Check: \n");
-  printf("------------------------------------\n");
+  if (verbose)
+    printf("\n");
+  else
+    printf("   ");
+  t = ggh_walltime(t);
+  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/cmdline_params->N);
 
-int ret = 0;
+  
+  printf("-----------------------------------------------------\n");
+  printf(" Check: ");
+  if (verbose)
+    printf("\n-----------------------------------------------------\n");
+      
+  int ret = 0;
   for(int i=1; i<cmdline_params->N; i++) {
-    printf("s_%d == s_%d: ",0, i);
+    if(verbose)
+      printf("s_%d == s_%d: ",0, i);
     assert(!fmpz_poly_is_zero(s[i]));
     if (gghlite_clr_equal(s[i], s[0])) {
-      printf("TRUE\n");
+      verbose ? printf("TRUE\n")  : printf("+");
     } else {
-      printf("FALSE\n");
+      verbose ? printf("FALSE\n") : printf("-");
       ret = -1;
     }
   }
+  printf("\n");
+  if (!verbose)
+    printf("-----------------------------------------------------\n");
+
 
   printf("λ: %3ld, N: %2ld, n: %6ld, seed: 0x%08lx, sloppy: %ld, success: %d, time: %10.2fs\n",
          cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_SLOPPY,
