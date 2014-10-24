@@ -159,6 +159,93 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   fmpz_poly_clear(modulus);
 }
 
+void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
+  assert(self->pk);
+  assert(self->pk->n);
+
+  fmpz_poly_init(self->g);
+
+  mpfr_t g_inv_norm;
+  mpfr_init2(g_inv_norm, fmpz_sizeinbase(self->pk->q,2));
+
+  mpfr_t norm;
+  mpfr_init2(norm, mpfr_get_prec(self->pk->sigma));
+
+  mpfr_t sqrtn_sigma;
+  mpfr_init2(sqrtn_sigma, mpfr_get_prec(self->pk->sigma));
+  mpfr_set_si(sqrtn_sigma, self->pk->n, MPFR_RNDN);
+  mpfr_sqrt(sqrtn_sigma, sqrtn_sigma, MPFR_RNDN);
+  mpfr_mul(sqrtn_sigma, sqrtn_sigma, self->pk->sigma, MPFR_RNDN);
+
+  dgsl_rot_mp_t *D = _gghlite_dgsl_from_n(self->pk->n, self->pk->sigma);
+
+  long fail[3] = {0,0,0};
+
+  fmpz_poly_t modulus;
+  fmpz_poly_init2(modulus, self->pk->n);
+  fmpz_poly_set_fmpz_mod_poly(modulus, self->pk->modulus);
+
+  fmpq_poly_t g_q;
+  fmpq_poly_init(g_q);
+
+  fmpq_poly_t g_inv;
+  fmpq_poly_init(g_inv);
+
+  /* we try about 1% small primes first, where 1% relates to the total number of primes needed for multi-modular result */
+  int k = ceil((log2(_gghlite_sigma(self->pk->n)) + log2(self->pk->n)/2.0) * self->pk->n/100.0/(FLINT_BITS -1));
+  if (k < 20)
+    k = 20;
+  
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, k);
+  const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
+  
+  while(1) {
+    printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
+    fflush(0);
+
+    uint64_t t = ggh_walltime(0);
+    fmpz_poly_sample_D(self->g, D, randstate);
+    self->t_sample += ggh_walltime(t);
+
+    fmpz_poly_eucl_norm_mpfr(norm, self->g, MPFR_RNDN);
+    if(mpfr_cmp(norm, sqrtn_sigma)>0) {
+      fail[0]++;
+      continue;
+    }
+
+    /* 1. check if prime */
+    t = ggh_walltime(0);
+    if (!fmpz_poly_oz_ideal_is_probaprime(self->g, modulus, sloppy, k, small_primes)) {
+      fail[1]++;
+      self->t_is_prime += ggh_walltime(t);
+      continue;
+    } else {
+      self->t_is_prime += ggh_walltime(t);
+    }
+
+    /* 2. check norm of inverse */
+    fmpq_poly_set_fmpz_poly(g_q, self->g);
+    _fmpq_poly_oz_invert_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);
+    if (!_gghlite_g_inv_check(self->pk, g_inv)) {
+      fail[2]++;
+      continue;
+    }
+    break;
+  }
+
+  free(small_primes);
+  
+  fmpz_poly_clear(modulus);
+  printf("\n");
+  fflush(0);
+  mpfr_clear(norm);
+  mpfr_clear(sqrtn_sigma);
+  mpfr_clear(g_inv_norm);
+  fmpq_poly_clear(g_q);
+  fmpq_poly_clear(g_inv);
+  dgsl_rot_mp_clear(D);
+}
+
 void _gghlite_set_pzt(gghlite_t self) {
   assert(self->pk);
   assert(self->pk->n);
@@ -194,87 +281,6 @@ void _gghlite_set_pzt(gghlite_t self) {
   fmpz_mod_poly_clear(pzt);
   fmpz_mod_poly_clear(z_kappa);
   fmpz_mod_poly_clear(g_inv);
-}
-
-void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
-  assert(self->pk);
-  assert(self->pk->n);
-
-  fmpz_poly_init(self->g);
-
-  mpfr_t g_inv_norm;
-  mpfr_init2(g_inv_norm, fmpz_sizeinbase(self->pk->q,2));
-
-  mpfr_t norm;
-  mpfr_init2(norm, mpfr_get_prec(self->pk->sigma));
-
-  mpfr_t sqrtn_sigma;
-  mpfr_init2(sqrtn_sigma, mpfr_get_prec(self->pk->sigma));
-  mpfr_set_si(sqrtn_sigma, self->pk->n, MPFR_RNDN);
-  mpfr_sqrt(sqrtn_sigma, sqrtn_sigma, MPFR_RNDN);
-  mpfr_mul(sqrtn_sigma, sqrtn_sigma, self->pk->sigma, MPFR_RNDN);
-
-  dgsl_rot_mp_t *D = _gghlite_dgsl_from_n(self->pk->n, self->pk->sigma);
-
-  long fail[3] = {0,0,0};
-
-  fmpz_poly_t modulus;
-  fmpz_poly_init2(modulus, self->pk->n);
-  fmpz_poly_set_fmpz_mod_poly(modulus, self->pk->modulus);
-
-  fmpq_poly_t g_q;
-  fmpq_poly_init(g_q);
-
-  fmpq_poly_t g_inv;
-  fmpq_poly_init(g_inv);
-
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, 20);
-  const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
-  
-  while(1) {
-    printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
-    fflush(0);
-
-    uint64_t t = ggh_walltime(0);
-    fmpz_poly_sample_D(self->g, D, randstate);
-    self->t_sample += ggh_walltime(t);
-
-    fmpz_poly_eucl_norm_mpfr(norm, self->g, MPFR_RNDN);
-    if(mpfr_cmp(norm, sqrtn_sigma)>0) {
-      fail[0]++;
-      continue;
-    }
-
-    /* 1. check if prime */
-    t = ggh_walltime(0);
-    if (!fmpz_poly_oz_ideal_is_probaprime(self->g, modulus, sloppy, 20, small_primes)) {
-      fail[1]++;
-      self->t_is_prime += ggh_walltime(t);
-      continue;
-    } else {
-      self->t_is_prime += ggh_walltime(t);
-    }
-
-    /* 2. check norm of inverse */
-    fmpq_poly_set_fmpz_poly(g_q, self->g);
-    _fmpq_poly_oz_invert_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);
-    if (!_gghlite_g_inv_check(self->pk, g_inv)) {
-      fail[2]++;
-      continue;
-    }
-    break;
-  }
-
-  free(small_primes);
-  
-  fmpz_poly_clear(modulus);
-  printf("\n");
-  mpfr_clear(norm);
-  mpfr_clear(sqrtn_sigma);
-  mpfr_clear(g_inv_norm);
-  fmpq_poly_clear(g_q);
-  fmpq_poly_clear(g_inv);
-  dgsl_rot_mp_clear(D);
 }
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
