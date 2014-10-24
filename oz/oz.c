@@ -1,3 +1,4 @@
+#include <omp.h>
 #include "flint-addons.h"
 #include "util.h"
 #include "oz.h"
@@ -695,38 +696,44 @@ mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const in
 }
 
 int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy, const int k, const mp_limb_t *small_primes) {
-  int r = 1;
+  int num_threads = omp_get_max_threads();
 
-  nmod_poly_t f_mod;
-  nmod_poly_t g_mod;
+  nmod_poly_t a[num_threads];
+  nmod_poly_t b[num_threads];
+  int r[num_threads];
 
-  for(int i=0; i<k; i++) {
-    mp_limb_t p = small_primes[i];
+  for(int j=0; j<num_threads; j++)
+    r[j] = 1;
 
-    // TODO: use _nmod_vec and check conditions manually
-    nmod_poly_init(f_mod, p); fmpz_poly_get_nmod_poly(f_mod, f);
-    nmod_poly_init(g_mod, p); fmpz_poly_get_nmod_poly(g_mod, g);
-
-    if (nmod_poly_resultant(f_mod, g_mod) == 0) {
-      r = 0;
-      nmod_poly_clear(f_mod);
-      nmod_poly_clear(g_mod);
-      break;
+  for(int i=0; i<k; i+=num_threads) {
+    if (k-i < num_threads)
+      num_threads = k-i;
+#pragma omp parallel for   
+    for (int j=0; j<num_threads; j++) {
+      mp_limb_t p = small_primes[i+j];
+      nmod_poly_init(a[j], p); fmpz_poly_get_nmod_poly(a[j], f);
+      nmod_poly_init(b[j], p); fmpz_poly_get_nmod_poly(b[j], g);
+      r[j] = nmod_poly_resultant(a[j], b[j]);
+      nmod_poly_clear(a[j]);
+      nmod_poly_clear(b[j]);
     }
-    nmod_poly_clear(f_mod);
-    nmod_poly_clear(g_mod);
+    for(int j=0; j<num_threads; j++)
+      if (r[j]==0) {
+        r[0] = 0;
+        break;
+      }
+    if (r[0] == 0)
+      break;
   }
+  if (sloppy)
+    return r[0];
 
-  if (sloppy) {
-    return r;
-  }
-
-  if (r) {
+  if (r[0]) {
     fmpz_t norm;
     fmpz_init(norm);
     fmpz_poly_oz_ideal_norm(norm, f, fmpz_poly_degree(g), 0);
-    r = fmpz_is_probabprime(norm);
+    r[0] = fmpz_is_probabprime(norm);
     fmpz_clear(norm);
   }
-  return r;
+  return r[0];
 }
