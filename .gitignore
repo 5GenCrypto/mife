@@ -40,3 +40,4 @@ callgrind.*
 *~
 .libs/
 /test_*
+.dir-locals.el
