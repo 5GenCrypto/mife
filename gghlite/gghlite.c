@@ -259,11 +259,14 @@ void _gghlite_set_pzt(gghlite_t self) {
   fmpz_mod_poly_set(z_kappa, self->z);
   fmpz_mod_poly_powmod_ui_binexp(z_kappa, z_kappa, self->pk->kappa, self->pk->modulus);
 
+  fmpz_mod_poly_t g_mod;
+  fmpz_mod_poly_init(g_mod, self->pk->q);
+  fmpz_mod_poly_set_fmpz_poly(g_mod, self->g);
+
   fmpz_mod_poly_t g_inv;
   fmpz_mod_poly_init(g_inv, self->pk->q);
-  fmpz_mod_poly_set_fmpz_poly(g_inv, self->g);
-  fmpz_mod_poly_invert_mod(g_inv, g_inv, self->pk->modulus);
-
+  fmpz_mod_poly_oz_invert(g_inv, g_mod, self->pk->n);
+  
   fmpz_mod_poly_t pzt;
   fmpz_mod_poly_init(pzt, self->pk->q);
   fmpz_mod_poly_mulmod(pzt, z_kappa, g_inv, self->pk->modulus);
@@ -281,6 +284,7 @@ void _gghlite_set_pzt(gghlite_t self) {
   fmpz_mod_poly_clear(pzt);
   fmpz_mod_poly_clear(z_kappa);
   fmpz_mod_poly_clear(g_inv);
+  fmpz_mod_poly_clear(g_mod);
 }
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
@@ -319,7 +323,7 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
   fmpz_mod_poly_randtest(self->z, randstate, self->pk->n);
 
   fmpz_mod_poly_init(self->z_inv, self->pk->q);
-  fmpz_mod_poly_invert_mod(self->z_inv, self->z, self->pk->modulus);
+  fmpz_mod_poly_oz_invert(self->z_inv, self->z, self->pk->n);
   self->t_sample +=  ggh_walltime(t);
 }
 
