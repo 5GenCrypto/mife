@@ -1,6 +1,26 @@
 #ifndef _OZ_H_
 #define _OZ_H_
 
+/******************************************************************************
+*
+*              OZ: Operations in 2^k-th Cyclotomic Number Fields 
+*
+*    Copyright (C) 2014 Martin Albrecht <martinralbrecht+oz@googlemail.com> 
+*    Copyright (C) 2014 Catalin Cocis <catalincocis@yahoo.com > 
+*
+*  Distributed under the terms of the GNU General Public License (GPL)
+*  version 2 or higher.
+*
+*    This code is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*    General Public License for more details.
+*
+*  The full text of the GPL is available at:
+*
+*                  http://www.gnu.org/licenses/
+******************************************************************************/
+
 #include <stdio.h>
 #include <stdint.h>
 #include <mpfr.h>
@@ -9,7 +29,6 @@
 
 typedef enum {
   OZ_VERBOSE    = 0x1, //< print debug messages
-  OZ_BABYLONIAN = 0x2, //< use Babylonian method for sqrt
 } oz_flag_t;
 
 static inline void fmpz_poly_oz_init_modulus(fmpz_poly_t f, const long n) {
@@ -38,14 +57,6 @@ static inline void fmpq_poly_oz_mul(fmpq_poly_t rop, const fmpq_poly_t op1, cons
   fmpq_poly_mul(rop, op1, op2);
   fmpq_poly_oz_rem(rop, rop, n);
 }
-
-void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, const mpfr_prec_t prec);
-
-void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const uint64_t flags);
-
-int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init);
-int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init);
-int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const int p, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init);
 
 /*
   Set `fT` to the conjugate of `f`.
@@ -100,5 +111,7 @@ static inline int fmpz_poly_oz_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_
   return r;
 }
 
+#include "invert.h"
+#include "sqrt.h"
 
 #endif /* _OZ_H_ */
