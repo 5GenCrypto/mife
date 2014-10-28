@@ -35,7 +35,7 @@ tests/*.trs
 */stamp-h1
 */.deps/
 tests/test_dgsl
-tests/test_resultant
+tests/test_norm
 tests/test_invert
 test_misc
 test-driver

@@ -11,14 +11,14 @@ test_dgsl_SOURCES = test_dgsl.c
 test_dgsl_LDADD = $(MY_PROGRAM_LDADD)
 test_dgsl_LDFLAGS = -no-install
 
-test_resultant_SOURCES = test_resultant.c
-test_resultant_LDADD = $(MY_PROGRAM_LDADD)
-test_resultant_LDFLAGS = -no-install
+test_norm_SOURCES = test_norm.c
+test_norm_LDADD = $(MY_PROGRAM_LDADD)
+test_norm_LDFLAGS = -no-install
 
 test_invert_SOURCES = test_invert.c
 test_invert_LDADD = $(MY_PROGRAM_LDADD)
 test_invert_LDFLAGS = -no-install
 
-TESTS = test_dgsl test_resultant test_invert
-check_PROGRAMS = test_dgsl test_resultant test_invert
+TESTS = test_dgsl test_norm test_invert
+check_PROGRAMS = test_dgsl test_norm test_invert
 
