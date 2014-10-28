@@ -445,7 +445,7 @@ dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t 
   mpfr_set(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
 
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(fmpz_poly_length(g), g, sigma_, c, algorithm);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(fmpz_poly_length(g), g, sigma_, c, algorithm, OZ_VERBOSE);
   mpfr_clear(sigma_);
   return D;
 }
@@ -464,7 +464,7 @@ dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma) {
   mpfr_set(sigma_, sigma, MPFR_RNDN);
   mpfr_mul_d(sigma_, sigma_, S_TO_SIGMA, MPFR_RNDN);
 
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, I, sigma_, NULL, DGSL_IDENTITY);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, I, sigma_, NULL, DGSL_IDENTITY, OZ_VERBOSE);
   fmpz_poly_clear(I);
   mpfr_clear(sigma_);
   return D;

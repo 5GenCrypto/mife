@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4 --install
-SUBDIRS = flint oz dgs dgsl
+SUBDIRS = flint oz dgs dgsl tests
 
 AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(srcdir)/dgs/ -I$(srcdir)/flint -fopenmp
 
@@ -22,7 +22,7 @@ libgghlite_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 
 include_HEADERS = gghlite/gghlite.h gghlite/gghlite-defs.h gghlite/gghlite-internals.h gghlite/misc.h
 
-MY_PROGRAM_LDADD= $(srcdir)/libgghlite.la \
+MY_PROGRAM_LDADD= $(top_builddir)/libgghlite.la \
 		  $(top_builddir)/dgs/libdgs.la \
 		  $(top_builddir)/oz/liboz.la \
                   $(top_builddir)/dgsl/libdgsl.la \
@@ -54,17 +54,7 @@ bench_dgsl_SOURCES = applications/bench_dgsl.c applications/bench_dgsl.h
 bench_dgsl_LDADD = $(MY_PROGRAM_LDADD)
 bench_dgsl_LDFLAGS = -no-install
 
-
 test_misc_SOURCES = tests/test_misc.c
 test_misc_LDADD = $(MY_PROGRAM_LDADD)
 test_misc_LDFLAGS = -no-install
 
-check_PROGRAMS = test_dgsl test_resultant
-
-test_dgsl_SOURCES = tests/test_dgsl.c
-test_dgsl_LDADD = $(MY_PROGRAM_LDADD)
-test_dgsl_LDFLAGS = -no-install
-
-test_resultant_SOURCES = tests/test_resultant.c
-test_resultant_LDADD = $(MY_PROGRAM_LDADD)
-test_resultant_LDFLAGS = -no-install

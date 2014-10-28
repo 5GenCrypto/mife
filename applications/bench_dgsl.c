@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_init2(g, n);
   fmpz_poly_sample_sigma(g, n, sigma, randstate);
 
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, g, sigma_p, NULL, DGSL_INLATTICE);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(n, g, sigma_p, NULL, DGSL_INLATTICE, 0);
 
   fmpz_poly_t f;
   fmpz_poly_init(f);

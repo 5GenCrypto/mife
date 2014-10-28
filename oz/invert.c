@@ -3,12 +3,102 @@
 #include "oz.h"
 #include "flint-addons.h"
 
+void fmpz_mod_poly_oz_invert(fmpz_mod_poly_t f_inv, const fmpz_mod_poly_t f, const long n) {
+  assert(1<<n_clog(n,2) == n);
+  if(f_inv == f)
+    oz_die("fmpz_mod_poly_oz_invert does not support parameter aliasing");
 
-void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const int n, const mpfr_prec_t prec) {
+  fmpz_mod_poly_t V;  fmpz_mod_poly_init(V, fmpz_mod_poly_modulus(f));
+  fmpz_mod_poly_set(V, f);
+
+  fmpz_mod_poly_t U;  fmpz_mod_poly_init(U, fmpz_mod_poly_modulus(f));
+
+  /* F(x) = x^n+1 */
+  fmpz_mod_poly_t V2;  fmpz_mod_poly_init(V2, fmpz_mod_poly_modulus(f));
+
+  fmpz_mod_poly_t Se;  fmpz_mod_poly_init(Se, fmpz_mod_poly_modulus(f));
+  fmpz_mod_poly_t So;  fmpz_mod_poly_init(So, fmpz_mod_poly_modulus(f));
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+
+  int deg;
+  if (n > 1) {
+    /* set V2(x) = V(-x) */
+    fmpz_mod_poly_set(V2, V);
+    deg = fmpz_mod_poly_degree(V2);
+    for (int i = 1 ; i <= deg ; i += 2) {
+      /* negate odd coefficients */
+      fmpz_mod_poly_get_coeff_fmpz(tmp,V2,i);
+      fmpz_neg(tmp,tmp);
+      fmpz_mod_poly_set_coeff_fmpz(V2,i,tmp);
+    }
+
+    /* compute Se, So */
+    /* Set Se = (V(x) + V(-x))/2 */
+    for (int i = 0; i <= deg/2 ; i++) {
+      fmpz_mod_poly_get_coeff_fmpz(tmp, V2, 2*i);
+      fmpz_mod_poly_set_coeff_fmpz(Se, i, tmp);
+    }
+    fmpz_mod_poly_truncate(Se,deg/2+1);
+    
+    /* Set So to the compressed (V(-x) - V(x))/2 */
+    for (int i = 0 ; i < (deg+1)/2 ; i++) {
+      fmpz_mod_poly_get_coeff_fmpz(tmp, V2, 2*i+1);
+      fmpz_mod_poly_set_coeff_fmpz(So,i,tmp);
+    }
+    fmpz_mod_poly_truncate(So,deg/2+1);
+
+    /* V = V(x) * V(-x) mod f(x) */
+    fmpz_mod_poly_oz_mul(V, V, V2, n);
+
+    deg = fmpz_mod_poly_degree(V);
+    /* Compress the non-zero coeffs of V */
+    for (int i = 0; i <= deg/2 ; i ++) {
+      fmpz_mod_poly_get_coeff_fmpz(tmp, V, 2*i);
+      fmpz_mod_poly_set_coeff_fmpz(V, i, tmp);
+    }
+    fmpz_mod_poly_truncate(V,deg/2+1);
+    fmpz_mod_poly_oz_invert(V2, V, n/2);
+
+    /* Te=G*Se, To = G*So */
+    fmpz_mod_poly_mul(V,V2,Se);
+    fmpz_mod_poly_mul(U,V2,So);
+
+    deg = fmpz_mod_poly_degree(V);
+    fmpz_mod_poly_zero(f_inv);
+    for (int i = 0 ; i <= deg ; i ++) {
+      fmpz_mod_poly_get_coeff_fmpz(tmp, V, i);
+      fmpz_mod_poly_set_coeff_fmpz(f_inv, 2*i, tmp);
+    }
+    deg = fmpz_mod_poly_degree(U);
+    for (int i = 0 ; i <= deg ; i ++) {
+      fmpz_mod_poly_get_coeff_fmpz(tmp, U, i);
+      fmpz_mod_poly_set_coeff_fmpz(f_inv, 2*i+1, tmp);
+    }
+    fmpz_mod_poly_oz_rem(f_inv,f_inv,n);
+
+    /* truncate results on the precision required by algorithm */
+  } else {
+    fmpz_mod_poly_zero(f_inv);
+    fmpz_mod_poly_get_coeff_fmpz(tmp, f, 0);
+    fmpz_invmod(tmp, tmp, fmpz_mod_poly_modulus(f));
+    fmpz_mod_poly_set_coeff_fmpz(f_inv, 0, tmp);
+    fmpz_mod_poly_truncate(f_inv,1);
+  }
+
+  /* free memory */
+  fmpz_clear(tmp);
+  fmpz_mod_poly_clear(So);
+  fmpz_mod_poly_clear(Se);
+  fmpz_mod_poly_clear(V2);
+  fmpz_mod_poly_clear(U);
+  fmpz_mod_poly_clear(V);
+}
+
+void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
   if(f_inv == f)
     oz_die("_fmpq_poly_oz_invert_approx does not support parameter aliasing");
-
-  fmpq_poly_zero(f_inv);
 
   fmpq_poly_t V;
   fmpq_poly_init(V);
@@ -80,6 +170,7 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
     fmpq_poly_mul(V,V2,Se);
     fmpq_poly_mul(U,V2,So);
 
+    fmpq_poly_zero(f_inv);
     deg = fmpq_poly_degree(V);
     for (int i = 0 ; i <= deg ; i ++) {
       fmpq_poly_get_coeff_fmpq(tmp,V,i);
@@ -90,14 +181,13 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
       fmpq_poly_get_coeff_fmpq(tmp,U,i);
       fmpq_poly_set_coeff_fmpq(f_inv,2*i+1,tmp);
     }
-    if (deg>= 0)
-      fmpq_poly_truncate(f_inv,2*deg+2);
     fmpq_poly_oz_rem(f_inv,f_inv,n);
 
     /* truncate results on the precision required by algorithm */
     if (prec)
       fmpq_poly_truncate_prec(f_inv, prec);
   } else {
+    fmpq_poly_zero(f_inv);
     if (fmpz_poly_is_zero(f))
       oz_die("division by zero.");
     f_inv->length = 1;
@@ -121,6 +211,11 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const i
 
 void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long n,
                                 const mpfr_prec_t prec, const uint64_t flags) {
+
+  if (prec == 0) {
+    _fmpq_poly_oz_invert_approx(rop, f, n, prec);
+    return;
+  }
   fmpq_poly_t tmp;
   fmpq_poly_init(tmp);
 

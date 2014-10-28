@@ -241,7 +241,7 @@ void dgsl_mp_clear(dgsl_mp_t *self) {
    Rotational Basis
 **/
 
-dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm) {
+dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm, const oz_flag_t flags) {
   assert(mpfr_cmp_ui(sigma, 0) > 0);
 
   dgsl_rot_mp_t *self = (dgsl_rot_mp_t*)calloc(1, sizeof(dgsl_rot_mp_t));
@@ -338,7 +338,7 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
     fmpq_poly_init(self->sigma_sqrt);
     long r= 2*ceil(sqrt(log(n)));
 
-    _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec, OZ_VERBOSE);
+    _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec, flags);
     mpfr_init2(self->r_f, self->prec);
     mpfr_set_ui(self->r_f, r, MPFR_RNDN);
 

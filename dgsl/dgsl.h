@@ -64,7 +64,7 @@ typedef struct _dgsl_mp_t{
 
 dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const dgsl_alg_t algorithm);
 
-dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm);
+dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm, const oz_flag_t flags);
 
 int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
@@ -123,7 +123,7 @@ static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_
   fmpz_poly_t I;
   fmpz_poly_init(I);
   fmpz_poly_one(I);
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(len, I, sigma, NULL, DGSL_IDENTITY);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(len, I, sigma, NULL, DGSL_IDENTITY, OZ_VERBOSE);
 
   fmpz_mod_poly_sample_D(f, D, randstate);
 
@@ -135,7 +135,7 @@ static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma,
   fmpz_poly_t I;
   fmpz_poly_init(I);
   fmpz_poly_one(I);
-  dgsl_rot_mp_t *D = dgsl_rot_mp_init(len, I, sigma, NULL, DGSL_IDENTITY);
+  dgsl_rot_mp_t *D = dgsl_rot_mp_init(len, I, sigma, NULL, DGSL_IDENTITY, OZ_VERBOSE);
 
   fmpz_poly_sample_D(f, D, randstate);
 

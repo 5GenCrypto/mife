@@ -212,7 +212,9 @@ static inline void fmpz_mod_poly_invert_mod(fmpz_mod_poly_t f_inv, fmpz_mod_poly
   fmpz_mod_poly_t t; fmpz_mod_poly_init(t, fmpz_mod_poly_modulus(modulus));
 
   fmpz_mod_poly_xgcd(r, f_inv, t, f, modulus);
-  assert(fmpz_mod_poly_degree(r) == 0 && fmpz_is_one(r->coeffs + 0));
+  if (fmpz_mod_poly_degree(r) != 0 || !fmpz_is_one(r->coeffs + 0)) {
+      fmpz_mod_poly_zero(f_inv);
+  }
 
   fmpz_mod_poly_clear(t);
   fmpz_mod_poly_clear(r);
