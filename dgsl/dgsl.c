@@ -607,7 +607,7 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
      |g^-T| ~= |g^-1|
      |g^-1·g^-T| ~= sqrt(n)·|g^-T|·|g^-1|
   */
-  p = 8 * ceil(log2(n*p));
+  p = ceil(log2(n)/2.0 * (log2(n)+log2(p)));
   fmpq_poly_t sqrt_start; fmpq_poly_init(sqrt_start);
   fmpq_poly_oz_sqrt_approx_db(sqrt_start, nggt, n, p, prec/2, flags, NULL);
   
