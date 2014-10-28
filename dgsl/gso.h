@@ -47,7 +47,7 @@ static inline void _mpfr_vec_clear(mpfr_t *op, const long n) {
 
 static inline void _mpfr_vec_set(mpfr_t *rop, mpfr_t *op, const long n, const mpfr_rnd_t rnd) {
   for(long i=0; i<n; i++) {
-    mpfr_set(rop[i], op[i], MPFR_RNDN);
+    mpfr_set(rop[i], op[i], rnd);
   }
 }
 
@@ -56,7 +56,7 @@ static inline void _mpfr_vec_set_fmpz_vec(mpfr_t *rop, fmpz *op, const long n, c
   mpz_init(tmp);
   for(long i=0; i<n; i++) {
     fmpz_get_mpz(tmp, op + i);
-    mpfr_set_z(rop[i], tmp, MPFR_RNDN);
+    mpfr_set_z(rop[i], tmp, rnd);
   }
   mpz_clear(tmp);
 }
