@@ -15,7 +15,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
   if (prec == 0) {
     mp_bitcnt_t bound = _fmpq_poly_oz_ideal_norm_bound(f, n);
-    fmpq_poly_oz_init_modulus(modulus, n);
+    fmpq_poly_init_oz_modulus(modulus, n);
     fmpq_poly_resultant_modular_bound(norm, f, modulus, bound);
     fmpq_poly_clear(modulus);
 
@@ -30,7 +30,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
   } else {
 
-    fmpq_poly_oz_init_modulus(modulus, n);
+    fmpq_poly_init_oz_modulus(modulus, n);
     fmpq_poly_t f_trunc;
     fmpq_poly_init(f_trunc);
     fmpq_poly_set(f_trunc, f);
@@ -49,7 +49,7 @@ void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, con
   mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
   if (prec == 0) {
     fmpz_poly_t modulus;
-    fmpz_poly_oz_init_modulus(modulus, n);
+    fmpz_poly_init_oz_modulus(modulus, n);
     fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
     fmpz_poly_clear(modulus);
   } else {
@@ -66,9 +66,6 @@ void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, con
   }
 }
 
-
-
-
 void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n) {
   fmpz_poly_set(rem, f);
   fmpz_t lead; fmpz_init(lead);
@@ -84,13 +81,28 @@ void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n) {
   fmpz_clear(lead);
 }
 
+void fmpz_mod_poly_oz_rem(fmpz_mod_poly_t rem, const fmpz_mod_poly_t f, const long n) {
+  fmpz_mod_poly_set(rem, f);
+  fmpz_t lead; fmpz_init(lead);
+  fmpz_t coef; fmpz_init(coef);
+  for(long d=fmpz_mod_poly_degree(rem); d>=n; d--) {
+    fmpz_mod_poly_get_coeff_fmpz(lead, rem, d);
+    fmpz_mod_poly_get_coeff_fmpz(coef, rem, d-n);
+    fmpz_sub(coef, coef, lead);
+    fmpz_mod_poly_set_coeff_ui(rem, d, 0);
+    fmpz_mod_poly_set_coeff_fmpz(rem, d-n, coef);
+  }
+  fmpz_clear(coef);
+  fmpz_clear(lead);
+}
+
 void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n) {
 
   const long d = fmpq_poly_degree(f);
   if(d > 2*n-1) {
     // TODO: Don't be so lazy and take care of this case as well
     fmpq_poly_t modulus;
-    fmpq_poly_oz_init_modulus(modulus, n);
+    fmpq_poly_init_oz_modulus(modulus, n);
     fmpq_poly_rem(rem, f, modulus);
     fmpq_poly_clear(modulus);
   } else if (d>=n) {

@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
 
   fmpz_poly_t modulus;
-  fmpz_poly_oz_init_modulus(modulus, n);
+  fmpz_poly_init_oz_modulus(modulus, n);
 
   uint64_t t = ggh_walltime(0);
 

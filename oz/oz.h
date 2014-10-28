@@ -26,27 +26,28 @@
 #include <mpfr.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpq_poly.h>
+#include <flint/fmpz_mod_poly.h>
 
 typedef enum {
   OZ_VERBOSE    = 0x1, //< print debug messages
 } oz_flag_t;
 
-static inline void fmpz_poly_oz_init_modulus(fmpz_poly_t f, const long n) {
+static inline void fmpz_poly_init_oz_modulus(fmpz_poly_t f, const long n) {
   fmpz_poly_init(f);
   fmpz_poly_set_coeff_si(f, 0, 1);
   fmpz_poly_set_coeff_si(f, n, 1);
 }
 
 
-static inline void fmpq_poly_oz_init_modulus(fmpq_poly_t f, const long n) {
+static inline void fmpq_poly_init_oz_modulus(fmpq_poly_t f, const long n) {
   fmpq_poly_init(f);
   fmpq_poly_set_coeff_si(f, 0, 1);
   fmpq_poly_set_coeff_si(f, n, 1);
 }
 
 void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n);
-
 void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n);
+void fmpz_mod_poly_oz_rem(fmpz_mod_poly_t rem, const fmpz_mod_poly_t f, const long n);
 
 static inline void fmpz_poly_oz_mul(fmpz_poly_t rop, const fmpz_poly_t op1, const fmpz_poly_t op2, const long n) {
   fmpz_poly_mul(rop, op1, op2);
