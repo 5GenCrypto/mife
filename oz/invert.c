@@ -184,7 +184,7 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const l
       fmpq_poly_get_coeff_mpq(tmp_q[2*i+1], U, i);
       /* fmpq_poly_set_coeff_fmpq(f_inv,2*i+1,tmp); */
     }
-    fmpq_poly_set_array_mpq(f_inv, (const mpq_t*)tmp_q, 2*deg+2);
+    fmpq_poly_set_array_mpq(f_inv, (const mpq_t*)tmp_q, 2*deg+3);
     fmpq_poly_oz_rem(f_inv,f_inv,n);
 
     /* truncate results on the precision required by algorithm */
