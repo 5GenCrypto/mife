@@ -211,7 +211,7 @@ int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, const long n, int sloppy, co
   for(int i=0; i<k; i+=num_threads) {
     if (k-i < num_threads)
       num_threads = k-i;
-#pragma omp parallel for   
+#pragma omp parallel for
     for (int j=0; j<num_threads; j++) {
       mp_limb_t p = small_primes[i+j];
       nmod_poly_init(a[j], p); fmpz_poly_get_nmod_poly(a[j], f);

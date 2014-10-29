@@ -186,10 +186,10 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   int k = ceil((log2(_gghlite_sigma(self->pk->n)) + log2(self->pk->n)/2.0) * self->pk->n/100.0/(FLINT_BITS -1));
   if (k < 20)
     k = 20;
-  
+
   mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, k);
   const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
-  
+
   while(1) {
     printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
     fflush(0);
@@ -308,7 +308,7 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
   assert(fmpz_cmp_ui(self->pk->q,0)>0);
 
   fmpz_mod_poly_init(self->z, self->pk->q);
-  
+
   uint64_t t = ggh_walltime(0);
   fmpz_mod_poly_randtest(self->z, randstate, self->pk->n);
 
@@ -360,7 +360,7 @@ void gghlite_clear(gghlite_t self, int clear_pk) {
   fmpz_mod_poly_clear(self->z_inv);
   fmpz_poly_clear(self->g);
   dgsl_rot_mp_clear(self->D_g);
-  
+
   if (clear_pk)
     gghlite_pk_clear(self->pk);
 }

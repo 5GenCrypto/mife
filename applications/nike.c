@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, cmdline_params->seed, 1);
 
-  
+
   if (verbose)
     print_intro();
 
@@ -118,12 +118,12 @@ int main(int argc, char *argv[]) {
   t = ggh_walltime(t);
   printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/cmdline_params->N);
 
-  
+
   printf("-----------------------------------------------------\n");
   printf(" Check: ");
   if (verbose)
     printf("\n-----------------------------------------------------\n");
-      
+
   int ret = 0;
   for(int i=1; i<cmdline_params->N; i++) {
     if(verbose)
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   printf("λ: %3ld, N: %2ld, n: %6ld, seed: 0x%08lx, sloppy: %ld, success: %d, time: %10.2fs\n",
          cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_SLOPPY,
          ret==0, ggh_walltime(t_total)/1000000.0);
-  
+
   for(int i=0; i<cmdline_params->N; i++) {
     gghlite_enc_clear(e[i]);
     gghlite_enc_clear(u[i]);
