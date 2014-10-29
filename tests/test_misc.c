@@ -62,7 +62,7 @@ int test_sqrt_approx(long n, long prec) {
   mpfr_init2(sigma, prec);
   mpfr_set_d(sigma, _gghlite_sigma(n), MPFR_RNDN);
   mpfr_mul_d(sigma, sigma, 0.398942280401433, MPFR_RNDN);
-  
+
   fmpz_poly_sample_sigma(g, n, sigma, randstate);
 
   mpfr_t sigma_p;
@@ -70,7 +70,7 @@ int test_sqrt_approx(long n, long prec) {
   mpfr_set_d(sigma_p, _gghlite_sigma_p(n), MPFR_RNDN);
   mpfr_mul_d(sigma_p, sigma_p, 0.398942280401433, MPFR_RNDN);
 
-  
+
   fmpq_poly_t Sigma_sqrt;
   fmpq_poly_init(Sigma_sqrt);
 
@@ -78,7 +78,7 @@ int test_sqrt_approx(long n, long prec) {
 
   fmpz_poly_clear(g);
   fmpq_poly_clear(Sigma_sqrt);
-  
+
   return 0;
 }
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   test_sqrt_approx(n, prec);
   exit(0);
-  
+
   fmpz_poly_t g;
   fmpz_poly_init(g);
 
@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
   uint64_t t = ggh_walltime(0);
 
   int k = 20;
-  
+
   mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(n, k);
-  
+
   int r = 0;
   for(size_t i=0; i<prec; i++) {
     fmpz_poly_sample_sigma(g, n, sigma, randstate);

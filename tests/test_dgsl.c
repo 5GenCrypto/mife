@@ -279,7 +279,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   mpfr_clear(sigma_);
   mpfr_clear(sigma_p_);
   fmpz_poly_clear(B);
-  if (ratio < 1.2)
+  if (ratio < 1.4)
     return 0;
   else
     return 1;

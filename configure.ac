@@ -34,13 +34,18 @@ if test "x$enable_heuristics" = x"yes"; then
    AC_DEFINE(GGHLITE_HEURISTICS,1,[Define whether to enable performance improvements])
 fi
 
-AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile])
 
 AC_CONFIG_SUBDIRS([dgs])
 
 # configure FLINT by hand because it doesn't support all options autotools might
 # throw at it
 
-cd flint && ./configure --prefix=${prefix} && cd ..
+AC_ARG_VAR(FLINT, [If set to no then calling configure on FLINT is skipped])
+
+
+if test "$FLINT" -neq "no"; then
+   cd flint && ./configure --prefix=${prefix} && cd ..
+fi   
 
 AC_OUTPUT

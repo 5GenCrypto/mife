@@ -6,14 +6,14 @@ int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
   fmpz_t q;
   fmpz_init(q);
   fmpz_set_si(q, q_);
-  
+
   fmpz_mod_poly_t f;  fmpz_mod_poly_init(f, q);
   fmpz_mod_poly_t g;  fmpz_mod_poly_init_oz_modulus(g, q, n);
 
   fmpz_mod_poly_randtest(f, state, n);
   while (fmpz_mod_poly_degree(f) < n-1)
     fmpz_mod_poly_randtest(f, state, n);
-  
+
   fmpz_mod_poly_t r0, r1;
   fmpz_mod_poly_init(r0, q);
   fmpz_mod_poly_init(r1, q);
@@ -33,14 +33,18 @@ int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
     fmpz_mod_poly_print_pretty(r1, "x"); printf("\n");
   }
 
-  printf("n: %4ld, q: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f, passes: %d\n", n, q_,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1, r);
+  printf("n: %4ld,    q: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f ", n, q_,
+         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+  if (r)
+    printf(" PASS\n");
+  else
+    printf(" FAIL\n");
 
   fmpz_mod_poly_clear(f);
   fmpz_mod_poly_clear(g);
   fmpz_mod_poly_clear(r0);
   fmpz_mod_poly_clear(r1);
-  return r;
+  return !r;
 }
 
 int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
@@ -50,7 +54,7 @@ int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
   fmpq_poly_randtest(f, state, n, bits);
   while (fmpq_poly_degree(f) < n-1)
     fmpq_poly_randtest(f, state, n, bits);
-  
+
   fmpq_poly_t r0, r1;
   fmpq_poly_init(r0);
   fmpq_poly_init(r1);
@@ -71,14 +75,18 @@ int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
     exit(1);
   }
 
-  printf("n: %4ld, bits: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f, passes: %d\n", n, bits,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1, r);
+  printf("n: %4ld, bits: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f ", n, bits,
+         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+  if (r)
+    printf(" PASS\n");
+  else
+    printf(" FAIL\n");
 
   fmpq_poly_clear(f);
   fmpq_poly_clear(g);
   fmpq_poly_clear(r0);
   fmpq_poly_clear(r1);
-  return r;
+  return !r;
 }
 
 
@@ -95,6 +103,7 @@ int main(int argc, char *argv[]) {
     for(long q=n_nextprime(1,0); q<100; q = n_nextprime(q, 0))
       status += test_fmpz_mod_poly_oz_invert(n[i], q, state);
 
+  printf("\n");
   for(int i=0; n[i]; i++)
     for(mp_bitcnt_t bits=1; bits < n[i]; bits=2*bits)
       status += test_fmpq_poly_oz_invert(n[i], bits, state);

@@ -21,11 +21,11 @@ missing
 */Makefile
 /dgsl/Makefile
 /config.status
-/gghlite_params
-/gghlite_instance
-/gghlite_noise_dist
-/gghlite_false_friends
-/nike
+/applications/gghlite_params
+/applications/gghlite_instance
+/applications/gghlite_noise_dist
+/applications/gghlite_false_friends
+/applications/nike
 */.dirstamp
 */*.lo
 */*.o
@@ -37,6 +37,7 @@ tests/*.trs
 tests/test_dgsl
 tests/test_norm
 tests/test_invert
+tests/test_mul
 test_misc
 test-driver
 bench_dgsl
