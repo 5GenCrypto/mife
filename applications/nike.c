@@ -92,11 +92,11 @@ int main(int argc, char *argv[]) {
     gghlite_enc_set_ui(tmp, 1);
     for(int j=0; j<cmdline_params->N; j++) {
       if (i==j) {
-        gghlite_mult(tmp, params, tmp, e[j]);
+        gghlite_mul(tmp, params, tmp, e[j]);
         if (verbose)
           printf("e_%d",j);
       } else {
-        gghlite_mult(tmp, params, tmp, u[j]);
+        gghlite_mul(tmp, params, tmp, u[j]);
         if (verbose)
           printf("u_%d",j);
       }

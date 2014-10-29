@@ -192,8 +192,8 @@ static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc
    :param g:         valid encoding
 */
 
-static inline void gghlite_mult(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_t f, gghlite_enc_t g) {
-  fmpz_mod_poly_mulmod(h, f, g, self->modulus);
+static inline void gghlite_mul(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_t f, gghlite_enc_t g) {
+  fmpz_mod_poly_oz_mul(h, f, g, self->n);
 }
 
 /**

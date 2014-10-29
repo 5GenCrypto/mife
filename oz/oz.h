@@ -92,7 +92,7 @@ void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, con
 
 mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const int k);
 
-int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, fmpz_poly_t g, int sloppy, const int k, const mp_limb_t *small_primes);
+int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, const long n, int sloppy, const int k, const mp_limb_t *small_primes);
 
 /**
    Decide if <b_0,b_1> = <g>

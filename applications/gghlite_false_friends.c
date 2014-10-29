@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     gghlite_enc_init(tmp, self->pk);
     gghlite_enc_set_ui(tmp, 1);
     for(int i=0; i<params->kappa; i++) {
-      gghlite_mult(tmp, self->pk, tmp, u[i]);
+      gghlite_mul(tmp, self->pk, tmp, u[i]);
     }
     assert(!gghlite_is_zero(self->pk, tmp));
     gghlite_enc_clear(tmp);

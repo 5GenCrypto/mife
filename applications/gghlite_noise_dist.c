@@ -54,10 +54,10 @@ int main(int argc, char *argv[]) {
     for(int k=0; k<params->kappa; k++) {
       gghlite_enc_set_ui(u[k], 0);
       gghlite_enc(u[k], self->pk, u[k], 1, 1, randstate);
-      gghlite_mult(tmp, self->pk, tmp, u[k]);
+      gghlite_mul(tmp, self->pk, tmp, u[k]);
     }
 
-    fmpz_mod_poly_mulmod(tmp, self->pk->pzt, tmp, self->pk->modulus);
+    fmpz_mod_poly_oz_mul(tmp, self->pk->pzt, tmp, self->pk->n);
     fmpz_poly_set_fmpz_mod_poly(out, tmp);
     fmpz_poly_eucl_norm_mpfr(norm, out, MPFR_RNDN);
     mpfr_add(acc, acc, norm, MPFR_RNDN);
