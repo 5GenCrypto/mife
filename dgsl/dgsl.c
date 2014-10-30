@@ -592,7 +592,7 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   fmpq_poly_t nggt;
   fmpq_poly_init(nggt);
   fmpq_poly_oz_mul(nggt, ng, ngt, n);
-  
+
   /**
      We compute sqrt(g^-T · g^-1) to use it as the starting point for
      convergence on sqrt(σ^2 · g^-T · g^-1 - r^2) below. We can compute the
@@ -612,12 +612,12 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   p = ceil(log2(n)/2.0 * (log2(n)+log2(p)));
   fmpq_poly_t sqrt_start; fmpq_poly_init(sqrt_start);
   fmpq_poly_oz_sqrt_approx_db(sqrt_start, nggt, n, p, prec/2, flags, NULL);
-  
+
   fmpq_t sigma2;
   fmpq_init(sigma2);
   fmpq_set_mpfr(sigma2, sigma, MPFR_RNDN);
   fmpq_poly_scalar_mul_fmpq(sqrt_start, sqrt_start, sigma2);
-  
+
   fmpq_mul(sigma2, sigma2, sigma2);
   fmpq_poly_scalar_mul_fmpq(nggt, nggt, sigma2);
   fmpq_clear(sigma2);
@@ -625,7 +625,7 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
   fmpq_poly_add(rop, rop, nggt);
 
   p = p + 2*log2(mpfr_get_d(sigma, MPFR_RNDN));
-  
+
   fmpq_poly_oz_sqrt_approx_babylonian(rop, rop, n, p, prec, flags, sqrt_start);
 
   mpfr_clear(norm);

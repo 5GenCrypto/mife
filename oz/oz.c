@@ -109,14 +109,14 @@ void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n) {
     assert(d-n+1 <= n);
     fmpq_poly_t r;
     fmpq_poly_init(r);
-    fmpq_poly_realloc(r, n);    
+    fmpq_poly_realloc(r, n);
     mpq_t *z = (mpq_t*)calloc(n, sizeof(mpq_t));
     for (int i = 0; i < n; i++) {
       mpq_init(z[i]);
       fmpq_poly_get_coeff_mpq(z[i], f, i);
     }
     fmpq_poly_set_array_mpq(r, (const mpq_t*)z, n);
-              
+
     for (int i=0; i<d-n+1; i++)
       fmpq_poly_get_coeff_mpq(z[i], f, n+i);
     fmpq_poly_t t;
@@ -125,7 +125,7 @@ void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n) {
     fmpq_poly_sub(r, r, t);
     fmpq_poly_set(rem, r);
 
-    fmpq_poly_clear(t);    
+    fmpq_poly_clear(t);
     fmpq_poly_clear(r);
     for (int i=0; i<n; i++)
       mpq_clear(z[i]);

@@ -1,5 +1,4 @@
 #include <gghlite/gghlite.h>
-
 #include "nike.h"
 
 int main(int argc, char *argv[]) {

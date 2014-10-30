@@ -131,7 +131,7 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_mul_ui(enc, enc, n, MPFR_RNDN);
 
   const char *units[3] = {"KB","MB","GB"};
-  
+
   double sd = mpfr_get_d(enc, MPFR_RNDN)/8.0;
   int i;
   for(i=0; i<3; i++) {
