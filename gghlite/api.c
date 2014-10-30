@@ -64,9 +64,7 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
 
   long logq = fmpz_sizeinbase(self->q,2) - 1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {
-    for(long j=0; j<logq-self->ell; j++) {
-      fmpz_clrbit(rop->coeffs + i, j);
-    }
+    fmpz_tdiv_q_2exp(rop->coeffs+i,rop->coeffs+i, logq-self->ell+1);
   }
 }
 
