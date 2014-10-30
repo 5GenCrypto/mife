@@ -459,6 +459,7 @@ int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_r
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
   /* fmpz_poly_neg(rop, rop); */
   fmpz_poly_oz_mul(rop, self->B, rop, self->n);
+  fmpq_poly_clear(x);
   return 0;
 }
 
@@ -481,7 +482,8 @@ void dgsl_rot_mp_clear(dgsl_rot_mp_t *self) {
 
   }
   if(self->call == dgsl_rot_mp_call_inlattice) {
-
+    mpfr_clear(self->r_f);
+    fmpq_poly_clear(self->sigma_sqrt);
   }
   mpfr_clear(self->sigma);
   free(self);

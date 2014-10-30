@@ -45,7 +45,10 @@ int main(int argc, char *argv[]) {
 
   dgsl_rot_mp_clear(D);
   fmpz_poly_clear(g);
+  mpfr_clear(sigma_p);
+  mpfr_clear(sigma);
   flint_randclear(randstate);
   flint_cleanup();
+
   mpfr_free_cache();
 }
