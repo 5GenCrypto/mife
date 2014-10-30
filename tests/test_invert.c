@@ -109,6 +109,6 @@ int main(int argc, char *argv[]) {
       status += test_fmpq_poly_oz_invert(n[i], bits, state);
 
   flint_randclear(state);
-
+  flint_cleanup();
   return status;
 }

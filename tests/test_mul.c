@@ -64,6 +64,6 @@ int main(int argc, char *argv[]) {
       status += test_fmpz_mod_poly_oz_mul(n, q, state);
   }
   flint_randclear(state);
-
+  flint_cleanup();
   return status;
 }

@@ -47,5 +47,6 @@ int main(int argc, char *argv[]) {
   printf(" PASS\n");
   free(u);
   gghlite_clear(self, 1);
+  flint_cleanup();
   return 0;
 }

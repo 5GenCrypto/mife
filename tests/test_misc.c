@@ -126,6 +126,6 @@ int main(int argc, char *argv[]) {
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
   flint_randclear(randstate);
-
+  flint_cleanup();
   return 0;
 }

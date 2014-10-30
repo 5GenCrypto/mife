@@ -154,5 +154,6 @@ int main(int argc, char *argv[]) {
 
   flint_randclear(randstate);
   mpfr_free_cache();
+  flint_cleanup();
   return ret;
 }

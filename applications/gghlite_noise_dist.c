@@ -83,5 +83,6 @@ int main(int argc, char *argv[]) {
   gghlite_clear(self, 1);
 
   flint_randclear(randstate);
+  flint_cleanup();
   mpfr_free_cache();
 }

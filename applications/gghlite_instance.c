@@ -27,9 +27,10 @@ int main(int argc, char *argv[]) {
   printf("\n---\n");
 
   gghlite_print_times(self);
-  
+
   gghlite_clear(self, 1);
 
   flint_randclear(randstate);
+  flint_cleanup();
   mpfr_free_cache();
 }

@@ -393,6 +393,6 @@ int main(int argc, char *argv[]) {
     status += test_dgsl_run( test_gso(1,4, M, G) );
   }
 
-
+  flint_cleanup();
   return status;
 }

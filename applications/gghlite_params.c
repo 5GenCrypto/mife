@@ -12,5 +12,6 @@ int main(int argc, char *argv[]) {
   gghlite_print_params(self->pk);
 
   gghlite_clear(self, 1);
+  flint_cleanup();
   mpfr_free_cache();
 }
