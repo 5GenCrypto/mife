@@ -183,6 +183,7 @@ void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n) {
 }
 
 mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const int k) {
+  assert(k>=1);
   mp_limb_t q = 1;
   mp_limb_t *small_primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k);
   small_primes[0] = 2;
