@@ -97,7 +97,7 @@ void gghlite_print_params(const gghlite_pk_t self);
    :param self: initialised GGHLite public key
 */
 
-void gghlite_enc_init(gghlite_enc_t op, gghlite_pk_t self);
+void gghlite_enc_init(gghlite_enc_t op, const gghlite_pk_t self);
 
 static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c) {
   fmpz_mod_poly_zero(op);

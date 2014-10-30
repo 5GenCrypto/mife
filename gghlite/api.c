@@ -3,7 +3,7 @@
 #include "gghlite.h"
 #include "gghlite-internals.h"
 
-void gghlite_enc_init(fmpz_mod_poly_t op, gghlite_pk_t self) {
+void gghlite_enc_init(fmpz_mod_poly_t op, const gghlite_pk_t self) {
   assert(!fmpz_is_zero(self->q));
   fmpz_mod_poly_init(op, self->q);
 }
