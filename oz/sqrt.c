@@ -152,12 +152,14 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
         _fmpq_poly_oz_invert_approx(y_next, z, n, prec);
         fmpq_poly_add(y_next, y_next, y);
         fmpq_poly_scalar_div_si(y_next, y_next, 2);
+        flint_cleanup();
       }
 #pragma omp section
       {
         _fmpq_poly_oz_invert_approx(z_next, y, n, prec);
         fmpq_poly_add(z_next, z_next, z);
         fmpq_poly_scalar_div_si(z_next, z_next, 2);
+        flint_cleanup();
       }
     }
     fmpq_poly_set(y, y_next);
