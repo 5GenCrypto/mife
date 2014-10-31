@@ -126,7 +126,7 @@ static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const g
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_rerand(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, flint_rand_t randstate);
+void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k, flint_rand_t randstate);
 
 /**
    Elevate an encoding at levek `k'` to level `k` and re-randomise if requested.
