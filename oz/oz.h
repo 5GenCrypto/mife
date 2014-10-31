@@ -3,10 +3,10 @@
 
 /******************************************************************************
 *
-*              OZ: Operations in 2^k-th Cyclotomic Number Fields 
+*              OZ: Operations in 2^k-th Cyclotomic Number Fields
 *
-*    Copyright (C) 2014 Martin Albrecht <martinralbrecht+oz@googlemail.com> 
-*    Copyright (C) 2014 Catalin Cocis <catalincocis@yahoo.com > 
+*    Copyright (C) 2014 Martin Albrecht <martinralbrecht+oz@googlemail.com>
+*    Copyright (C) 2014 Catalin Cocis <catalincocis@yahoo.com >
 *
 *  Distributed under the terms of the GNU General Public License (GPL)
 *  version 2 or higher.
@@ -50,26 +50,6 @@ static inline void fmpz_mod_poly_init_oz_modulus(fmpz_mod_poly_t f, const fmpz_t
   fmpz_mod_poly_set_coeff_ui(f, n, 1);
 }
 
-
-void fmpz_poly_oz_rem(fmpz_poly_t rem, const fmpz_poly_t f, const long n);
-void fmpq_poly_oz_rem(fmpq_poly_t rem, const fmpq_poly_t f, const long n);
-void fmpz_mod_poly_oz_rem(fmpz_mod_poly_t rem, const fmpz_mod_poly_t f, const long n);
-
-static inline void fmpz_poly_oz_mul(fmpz_poly_t rop, const fmpz_poly_t op1, const fmpz_poly_t op2, const long n) {
-  fmpz_poly_mul(rop, op1, op2);
-  fmpz_poly_oz_rem(rop, rop, n);
-}
-
-static inline void fmpq_poly_oz_mul(fmpq_poly_t rop, const fmpq_poly_t op1, const fmpq_poly_t op2, const long n) {
-  fmpq_poly_mul(rop, op1, op2);
-  fmpq_poly_oz_rem(rop, rop, n);
-}
-
-static inline void fmpz_mod_poly_oz_mul(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op1, const fmpz_mod_poly_t op2, const long n) {
-  fmpz_mod_poly_mul(rop, op1, op2);
-  fmpz_mod_poly_oz_rem(rop, rop, n);
-}
-
 /*
   Set `fT` to the conjugate of `f`.
 
@@ -77,12 +57,6 @@ static inline void fmpz_mod_poly_oz_mul(fmpz_mod_poly_t rop, const fmpz_mod_poly
 */
 
 void fmpz_poly_oz_conjugate(fmpz_poly_t fT, const fmpz_poly_t f, const long n);
-
-/*
-  Set `fT` to the conjugate of `f`.
-
-  This is equivalent to taking the transpose of the matrix associated with `f`.
-*/
 
 void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n);
 
@@ -123,6 +97,7 @@ static inline int fmpz_poly_oz_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_
   return r;
 }
 
+#include "mul.h"
 #include "invert.h"
 #include "sqrt.h"
 

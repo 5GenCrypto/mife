@@ -3,10 +3,10 @@
 
 /******************************************************************************
 *
-*              OZ: Operations in 2^k-th Cyclotomic Number Fields 
+*              OZ: Operations in 2^k-th Cyclotomic Number Fields
 *
-*    Copyright (C) 2014 Martin Albrecht <martinralbrecht+oz@googlemail.com> 
-*    Copyright (C) 2014 Catalin Cocis <catalincocis@yahoo.com > 
+*    Copyright (C) 2014 Martin Albrecht <martinralbrecht+oz@googlemail.com>
+*    Copyright (C) 2014 Catalin Cocis <catalincocis@yahoo.com >
 *
 *  Distributed under the terms of the GNU General Public License (GPL)
 *  version 2 or higher.
