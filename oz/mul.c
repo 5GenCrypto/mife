@@ -115,7 +115,7 @@ int _fmpz_nth_root(fmpz_t rop, const long n, const fmpz_t q) {
   return 1;
 }
 
-void _fmpz_mod_poly_oz_fft(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_t w, const size_t n) {
+void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_t w, const size_t n) {
   if (n == 1) {
     fmpz_mod_poly_set(rop, op);
     return;
@@ -180,7 +180,7 @@ void fmpz_mod_poly_oz_set_powers(fmpz_mod_poly_t op, const size_t n, const fmpz_
   _fmpz_mod_poly_normalise(op);
 }
 
-void fmpz_mod_poly_oz_fft(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
+void fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
   const fmpz *q = fmpz_mod_poly_modulus(op);
   fmpz_t w;  fmpz_init(w);
   if (!_fmpz_nth_root(w, n, q)) {
@@ -191,11 +191,11 @@ void fmpz_mod_poly_oz_fft(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const s
   fmpz_mod_poly_oz_set_powers(wvec, n, w);
   fmpz_clear(w);
 
-  _fmpz_mod_poly_oz_fft(rop, op, wvec, n);
+  _fmpz_mod_poly_oz_ntt(rop, op, wvec, n);
   fmpz_mod_poly_clear(wvec);
 }
 
-void fmpz_mod_poly_oz_ifft(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
+void fmpz_mod_poly_oz_intt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
   const fmpz *q = fmpz_mod_poly_modulus(op);
   fmpz_t w;  fmpz_init(w);
   if (!_fmpz_nth_root(w, n, q)) {
@@ -207,11 +207,11 @@ void fmpz_mod_poly_oz_ifft(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
   fmpz_mod_poly_oz_set_powers(wvec, n, w);
   fmpz_clear(w);
 
-  _fmpz_mod_poly_oz_fft(rop, op, wvec, n);
+  _fmpz_mod_poly_oz_ntt(rop, op, wvec, n);
   fmpz_mod_poly_clear(wvec);
 }
 
-void fmpz_mod_poly_oz_fft_precomp_init(fmpz_mod_poly_oz_fft_precomp_t op, const size_t n, const fmpz_t q) {
+void fmpz_mod_poly_oz_ntt_precomp_init(fmpz_mod_poly_oz_ntt_precomp_t op, const size_t n, const fmpz_t q) {
   fmpz_t w;  fmpz_init(w);
   if (!_fmpz_nth_root(w, n, q)) {
     fmpz_clear(w);
@@ -253,14 +253,69 @@ void fmpz_mod_poly_oz_fft_precomp_init(fmpz_mod_poly_oz_fft_precomp_t op, const 
   fmpz_clear(n_inv);
 }
 
-void fmpz_mod_poly_oz_fft_precomp_clear(fmpz_mod_poly_oz_fft_precomp_t op) {
+void fmpz_mod_poly_oz_ntt_precomp_clear(fmpz_mod_poly_oz_ntt_precomp_t op) {
   fmpz_mod_poly_clear(op->w);
   fmpz_mod_poly_clear(op->w_inv);
   fmpz_mod_poly_clear(op->phi);
   fmpz_mod_poly_clear(op->phi_inv);
 }
 
-void _fmpz_mod_poly_oz_mul_fftnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const fmpz_mod_poly_oz_fft_precomp_t precomp) {
+void _fmpz_mod_poly_oz_ntt_mul(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const size_t n) {
+  const fmpz *q = fmpz_mod_poly_modulus(f);
+  fmpz_mod_poly_realloc(h, n);
+
+  for(size_t i=0; i<n; i++) {
+    fmpz_mul(h->coeffs + i, f->coeffs + i, g->coeffs + i);
+    fmpz_mod(h->coeffs + i, h->coeffs+i, q);
+  }
+  h->length = n;
+}
+
+
+void _fmpz_mod_poly_oz_ntt_set_ui(fmpz_mod_poly_t op, const unsigned long c, const size_t n) {
+  fmpz_mod_poly_realloc(op, n);
+  for(size_t i=0; i<n; i++)
+    fmpz_mod_poly_set_coeff_ui(op, i, c);
+}
+
+void _fmpz_mod_poly_oz_ntt_pow_ui(fmpz_mod_poly_t rop, const fmpz_mod_poly_t f, unsigned long e, const size_t n) {
+  _fmpz_mod_poly_oz_ntt_set_ui(rop, 1, n);
+
+  fmpz_mod_poly_t tmp;
+  fmpz_mod_poly_init2(tmp, fmpz_mod_poly_modulus(f), n);
+  fmpz_mod_poly_set(tmp, f);
+  while(e>0) {
+    if (e&1)
+      _fmpz_mod_poly_oz_ntt_mul(rop, rop, f, n);
+    e = e>>1;
+    _fmpz_mod_poly_oz_ntt_mul(tmp, tmp, tmp, n);
+  }
+  fmpz_mod_poly_clear(tmp);
+}
+
+void _fmpz_mod_poly_oz_ntt_enc(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
+  const fmpz *q = fmpz_mod_poly_modulus(op);
+  fmpz_mod_poly_realloc(rop, precomp->n);
+  for(size_t i=0; i<precomp->n; i++) {
+    fmpz_mul(rop->coeffs+i, precomp->phi->coeffs+i, op->coeffs+i);
+    fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
+  }
+  rop->length = precomp->n;
+  _fmpz_mod_poly_oz_ntt(rop, rop, precomp->w, precomp->n);
+}
+
+void _fmpz_mod_poly_oz_ntt_dec(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
+  const fmpz *q = fmpz_mod_poly_modulus(op);
+
+  _fmpz_mod_poly_oz_ntt(rop, op, precomp->w_inv, precomp->n);
+
+  for(size_t i=0; i<precomp->n; i++) {
+    fmpz_mul(rop->coeffs+i, precomp->phi_inv->coeffs+i, rop->coeffs+i);
+    fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
+  }
+}
+
+void _fmpz_mod_poly_oz_mul_nttnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
   const size_t n = precomp->n;
   const fmpz *q = fmpz_mod_poly_modulus(f);
 
@@ -269,54 +324,27 @@ void _fmpz_mod_poly_oz_mul_fftnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, co
   fmpz_mod_poly_t F;  fmpz_mod_poly_init2(F, q, n);
   fmpz_mod_poly_t G;  fmpz_mod_poly_init2(G, q, n);
 
-  for(size_t i=0; i<n; i++) {
-    fmpz_mul(F->coeffs+i, precomp->phi->coeffs+i, f->coeffs+i);
-    fmpz_mod(F->coeffs+i, F->coeffs+i, q);
-    fmpz_mul(G->coeffs+i, precomp->phi->coeffs+i, g->coeffs+i);
-    fmpz_mod(G->coeffs+i, G->coeffs+i, q);
-  }
-  F->length = n;
-  G->length = n;
+  _fmpz_mod_poly_oz_ntt_enc(F, f, precomp);
+  _fmpz_mod_poly_oz_ntt_enc(G, g, precomp);
 
-  /* printf("F:"); fmpz_mod_poly_print_pretty(F, "x"); printf("\n"); */
-  /* printf("G:"); fmpz_mod_poly_print_pretty(G, "x"); printf("\n"); */
-  _fmpz_mod_poly_oz_fft(F, F, precomp->w, n);
-  _fmpz_mod_poly_oz_fft(G, G, precomp->w, n);
-  /* printf("F:"); fmpz_mod_poly_print_pretty(F, "x"); printf("\n"); */
-  /* printf("G:"); fmpz_mod_poly_print_pretty(G, "x"); printf("\n"); */
-
-  fmpz_mod_poly_realloc(h, n);
-
-  for(size_t i=0; i<n; i++) {
-    fmpz_mul(h->coeffs + i, F->coeffs + i, G->coeffs + i);
-    fmpz_mod(h->coeffs + i, h->coeffs+i, q);
-  }
-  h->length = n;
-  /* printf("h:"); fmpz_mod_poly_print_pretty(h, "x"); printf("\n"); */
-
-  _fmpz_mod_poly_oz_fft(h, h, precomp->w_inv, n);
-  /* printf("h:"); fmpz_mod_poly_print_pretty(h, "x"); printf("\n"); */
-
-  for(size_t i=0; i<n; i++) {
-    fmpz_mul(h->coeffs+i, precomp->phi_inv->coeffs+i, h->coeffs+i);
-    fmpz_mod(h->coeffs+i, h->coeffs+i, q);
-  }
-  /* printf("h:"); fmpz_mod_poly_print_pretty(h, "x"); printf("\n"); */
+  _fmpz_mod_poly_oz_ntt_mul(h, F, G, n);
 
   fmpz_mod_poly_clear(F);
   fmpz_mod_poly_clear(G);
+
+  _fmpz_mod_poly_oz_ntt_dec(h, h, precomp);
 }
 
-void fmpz_mod_poly_oz_mul_fftnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const size_t n) {
+void fmpz_mod_poly_oz_mul_nttnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const size_t n) {
   assert(fmpz_equal(fmpz_mod_poly_modulus(f), fmpz_mod_poly_modulus(g)));
   assert(fmpz_mod_poly_length(f) == fmpz_mod_poly_length(g));
   assert(fmpz_mod_poly_length(f) == (long)n);
 
   const fmpz *q = fmpz_mod_poly_modulus(f);
-  fmpz_mod_poly_oz_fft_precomp_t precomp;
-  fmpz_mod_poly_oz_fft_precomp_init(precomp, n, q);
+  fmpz_mod_poly_oz_ntt_precomp_t precomp;
+  fmpz_mod_poly_oz_ntt_precomp_init(precomp, n, q);
 
-  _fmpz_mod_poly_oz_mul_fftnwc(h, f, g, precomp);
+  _fmpz_mod_poly_oz_mul_nttnwc(h, f, g, precomp);
 
-  fmpz_mod_poly_oz_fft_precomp_clear(precomp);
+  fmpz_mod_poly_oz_ntt_precomp_clear(precomp);
 }

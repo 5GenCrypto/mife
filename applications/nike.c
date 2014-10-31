@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     if (verbose)
       printf("%8s computes: s_%d = ", agents[i], i);
     gghlite_enc_init(tmp, params);
-    gghlite_enc_set_ui(tmp, 1);
+    gghlite_enc_set_ui(tmp, 1, params);
     for(int j=0; j<cmdline_params->N; j++) {
       if (i==j) {
         gghlite_mul(tmp, params, tmp, e[j]);

@@ -101,13 +101,15 @@ void _gghlite_pk_set_q(gghlite_pk_t self) {
   mpfr_clear(log_q_base);
   mpfr_clear(q_base);
 
+  fmpz_fdiv_q_2exp(self->q, self->q, n_flog(self->n,2)+1);
+  fmpz_mul_2exp(self->q, self->q, n_flog(self->n,2)+1);
   fmpz_add_ui(self->q, self->q, 1);
   while(1) {
-    // TODO: use mpz_next_prime
     if(fmpz_is_probabprime(self->q))
       break;
-    fmpz_add_ui(self->q, self->q, 2);
+    fmpz_add_ui(self->q, self->q, 2*self->n);
   }
+  fmpz_mod_poly_oz_ntt_precomp_init(self->ntt, self->n, self->q);
 }
 
 #ifndef GGHLITE_HEURISTICS
@@ -519,6 +521,7 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   mpfr_clear(self->sigma_p);
   mpfr_clear(self->ell_g);
   mpfr_clear(self->sigma);
+  fmpz_mod_poly_oz_ntt_precomp_clear(self->ntt);
   fmpz_clear(self->q);
 }
 

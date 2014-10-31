@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
       gghlite_sample(u[i], self->pk, 1, randstate);
     }
     gghlite_enc_init(tmp, self->pk);
-    gghlite_enc_set_ui(tmp, 1);
+    gghlite_enc_set_ui(tmp, 1, self->pk);
     for(int i=0; i<params->kappa; i++) {
       gghlite_mul(tmp, self->pk, tmp, u[i]);
     }

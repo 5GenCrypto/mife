@@ -20,7 +20,7 @@ void _gghlite_set_y(gghlite_t self) {
   fmpz_mod_poly_truncate(tmp, self->pk->n);
 
   fmpz_mod_poly_init(self->pk->y, self->pk->q);
-  fmpz_mod_poly_set(self->pk->y, tmp);
+  _fmpz_mod_poly_oz_ntt_enc(self->pk->y, tmp, self->pk->ntt);
 
   fmpz_mod_poly_clear(tmp);
 }
@@ -41,7 +41,7 @@ void _gghlite_set_x(gghlite_t self) {
   fmpz_mod_poly_t acc;
   fmpz_mod_poly_init(acc, self->pk->q);
 
-  for(long k=0; k<self->pk->kappa; k++) {
+  for(size_t k=0; k<self->pk->kappa; k++) {
     if(fmpz_poly_is_zero(self->b[k][0]) || fmpz_poly_is_zero(self->b[k][1]))
       continue;
 
@@ -50,13 +50,12 @@ void _gghlite_set_x(gghlite_t self) {
     fmpz_mod_poly_init(self->pk->x[k][0], self->pk->q);
     fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][0]);
     fmpz_mod_poly_oz_mul(self->pk->x[k][0], tmp, acc, self->pk->n);
-    fmpz_mod_poly_truncate(self->pk->x[k][0], self->pk->n);
+    _fmpz_mod_poly_oz_ntt_enc(self->pk->x[k][0], self->pk->x[k][0], self->pk->ntt);
 
     fmpz_mod_poly_init(self->pk->x[k][1], self->pk->q);
     fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][1]);
     fmpz_mod_poly_oz_mul(self->pk->x[k][1], tmp, acc, self->pk->n);
-    fmpz_mod_poly_truncate(self->pk->x[k][0], self->pk->n);
-
+    _fmpz_mod_poly_oz_ntt_enc(self->pk->x[k][1], self->pk->x[k][1], self->pk->ntt);
   }
   fmpz_mod_poly_clear(tmp);
   fmpz_mod_poly_clear(acc);
@@ -268,7 +267,8 @@ void _gghlite_set_pzt(gghlite_t self) {
   fmpz_mod_poly_oz_mul(pzt, pzt, h, self->pk->n);
   fmpz_mod_poly_truncate(pzt, self->pk->n);
   fmpz_mod_poly_init(self->pk->pzt, self->pk->q);
-  fmpz_mod_poly_set(self->pk->pzt, pzt);
+
+  _fmpz_mod_poly_oz_ntt_enc(self->pk->pzt, pzt, self->pk->ntt);
 
   fmpz_mod_poly_clear(h);
   fmpz_mod_poly_clear(pzt);

@@ -50,15 +50,13 @@ int main(int argc, char *argv[]) {
       gghlite_enc_init(u[k], self->pk);
 
   for(int i=0; i<NTRIALS; i++) {
-    gghlite_enc_set_ui(tmp, 1);
+    gghlite_enc_set_ui(tmp, 1, self->pk);
     for(int k=0; k<params->kappa; k++) {
-      gghlite_enc_set_ui(u[k], 0);
+      gghlite_enc_set_ui(u[k], 0, self->pk);
       gghlite_enc(u[k], self->pk, u[k], 1, 1, randstate);
       gghlite_mul(tmp, self->pk, tmp, u[k]);
     }
-
-    fmpz_mod_poly_oz_mul(tmp, self->pk->pzt, tmp, self->pk->n);
-    fmpz_poly_set_fmpz_mod_poly(out, tmp);
+    gghlite_extract(out, self->pk, tmp);
     fmpz_poly_eucl_norm_mpfr(norm, out, MPFR_RNDN);
     mpfr_add(acc, acc, norm, MPFR_RNDN);
     if (mpfr_cmp(norm, max)>0)

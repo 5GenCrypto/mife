@@ -99,9 +99,8 @@ void gghlite_print_params(const gghlite_pk_t self);
 
 void gghlite_enc_init(gghlite_enc_t op, const gghlite_pk_t self);
 
-static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c) {
-  fmpz_mod_poly_zero(op);
-  fmpz_mod_poly_set_coeff_ui(op, 0, c);
+static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const gghlite_pk_t self) {
+  _fmpz_mod_poly_oz_ntt_set_ui(op, c, self->n);
 }
 
 #define gghlite_enc_clear fmpz_mod_poly_clear
@@ -192,9 +191,14 @@ static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc
    :param g:         valid encoding
 */
 
-static inline void gghlite_mul(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_t f, gghlite_enc_t g) {
-  fmpz_mod_poly_oz_mul(h, f, g, self->n);
+static inline void gghlite_mul(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
+  _fmpz_mod_poly_oz_ntt_mul(h, f, g, self->n);
 }
+
+static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
+  fmpz_mod_poly_add(h, f, g);
+}
+
 
 /**
    Extract canonical string from ``op``
@@ -204,7 +208,7 @@ static inline void gghlite_mul(gghlite_enc_t h, gghlite_pk_t self, gghlite_enc_t
    :param op:        valid encoding at level-`k`
 */
 
-void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
+void gghlite_extract(fmpz_poly_t rop, const gghlite_pk_t self, const gghlite_enc_t op);
 
 /**
    Return 1 if op is an encoding of zero at level κ
@@ -213,7 +217,7 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, gghlite_enc_t op);
    :param op:        valid encoding at level-`k`
 */
 
-int gghlite_is_zero(gghlite_pk_t self, gghlite_enc_t op);
+int gghlite_is_zero(const gghlite_pk_t self, const gghlite_enc_t op);
 
 /**
    Return root-Hermite factor `δ_0` required to break the scheme

@@ -7,8 +7,21 @@
 #include <flint/fmpz_mod_poly.h>
 #include <dgsl/dgsl.h>
 
-typedef fmpz_mod_poly_t gghlite_enc_t;
+
+/**
+   Plaintext elements are represented as polynomials in the usual coefficient
+   representation.
+*/
+
 typedef fmpz_poly_t     gghlite_clr_t;
+
+/**
+   Encodings are represented as evaluations of polynomials, i.e. as vectors `e`
+   of length `n` where `e_i` holds our element evaluated at `ω_n^i` where `ω_n`
+   as some root of unity in Z_q.
+**/
+
+typedef fmpz_mod_poly_t gghlite_enc_t;
 
 typedef enum {
   GGHLITE_FLAGS_DEFAULT  = 0x0,
@@ -72,6 +85,8 @@ struct _gghlite_pk_struct {
   gghlite_enc_t y;
   dgsl_rot_mp_t *D_sigma_p;
   dgsl_rot_mp_t *D_sigma_s;
+
+  fmpz_mod_poly_oz_ntt_precomp_t ntt;
 };
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];

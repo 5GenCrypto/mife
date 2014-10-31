@@ -3,40 +3,39 @@
 #include "gghlite.h"
 #include "gghlite-internals.h"
 
-void gghlite_enc_init(fmpz_mod_poly_t op, const gghlite_pk_t self) {
+void gghlite_enc_init(gghlite_enc_t op, const gghlite_pk_t self) {
   assert(!fmpz_is_zero(self->q));
-  fmpz_mod_poly_init(op, self->q);
+  fmpz_mod_poly_init2(op, self->q, self->n);
 }
 
-void gghlite_rerand(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, flint_rand_t randstate) {
+void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k, flint_rand_t randstate) {
   assert(k <= self->kappa && 1<=k);
   assert(self->rerand_mask && (1ULL<<(k-1)));
   assert(!fmpz_mod_poly_is_zero(self->x[k-1][0]) && !fmpz_mod_poly_is_zero(self->x[k-1][1]));
   assert(self->D_sigma_s);
 
-  fmpz_mod_poly_t tmp;
+  gghlite_enc_t tmp;
   gghlite_enc_init(tmp, self);
 
   fmpz_mod_poly_set(rop, op);
 
   for(long i=0; i<2; i++) {
     fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
-    fmpz_mod_poly_oz_mul(tmp, tmp, self->x[k-1][i], self->n);
+    _fmpz_mod_poly_oz_ntt_enc(tmp, tmp, self->ntt);
+    _fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[k-1][i], self->n);
     fmpz_mod_poly_add(rop, rop, tmp);
   }
   fmpz_mod_poly_clear(tmp);
 }
 
-void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op, long k, long kprime, int rerand, flint_rand_t randstate) {
+void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, long kprime, int rerand, flint_rand_t randstate) {
   assert(kprime <= k);
   assert(k <= self->kappa);
   if (k>kprime) {
-    fmpz_mod_poly_t yk;
+    gghlite_enc_t yk;
     gghlite_enc_init(yk, self);
-    fmpz_mod_poly_set(yk, self->y);
-    fmpz_mod_poly_powmod_ui_binexp(yk, yk, k-kprime, self->modulus);
-    fmpz_mod_poly_oz_mul(rop, op, yk, self->n);
-    fmpz_mod_poly_truncate(rop, self->n);
+    _fmpz_mod_poly_oz_ntt_pow_ui(yk, self->y, k-kprime, self->n);
+    _fmpz_mod_poly_oz_ntt_mul(rop, op, yk, self->n);
     fmpz_mod_poly_clear(yk);
   }
   if(rerand) {
@@ -45,20 +44,22 @@ void gghlite_elevate(fmpz_mod_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op,
 }
 
 
-void gghlite_sample(fmpz_mod_poly_t rop, gghlite_pk_t self, long k, flint_rand_t randstate) {
+void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, long k, flint_rand_t randstate) {
   assert(self->kappa);
-  assert(k >=0 && k <= self->kappa);
+  assert(k >=0 && k <= (long)self->kappa);
 
   fmpz_mod_poly_sample_D(rop, self->D_sigma_p, randstate);
+  _fmpz_mod_poly_oz_ntt_enc(rop, rop, self->ntt);
   if (k == 0)
     return;
   gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
 }
 
-void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
-  fmpz_mod_poly_t t;
+void gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
+  gghlite_enc_t t;
   gghlite_enc_init(t, self);
-  fmpz_mod_poly_oz_mul(t, self->pzt, op, self->n);
+  _fmpz_mod_poly_oz_ntt_mul(t, self->pzt, op, self->n);
+  _fmpz_mod_poly_oz_ntt_dec(t, t, self->ntt);
   fmpz_poly_set_fmpz_mod_poly(rop, t);
   fmpz_mod_poly_clear(t);
 
@@ -68,16 +69,15 @@ void gghlite_extract(fmpz_poly_t rop, gghlite_pk_t self, fmpz_mod_poly_t op) {
   }
 }
 
-int gghlite_is_zero(gghlite_pk_t self, fmpz_mod_poly_t op) {
-  fmpz_mod_poly_t t;
-  gghlite_enc_init(t, self);
-  fmpz_mod_poly_oz_mul(t, self->pzt, op, self->n);
+int gghlite_is_zero(const gghlite_pk_t self, const fmpz_mod_poly_t op) {
+  gghlite_clr_t t;
+  gghlite_clr_init(t);
+  gghlite_extract(t, self, op);
 
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self));
-  fmpz_mod_poly_eucl_norm_mpfr(norm, t, MPFR_RNDN);
-  gghlite_enc_clear(t);
-
+  fmpz_poly_eucl_norm_mpfr(norm, t, MPFR_RNDN);
+  gghlite_clr_clear(t);
 
   mpfr_t bound;
   mpfr_init2(bound, _gghlite_prec(self));
