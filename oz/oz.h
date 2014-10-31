@@ -90,12 +90,23 @@ static inline int fmpz_poly_oz_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_
   fmpz_clear(det_b0);
   fmpz_clear(det_b1);
 
-  int r = fmpz_cmp(det, tmp);
+  int r = fmpz_equal(det, tmp);
 
   fmpz_clear(det);
   fmpz_clear(tmp);
   return r;
 }
+
+static inline int fmpz_poly_oz_coprime(fmpz_poly_t b0, fmpz_poly_t b1) {
+  fmpz_poly_t t;  fmpz_poly_init(t);
+  fmpz_poly_gcd(t, b0, b1);
+  int r = (fmpz_poly_degree(t) == 0);
+  if (r)
+    r = (fmpz_cmp_ui(t->coeffs, 1) == 0);
+  fmpz_poly_clear(t);
+  return r;
+}
+
 
 #include "mul.h"
 #include "invert.h"

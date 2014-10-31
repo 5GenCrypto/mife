@@ -114,15 +114,13 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
       fmpz_poly_sample_D(self->b[k][1], self->D_g, randstate);
       self->t_sample += ggh_walltime(t);
 
-      if (!(self->pk->flags & GGHLITE_FLAGS_SLOPPY)) {
-        t = ggh_walltime(0);
-        if (fmpz_poly_oz_ideal_subset(self->g, self->b[k][0], self->b[k][1], self->pk->n) != 0) {
-          fail[0]++;
-          self->t_is_subideal += ggh_walltime(t);
-          continue;
-        } else {
-          self->t_is_subideal += ggh_walltime(t);
-        }
+      t = ggh_walltime(0);
+      if (!fmpz_poly_oz_coprime(self->b[k][0], self->b[k][1])) {
+        fail[0]++;
+        self->t_is_subideal += ggh_walltime(t);
+        continue;
+      } else {
+        self->t_is_subideal += ggh_walltime(t);
       }
 
       _fmpz_vec_set(B->coeffs+0, self->b[k][0]->coeffs, n);
