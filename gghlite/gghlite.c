@@ -13,14 +13,12 @@ void _gghlite_set_y(gghlite_t self) {
   assert(!fmpz_is_zero(self->pk->q));
   assert(!fmpz_mod_poly_is_zero(self->z_inv));
 
-  fmpz_mod_poly_t tmp;
-  fmpz_mod_poly_init(tmp, self->pk->q);
-  fmpz_mod_poly_set_fmpz_poly(tmp, self->a);
-  fmpz_mod_poly_oz_mul(tmp, tmp, self->z_inv, self->pk->n);
-  fmpz_mod_poly_truncate(tmp, self->pk->n);
+  fmpz_mod_poly_t tmp;  fmpz_mod_poly_init(tmp, self->pk->q);
+  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(tmp, self->a, self->pk->ntt);
+  fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->z_inv, self->pk->n);
 
   fmpz_mod_poly_init(self->pk->y, self->pk->q);
-  _fmpz_mod_poly_oz_ntt_enc(self->pk->y, tmp, self->pk->ntt);
+  fmpz_mod_poly_set(self->pk->y, tmp);
 
   fmpz_mod_poly_clear(tmp);
 }
@@ -45,17 +43,15 @@ void _gghlite_set_x(gghlite_t self) {
     if(fmpz_poly_is_zero(self->b[k][0]) || fmpz_poly_is_zero(self->b[k][1]))
       continue;
 
-    fmpz_mod_poly_powmod_ui_binexp(acc, self->z_inv, k+1, self->pk->modulus);
+    fmpz_mod_poly_oz_ntt_pow_ui(acc, self->z_inv, k+1, self->pk->n);
 
     fmpz_mod_poly_init(self->pk->x[k][0], self->pk->q);
-    fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][0]);
-    fmpz_mod_poly_oz_mul(self->pk->x[k][0], tmp, acc, self->pk->n);
-    _fmpz_mod_poly_oz_ntt_enc(self->pk->x[k][0], self->pk->x[k][0], self->pk->ntt);
+    fmpz_mod_poly_oz_ntt_enc_fmpz_poly(tmp, self->b[k][0], self->pk->ntt);
+    fmpz_mod_poly_oz_ntt_mul(self->pk->x[k][0], tmp, acc, self->pk->n);
 
     fmpz_mod_poly_init(self->pk->x[k][1], self->pk->q);
-    fmpz_mod_poly_set_fmpz_poly(tmp, self->b[k][1]);
-    fmpz_mod_poly_oz_mul(self->pk->x[k][1], tmp, acc, self->pk->n);
-    _fmpz_mod_poly_oz_ntt_enc(self->pk->x[k][1], self->pk->x[k][1], self->pk->ntt);
+    fmpz_mod_poly_oz_ntt_enc_fmpz_poly(tmp, self->b[k][1], self->pk->ntt);
+    fmpz_mod_poly_oz_ntt_mul(self->pk->x[k][1], tmp, acc, self->pk->n);
   }
   fmpz_mod_poly_clear(tmp);
   fmpz_mod_poly_clear(acc);
@@ -241,38 +237,29 @@ void _gghlite_set_pzt(gghlite_t self) {
   assert(!fmpz_poly_is_zero(self->h));
   assert(fmpz_mod_poly_degree(self->pk->modulus) == self->pk->n);
 
-  fmpz_mod_poly_t z_kappa;
-  fmpz_mod_poly_init(z_kappa, self->pk->q);
+  fmpz_mod_poly_t z_kappa;  fmpz_mod_poly_init(z_kappa, self->pk->q);
   fmpz_mod_poly_set(z_kappa, self->z);
-  fmpz_mod_poly_powmod_ui_binexp(z_kappa, z_kappa, self->pk->kappa, self->pk->modulus);
+  fmpz_mod_poly_oz_ntt_pow_ui(z_kappa, z_kappa, self->pk->kappa, self->pk->n);
 
-  fmpz_mod_poly_t g_mod;
-  fmpz_mod_poly_init(g_mod, self->pk->q);
-  fmpz_mod_poly_set_fmpz_poly(g_mod, self->g);
+  fmpz_mod_poly_t g_inv;  fmpz_mod_poly_init(g_inv, self->pk->q);
+  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(g_inv, self->g, self->pk->ntt);
+  fmpz_mod_poly_oz_ntt_inv(g_inv, g_inv, self->pk->n);
 
-  fmpz_mod_poly_t g_inv;
-  fmpz_mod_poly_init(g_inv, self->pk->q);
-  fmpz_mod_poly_oz_invert(g_inv, g_mod, self->pk->n);
+  fmpz_mod_poly_t pzt;  fmpz_mod_poly_init(pzt, self->pk->q);
+  fmpz_mod_poly_oz_ntt_mul(pzt, z_kappa, g_inv, self->pk->n);
 
-  fmpz_mod_poly_t pzt;
-  fmpz_mod_poly_init(pzt, self->pk->q);
-  fmpz_mod_poly_oz_mul(pzt, z_kappa, g_inv, self->pk->n);
+  fmpz_mod_poly_t h;  fmpz_mod_poly_init(h, self->pk->q);
+  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(h, self->h, self->pk->ntt);
 
-  fmpz_mod_poly_t h;
-  fmpz_mod_poly_init(h, self->pk->q);
-  fmpz_mod_poly_set_fmpz_poly(h, self->h);
+  fmpz_mod_poly_oz_ntt_mul(pzt, pzt, h, self->pk->n);
 
-  fmpz_mod_poly_oz_mul(pzt, pzt, h, self->pk->n);
-  fmpz_mod_poly_truncate(pzt, self->pk->n);
   fmpz_mod_poly_init(self->pk->pzt, self->pk->q);
-
-  _fmpz_mod_poly_oz_ntt_enc(self->pk->pzt, pzt, self->pk->ntt);
+  fmpz_mod_poly_set(self->pk->pzt, pzt);
 
   fmpz_mod_poly_clear(h);
   fmpz_mod_poly_clear(pzt);
   fmpz_mod_poly_clear(z_kappa);
   fmpz_mod_poly_clear(g_inv);
-  fmpz_mod_poly_clear(g_mod);
 }
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
@@ -309,9 +296,10 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
 
   uint64_t t = ggh_walltime(0);
   fmpz_mod_poly_randtest(self->z, randstate, self->pk->n);
+  fmpz_mod_poly_oz_ntt_enc(self->z, self->z, self->pk->ntt);
 
   fmpz_mod_poly_init(self->z_inv, self->pk->q);
-  fmpz_mod_poly_oz_invert(self->z_inv, self->z, self->pk->n);
+  fmpz_mod_poly_oz_ntt_inv(self->z_inv, self->z, self->pk->n);
   self->t_sample +=  ggh_walltime(t);
 }
 
@@ -347,7 +335,7 @@ void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa,
 
 void gghlite_clear(gghlite_t self, int clear_pk) {
   fmpz_poly_clear(self->a);
-  for(long k=0; k<self->pk->kappa; k++) {
+  for(unsigned long k=0; k<self->pk->kappa; k++) {
     if(self->pk->rerand_mask && (1ULL)<<k) {
       fmpz_poly_clear(self->b[k][0]);
       fmpz_poly_clear(self->b[k][1]);

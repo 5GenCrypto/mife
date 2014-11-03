@@ -109,6 +109,7 @@ static inline int fmpz_poly_oz_coprime(fmpz_poly_t b0, fmpz_poly_t b1) {
 
 
 #include "mul.h"
+#include "ntt.h"
 #include "invert.h"
 #include "sqrt.h"
 

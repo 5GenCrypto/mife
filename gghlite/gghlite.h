@@ -100,7 +100,7 @@ void gghlite_print_params(const gghlite_pk_t self);
 void gghlite_enc_init(gghlite_enc_t op, const gghlite_pk_t self);
 
 static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const gghlite_pk_t self) {
-  _fmpz_mod_poly_oz_ntt_set_ui(op, c, self->n);
+  fmpz_mod_poly_oz_ntt_set_ui(op, c, self->n);
 }
 
 #define gghlite_enc_clear fmpz_mod_poly_clear
@@ -192,7 +192,7 @@ static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc
 */
 
 static inline void gghlite_mul(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
-  _fmpz_mod_poly_oz_ntt_mul(h, f, g, self->n);
+  fmpz_mod_poly_oz_ntt_mul(h, f, g, self->n);
 }
 
 static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
