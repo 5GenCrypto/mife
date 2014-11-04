@@ -34,11 +34,9 @@ int main(int argc, char *argv[]) {
     uint64_t t0 = ggh_walltime(0);
     r += fmpz_poly_oz_ideal_is_probaprime(g, n, 0, k, small_primes);
     t += ggh_walltime(t0);
-    printf("%d ",r); fflush(0);
+    printf("\rm: %6ld, #prime: %d,",i+1, r); fflush(0);
   }
-  printf("\n");
-
-  printf("t: %.6f\n",t/1000000.0/m);
+  printf(" n: %4ld, log σ': %7.2f, t: %.6f\n",n, log2(_gghlite_sigma(n)), t/1000000.0/m);
 
   free(small_primes);
   mpfr_clear(sigma);
