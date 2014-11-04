@@ -14,11 +14,5 @@ bin_PROGRAMS = gghlite_params \
                gghlite_noise_dist \
                nike \
                gghlite_false_friends \
-               bench_dgsl
-
-gghlite_params_SOURCES = gghlite_params.c common.h
-gghlite_instance_SOURCES = gghlite_instance.c common.h
-gghlite_noise_dist_SOURCES = gghlite_noise_dist.c common.h
-gghlite_false_friends_SOURCES = gghlite_false_friends.c common.h
-nike_SOURCES = nike.c nike.h
-bench_dgsl_SOURCES = bench_dgsl.c bench_dgsl.h
+               bench_dgsl \
+               bench_prime_g
