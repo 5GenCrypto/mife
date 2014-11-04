@@ -55,14 +55,17 @@ void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, long k, flint_rand_t r
   gghlite_elevate(rop, self, rop, k, 0, 1, randstate);
 }
 
-void gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
+static void _gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
   gghlite_enc_t t;
   gghlite_enc_init(t, self);
   fmpz_mod_poly_oz_ntt_mul(t, self->pzt, op, self->n);
   fmpz_mod_poly_oz_ntt_dec(t, t, self->ntt);
   fmpz_poly_set_fmpz_mod_poly(rop, t);
   fmpz_mod_poly_clear(t);
+}
 
+void gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
+  _gghlite_extract(rop, self, op);
   long logq = fmpz_sizeinbase(self->q,2) - 1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {
     fmpz_tdiv_q_2exp(rop->coeffs+i,rop->coeffs+i, logq-self->ell+1);
@@ -72,12 +75,11 @@ void gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_e
 int gghlite_is_zero(const gghlite_pk_t self, const fmpz_mod_poly_t op) {
   gghlite_clr_t t;
   gghlite_clr_init(t);
-  gghlite_extract(t, self, op);
+  _gghlite_extract(t, self, op);
 
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self));
   fmpz_poly_eucl_norm_mpfr(norm, t, MPFR_RNDN);
-  gghlite_clr_clear(t);
 
   mpfr_t bound;
   mpfr_init2(bound, _gghlite_prec(self));
@@ -98,6 +100,7 @@ int gghlite_is_zero(const gghlite_pk_t self, const fmpz_mod_poly_t op) {
 
   mpfr_clear(bound);
   mpfr_clear(norm);
+  gghlite_clr_clear(t);
 
   if (r<=0)
     return 1;
