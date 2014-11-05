@@ -70,6 +70,9 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   assert(self->D_g);
   assert(!fmpz_poly_is_zero(self->g));
 
+  if ((self->pk->rerand_mask != 1) && (self->pk->rerand_mask != 0))
+    ggh_die("Re-randomisation at higher levels is not implemented yet.");
+
   const long n = self->pk->n;
 
   mpfr_t sigma_n;
