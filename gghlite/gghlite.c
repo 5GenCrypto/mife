@@ -95,7 +95,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 #endif //GGHLITE_QUITE
 #endif //GGHLITE_CHECK_SIGMA_N
 
-  for(long k=0; k<self->pk->kappa; k++) {
+  for(size_t k=0; k<self->pk->kappa; k++) {
     fmpz_poly_init(self->b[k][0]);
     fmpz_poly_init(self->b[k][1]);
 
