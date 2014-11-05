@@ -33,9 +33,25 @@ Instantiates a GGHLite instance
 
 ### NIKE ###
 
-Most steps of a non-interactive key exchange
+A non-interactive key exchange (but we skip running the hash function in the end). For example,
+calling
+
+    ./applications/nike -l 80 -N 7 - f
+
+will run 7-partite NIKE with security level λ=80. The parameter -f specifies that we are not
+checking if our ideal is a prime ideal.
+
+## Subdirectories ##
+
+ * **applications** NIKE, parameter estimation, benchmarks
+ * **dgs** discrete Gaussians over the integers
+ * **dgsl** discrete Gaussians over arbitrary regular lattices and ideal lattices modulo $x^{2^k}+1$
+ * **flint** a current snapshot of the FLINT library
+ * **gghlite** the actual GGHLite implementation
+ * **oz** efficient functions for computing in $Z[x]/(x^{2^k}+1)$ and $Z_q[x]/(x^{2^k}+1)$
+ * **tests** correctness tests
 
 ## Bugs ##
 
-This code has bugs, don't use it yet.
+This code has bugs, help us fix them.
 
