@@ -408,7 +408,6 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
   mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · ((m+1) · σ' · σ^*)^κ
 
-
   _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
 
@@ -420,6 +419,8 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
   double delta_0_g = mpfr_get_d(tmp, MPFR_RNDN);
 
+  /* finding (~b0,~b1) from (x0/x1) */
+
   _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
 
@@ -427,9 +428,11 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_mul_ui(target_norm, target_norm, self->n, MPFR_RNDN);
   mpfr_sqrt(target_norm, target_norm, MPFR_RNDN); //< sqrt(2n)
   mpfr_mul(target_norm, target_norm, self->sigma_p, MPFR_RNDN); //< sqrt(2n) · σ'
+  mpfr_div(target_norm, target_norm, self->sigma, MPFR_RNDN); //< sqrt(2n) · σ'/σ
+
   mpfr_mul_d(target_norm, target_norm, 0.3, MPFR_RNDN); // TODO: Don't hardcode this
-  mpfr_ui_div(target_norm, 1, target_norm, MPFR_RNDN); //< 1/(sqrt(2n) · σ' · τ)
-  mpfr_mul(target_norm, tmp, target_norm, MPFR_RNDN); //< sqrt(q)/(sqrt(2n) · σ' · τ)
+  mpfr_ui_div(target_norm, 1, target_norm, MPFR_RNDN); //< 1/(sqrt(2n) · σ'/σ · τ)
+  mpfr_mul(target_norm, tmp, target_norm, MPFR_RNDN); //< sqrt(q)/(sqrt(2n) · σ'/σ · τ)
 
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
   mpfr_mul_ui(tmp, tmp, 2, MPFR_RNDN);
