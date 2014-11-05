@@ -168,7 +168,11 @@ static inline double _gghlite_ell_b(double n) {
 
 void _gghlite_pk_set_ell_b(gghlite_pk_t self);
 
-static inline double _gghlite_sigma_s(double n, double lambda, double kappa) {
+static inline double _gghlite_sigma_s(double n, double lambda, double kappa, const uint64_t rerand_mask) {
+  if(rerand_mask == 0)
+    return 1;
+  if (rerand_mask > 1)
+    ggh_die("Re-randomisation at higher levels is not implemented yet.");
   const double sigma_p = _gghlite_sigma_p(n);
   const double pi = 3.14159265358979;
   const double ell_g = _gghlite_ell_g(n);
@@ -226,16 +230,6 @@ static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_r
 
 void _gghlite_pk_set_ell(gghlite_pk_t self);
 
-
-static inline int _gghlite_check_func(int64_t log_q, size_t n, size_t lambda, size_t kappa) {
-  double sigma_p = _gghlite_sigma_p(n);
-  double sigma_s = _gghlite_sigma_s(n, lambda, kappa);
-  double lhs = 8*kappa * (log2(3.0) + 1.5*log2(n) + log2(sigma_p) + log2(sigma_s));
-  if (lhs < log_q)
-    return 1;
-  else
-    return 0;
-}
 
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate);
 
