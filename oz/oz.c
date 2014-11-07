@@ -114,7 +114,7 @@ void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n) {
   fmpq_clear(t0);
 }
 
-mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const int k) {
+mp_limb_t *_fmpz_poly_oz_ideal_small_primes(const long n, const int k) {
   assert(k>=1);
   mp_limb_t q = 1;
   mp_limb_t *small_primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k);
@@ -130,7 +130,7 @@ mp_limb_t *_fmpz_poly_oz_ideal_is_probaprime_small_primes(const long n, const in
   return small_primes;
 }
 
-int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, const long n, int sloppy, const int k, const mp_limb_t *small_primes) {
+int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int sloppy, const int k, const mp_limb_t *small_primes) {
   fmpz_poly_t g; fmpz_poly_init_oz_modulus(g, n);
   int num_threads = omp_get_max_threads();
 

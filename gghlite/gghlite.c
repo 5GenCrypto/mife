@@ -99,7 +99,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 #endif //GGHLITE_CHECK_SIGMA_N
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, nsp);
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
   const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
 
   for(size_t k=0; k<self->pk->kappa; k++) {
@@ -183,7 +183,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   fmpq_poly_init(g_inv);
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, nsp);
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
   const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
 
   while(1) {

@@ -47,3 +47,5 @@ callgrind.*
 .dir-locals.el
 /applications/bench_prime_g
 /applications/bench_ideal_span
+/doc/doxygen_sqlite3.db
+/doc/html/

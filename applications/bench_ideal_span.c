@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   gghlite_init_instance(self, randstate);
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, nsp);
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
 
   printf("number of small primes: %4d\n",nsp);
 

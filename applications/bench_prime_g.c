@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   if (k < 20)
     k = 20;
 
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(n, k);
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(n, k);
 
   int r = 0;
   for(long i=0; i<m; i++) {
