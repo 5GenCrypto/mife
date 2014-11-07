@@ -113,19 +113,22 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
       printf("\r Computing B^(%2ld):: !i: %4ld, !s: %4ld, !n: %4ld",k+1, fail[0], fail[1], fail[2]);
       fflush(0);
       uint64_t t = ggh_walltime(0);
-      fmpz_poly_sample_D(self->b[k][0], self->D_g, randstate);
-      fmpz_poly_sample_D(self->b[k][1], self->D_g, randstate);
+      _dgsl_rot_mp_call_inlattice_multiplier(self->b[k][0], self->D_g, randstate->gmp_state);
+      _dgsl_rot_mp_call_inlattice_multiplier(self->b[k][1], self->D_g, randstate->gmp_state);
       self->t_sample += ggh_walltime(t);
 
       t = ggh_walltime(0);
-      const int span_ideal = fmpz_poly_oz_ideal_span(self->g, self->b[k][0], self->b[k][1],
-                                                     self->pk->n, sloppy, nsp, small_primes);
+      const int coprime = fmpz_poly_oz_coprime(self->b[k][0], self->b[k][1],
+                                               self->pk->n, sloppy, nsp, small_primes);
       self->t_is_subideal += ggh_walltime(t);
 
-      if (!span_ideal) {
+      if (!coprime) {
         fail[0]++;
         continue;
       }
+
+      fmpz_poly_oz_mul(self->b[k][0], self->D_g->B, self->b[k][0], self->pk->n);
+      fmpz_poly_oz_mul(self->b[k][1], self->D_g->B, self->b[k][1], self->pk->n);
 
       _fmpz_vec_set(B->coeffs+0, self->b[k][0]->coeffs, n);
       _fmpz_vec_set(B->coeffs+n, self->b[k][1]->coeffs, n);

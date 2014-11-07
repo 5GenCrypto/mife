@@ -449,19 +449,24 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   return 0;
 }
 
-int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
   const long n = self->n;
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
   fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
-  /* fmpq_poly_neg(x, x); */
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
-  /* fmpz_poly_neg(rop, rop); */
-  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   fmpq_poly_clear(x);
   return 0;
 }
+
+int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+  _dgsl_rot_mp_call_inlattice_multiplier(rop, self, state);
+  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
+  return 0;
+}
+
+
 
 void dgsl_rot_mp_clear(dgsl_rot_mp_t *self) {
   if (!self)

@@ -69,6 +69,7 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
 int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
+int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, uint64_t flags);
 

@@ -62,7 +62,7 @@ mp_limb_t *_fmpz_poly_oz_ideal_small_primes(const long n, const int k);
    @param f            \f$f \in \R\f$
    @param n            degree of cyclotomic polynomial, must be power of two
    @param sloppy       only check modulo primes in `small_primes`
-   @param k            number of primes in `small_primes`, must be > 1
+   @param k            number of primes in `small_primes`, must be ≥ 0
    @param small_primes a list of small primes which are checked first
 
   1. This function first computes \f$\res{f,x^n+1} \bmod p_i\f$ where $p_i$ with $0 ≤ i < k$ is a
@@ -85,7 +85,7 @@ int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int slop
    @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param n             degree of cyclotomic polynomial, must be power of two
    @param sloppy        only check modulo primes in `small_primes`
-   @param k             number of primes in `small_primes`, must be > 1
+   @param k             number of primes in `small_primes`, must be ≥ 0
    @param small_primes  a list of small primes which are checked first
 
    1. This function checks if the resultants of $b_0$ resp. $b_1$ with $x^n+1$ is zero mod $p_i$
@@ -107,23 +107,29 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 
 
 /**
-   \brief Return true if $b_0$ and $b_1$ are coprime, false otherwise.
+   \brief Return true if neither $b_0$ or $b_1$ has prime factors in `small_primes` and @f$\ideal{b_0, b_1} = \ideal{1}@f$.
 
-   @param b0  a polynomial in \f$\ZZ[x]\f$
-   @param b1  a polynomial in \f$\ZZ[x]\f$
+   @parqam b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
+   @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
+   @param n             degree of cyclotomic polynomial, must be power of two
+   @param sloppy        only check modulo primes in `small_primes`
+   @param k             number of primes in `small_primes`, must be ≥ 0
+   @param small_primes  a list of small primes which are checked first
 
-   This function computes \f$\gcd{b_0,b_1}\f$ and compares the result with 1.
-*/
+   1. This function checks if \f$\res{b_j,x^n+1} = 0 \bmod p_i\f$ for $0 ≤ j < 2$ and $0 ≤ i < k$
+      where $p_i$ is a small prime in the list `small_primes`. We return false in this case.
 
-static inline int fmpz_poly_oz_coprime(fmpz_poly_t b0, fmpz_poly_t b1) {
-  fmpz_poly_t t;  fmpz_poly_init(t);
-  fmpz_poly_gcd(t, b0, b1);
-  int r = (fmpz_poly_degree(t) == 0);
-  if (r)
-    r = (fmpz_cmp_ui(t->coeffs, 1) == 0);
-  fmpz_poly_clear(t);
-  return r;
-}
+   2. If this test passes and `sloppy = 0` we compute the the resultants \f$r_0 = \res{b_0,
+      x^n+1}\f$ and \f$r_1 = \res{b_1,x^n+1}\f$ and return true if \f$\gcd{r_0, r_1} = 1\f$ and
+      false otherwise.
+
+   The rationale behind step 1 is that we call this function on $b_0, b_1$ which are then used to
+   produce $b_0·g,b_1·g$ on which we would call fmpz_poly_oz_ideal_span(). To disable step 1, set `k =
+   0`.
+ */
+
+int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
+                         const int sloppy, const int k, const mp_limb_t *small_primes);
 
 
 #include "mul.h"

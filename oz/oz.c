@@ -247,3 +247,69 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
   fmpz_clear(tmp);
   return r0[0];
 }
+
+
+int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
+                         const int sloppy, const int k, const mp_limb_t *small_primes) {
+
+  fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
+  int num_threads = omp_get_max_threads();
+
+  nmod_poly_t n0[num_threads];
+  nmod_poly_t n1[num_threads];
+  nmod_poly_t nm[num_threads];
+
+  int r0[num_threads];
+  int r1[num_threads];
+
+  for(int j=0; j<num_threads; j++) {
+    r0[j] = 1;
+    r1[j] = 1;
+  }
+  for(int i=0; i<k; i+=num_threads) {
+    if (k-i < num_threads)
+      num_threads = k-i;
+#pragma omp parallel for
+    for (int j=0; j<num_threads; j++) {
+      mp_limb_t p = small_primes[i+j];
+      nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], b0);
+      nmod_poly_init(n1[j], p); fmpz_poly_get_nmod_poly(n1[j], b1);
+      nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);
+      r0[j] = nmod_poly_resultant(n0[j], nm[j]);
+      r1[j] = nmod_poly_resultant(n1[j], nm[j]);
+      nmod_poly_clear(n0[j]);
+      nmod_poly_clear(n1[j]);
+    }
+    for(int j=0; j<num_threads; j++) {
+      /* if both resultants are zero we're in a sub-ideal as g is expected to not to be divisible by
+         any small prime */
+      if (r0[j] == 0 && r1[j] == 0) {
+        r0[0] = 0;
+        break;
+      } else
+        r0[0] = 1;
+    }
+    if (r0[0] == 0)
+      break;
+  }
+  fmpz_poly_clear(mod);
+
+  if (sloppy || r0[0] == 0)
+    return (r0[0] != 0);
+
+  fmpz_t det_b0, det_b1;
+  fmpz_init(det_b0);
+  fmpz_init(det_b1);
+
+  fmpz_poly_oz_ideal_norm(det_b0, b0, n, 0);
+  fmpz_poly_oz_ideal_norm(det_b1, b1, n, 0);
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  fmpz_gcd(tmp, det_b0, det_b1);
+  fmpz_clear(det_b0);
+  fmpz_clear(det_b1);
+  r0[0] = fmpz_equal_si(tmp, 1);
+  fmpz_clear(tmp);
+  return r0[0];
+}
