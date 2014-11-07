@@ -118,12 +118,13 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
       self->t_sample += ggh_walltime(t);
 
       t = ggh_walltime(0);
-      if (!fmpz_poly_oz_ideal_span(self->g, self->b[k][0], self->b[k][1], self->pk->n, sloppy, nsp, small_primes)) {
+      const int span_ideal = fmpz_poly_oz_ideal_span(self->g, self->b[k][0], self->b[k][1],
+                                                     self->pk->n, sloppy, nsp, small_primes);
+      self->t_is_subideal += ggh_walltime(t);
+
+      if (!span_ideal) {
         fail[0]++;
-        self->t_is_subideal += ggh_walltime(t);
         continue;
-      } else {
-        self->t_is_subideal += ggh_walltime(t);
       }
 
       _fmpz_vec_set(B->coeffs+0, self->b[k][0]->coeffs, n);
