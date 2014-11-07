@@ -178,12 +178,8 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   fmpq_poly_t g_inv;
   fmpq_poly_init(g_inv);
 
-  /* we try about 1% small primes first, where 1% relates to the total number of primes needed for multi-modular result */
-  int k = ceil((log2(_gghlite_sigma(self->pk->n)) + log2(self->pk->n)/2.0) * self->pk->n/100.0/(FLINT_BITS -1));
-  if (k < 20)
-    k = 20;
-
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, k);
+  const int nsp = _gghlite_nsmall_primes(self->pk);
+  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_is_probaprime_small_primes(self->pk->n, nsp);
   const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
 
   while(1) {
@@ -202,7 +198,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
 
     /* 1. check if prime */
     t = ggh_walltime(0);
-    if (!fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, sloppy, k, small_primes)) {
+    if (!fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, sloppy, nsp, small_primes)) {
       fail[1]++;
       self->t_is_prime += ggh_walltime(t);
       continue;

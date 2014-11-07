@@ -103,6 +103,20 @@ static inline double _gghlite_ell_g(double n) {
 
 
 /**
+   Number of small primes to test in sloppy variant
+*/
+
+static inline int _gghlite_nsmall_primes(const gghlite_pk_t self) {
+  /* we try about 1% small primes first, where 1% relates to the total number of primes needed for
+     multi-modular result */
+  const long n = self->n;
+  int nsp = ceil((log2(_gghlite_sigma(n)) + log2(n)/2.0) * n/100.0/(FLINT_BITS -1));
+  if (nsp < 20)
+    nsp = 20;
+  return nsp;
+}
+
+/**
   Compute `ℓ_g`.
 
   CONSTRAINTS:
