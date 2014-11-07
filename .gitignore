@@ -46,3 +46,4 @@ callgrind.*
 .libs/
 .dir-locals.el
 /applications/bench_prime_g
+/applications/bench_ideal_span

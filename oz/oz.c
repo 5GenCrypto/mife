@@ -213,15 +213,16 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
       if (r0[j] == 0 && r1[j] == 0) {
         r0[0] = 0;
         break;
-      }
+      } else
+        r0[0] = 1;
     }
     if (r0[0] == 0)
       break;
   }
   fmpz_poly_clear(mod);
 
-  if (sloppy)
-    return r0[0];
+  if (sloppy || r0[0] == 0)
+    return (r0[0] != 0);
 
   fmpz_t det;
   fmpz_init(det);
