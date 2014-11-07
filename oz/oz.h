@@ -72,30 +72,9 @@ int fmpz_poly_oz_ideal_is_probaprime(fmpz_poly_t f, const long n, int sloppy, co
    Decide if <b_0,b_1> = <g>
  */
 
-static inline int fmpz_poly_oz_ideal_subset(fmpz_poly_t g, fmpz_poly_t b0, fmpz_poly_t b1, const long n) {
-  fmpz_t det;
-  fmpz_init(det);
-  fmpz_poly_oz_ideal_norm(det, g, n, 0);
+int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
+                            const int sloppy, const int k, const mp_limb_t *small_primes);
 
-  fmpz_t det_b0, det_b1;
-  fmpz_init(det_b0);
-  fmpz_init(det_b1);
-
-  fmpz_poly_oz_ideal_norm(det_b0, b0, n, 0);
-  fmpz_poly_oz_ideal_norm(det_b1, b1, n, 0);
-
-  fmpz_t tmp;
-  fmpz_init(tmp);
-  fmpz_gcd(tmp, det_b0, det_b1);
-  fmpz_clear(det_b0);
-  fmpz_clear(det_b1);
-
-  int r = fmpz_equal(det, tmp);
-
-  fmpz_clear(det);
-  fmpz_clear(tmp);
-  return r;
-}
 
 static inline int fmpz_poly_oz_coprime(fmpz_poly_t b0, fmpz_poly_t b1) {
   fmpz_poly_t t;  fmpz_poly_init(t);
