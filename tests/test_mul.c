@@ -40,14 +40,14 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
   fmpz_mod_poly_oz_mul(r0, f0, f1, n);
   t0 = oz_walltime(t0);
 
-  fmpz_mod_poly_oz_fft_precomp_t precomp;
-  fmpz_mod_poly_oz_fft_precomp_init(precomp, n, q);
+  fmpz_mod_poly_oz_ntt_precomp_t precomp;
+  fmpz_mod_poly_oz_ntt_precomp_init(precomp, n, q);
 
   uint64_t t1 = oz_walltime(0);
-  _fmpz_mod_poly_oz_mul_fftnwc(r1, f0, f1, precomp);
+  _fmpz_mod_poly_oz_mul_nttnwc(r1, f0, f1, precomp);
   t1 = oz_walltime(t1);
 
-  fmpz_mod_poly_oz_fft_precomp_clear(precomp);
+  fmpz_mod_poly_oz_ntt_precomp_clear(precomp);
 
   int r = fmpz_mod_poly_equal(r0, r1);
 
