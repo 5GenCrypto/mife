@@ -508,8 +508,6 @@ void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint
     if (gghlite_pk_check_sec(self))
       break;
   }
-
-  _gghlite_pk_set_modulus(self);
 }
 
 void gghlite_pk_clear(gghlite_pk_t self) {
@@ -524,7 +522,6 @@ void gghlite_pk_clear(gghlite_pk_t self) {
     }
   }
 
-  fmpz_mod_poly_clear(self->modulus);
   dgsl_rot_mp_clear(self->D_sigma_s);
   mpfr_clear(self->sigma_s);
   mpfr_clear(self->ell_b);

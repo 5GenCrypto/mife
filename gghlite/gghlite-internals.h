@@ -220,17 +220,6 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
 
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self);
 
-/**
-   Set `x^n + 1`.
-*/
-
-static inline void _gghlite_pk_set_modulus(gghlite_pk_t self) {
-  assert(self->n);
-  assert(!fmpz_is_zero(self->q));
-  fmpz_mod_poly_init_oz_modulus(self->modulus, self->q, self->n);
-}
-
-
 void _gghlite_pk_set_q(gghlite_pk_t self);
 
 static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_rnd_t rnd) {

@@ -1,3 +1,7 @@
+/**
+   @file gghlite-defs.h
+*/
+
 #ifndef _DEFS_H_
 #define _DEFS_H_
 
@@ -23,10 +27,15 @@ typedef fmpz_poly_t     gghlite_clr_t;
 
 typedef fmpz_mod_poly_t gghlite_enc_t;
 
+
+/**
+   \brief Flags controlling global behaviour
+*/
+
 typedef enum {
-  GGHLITE_FLAGS_DEFAULT  = 0x0,
-  GGHLITE_FLAGS_SLOPPY  =  0x1,
-  GGHLITE_FLAGS_VERBOSE =  0x2,
+  GGHLITE_FLAGS_DEFAULT  = 0x0, //!< default behaviour
+  GGHLITE_FLAGS_SLOPPY  =  0x1, //!< skip some expensive steps
+  GGHLITE_FLAGS_VERBOSE =  0x2, //!< be more verbose
 } gghlite_flags_t;
 
 /**
@@ -36,90 +45,58 @@ typedef enum {
 #define KAPPA (sizeof(uint64_t)<<3)
 
 /**
-   GGHLite Public key.
+   \brief GGHLite Public key Struct
 
-   FIELDS:
-
-  - the security parameter `λ`
-  - the multi-linearity parameter `κ ≤ KAPPA`
-  - the rerandomisation mask such that if the `i`-th bit is set
-  - flags which control the behaviour of instance generation
-    then rerandomisation elements for level `i+1` are generated
-  - the dimension of the lattice `n`
-  - the number of bits `ℓ` in each coefficient used for extraction
-  - the modulus `q`
-  - Gaussian width parameter `σ`   for sampling `g`
-  - Gaussian width parameter `σ'`  for sampling `b_{k,i}`
-  - Gaussian width parameter `σ^*` for sampling `ρ_i`
-  - the bound `ℓ_b` on `σ_n(rot(B^(k)))`
-  - the bound `ℓ_g` on `|g^-1|`
-  - the fraction `ξ` of `q` used for zero-testing
-  - the modulus `x^n + 1` to specify the cyclotomic ring `ZZ[x]/(x^n+1)`
-  - the zero-testing parameter `p_{zt}`
-  - level-`k` encodings of zero `x_{k,i}` for each level `k` specified by rerandomisation mask
-  - one level-1 encoding of 1
-  - the discrete Gaussian distribution `D_{R,σ'}`
-  - the discrete Gaussian distribution `D_{R,σ^*}`
-
+   This struct represents a GGHLite public key or `params`. We emphasise computation speed over
+   memory size and hence include various caches to speed up computations.
 */
 
 struct _gghlite_pk_struct {
-  size_t lambda;
-  size_t kappa;
-  uint64_t rerand_mask;
-  uint64_t flags;
-
-  long n;
-  long ell;
-  fmpz_t q;
-  mpfr_t sigma;
-  mpfr_t sigma_p;
-  mpfr_t sigma_s;
-  mpfr_t ell_b;
-  mpfr_t ell_g;
-  mpfr_t xi;
-
-  gghlite_enc_t modulus;
-  gghlite_enc_t pzt;
-  gghlite_enc_t x[KAPPA][2];
-  gghlite_enc_t y;
-  dgsl_rot_mp_t *D_sigma_p;
-  dgsl_rot_mp_t *D_sigma_s;
-
-  fmpz_mod_poly_oz_ntt_precomp_t ntt;
+  size_t lambda;                      //!< security parameter $λ$
+  size_t kappa;                       //!< multi-linearity parameter $κ ≤$ `KAPPA`
+  uint64_t rerand_mask;               //!< mask where $i$-th bit toggles generation of re-randomisers for level-$i$
+  uint64_t flags;                     //!< see @ref gghlite_flags_t
+  long n;                             //!< dimension of the lattice $n$
+  long ell;                           //!< number of bits $ℓ$ in each coefficient used for extraction
+  fmpz_t q;                           //!< modulus $q$
+  mpfr_t sigma;                       //!< Gaussian width parameter $σ$ for sampling $g$
+  mpfr_t sigma_p;                     //!< Gaussian width parameter $σ'$ for sampling $b_{k,i}$
+  mpfr_t sigma_s;                     //!< Gaussian width parameter $σ^*$ for sampling $ρ_i$
+  mpfr_t ell_b;                       //!< bound $ℓ_b$ on $σ_n(rot(B^(k)))$
+  mpfr_t ell_g;                       //!< bound $ℓ_g$ on $|g^-1|$
+  mpfr_t xi;                          //!< fraction $ξ$ of $q$ used for zero-testing
+  gghlite_enc_t pzt;                  //!< zero-testing parameter $p_{zt}$
+  gghlite_enc_t x[KAPPA][2];          //!< level-$k$ encodings of zero $x_{k,i}$ for each level $k$ specified by rerandomisation mask
+  gghlite_enc_t y;                    //!< one level-1 encoding of 1
+  dgsl_rot_mp_t *D_sigma_p;           //!< discrete Gaussian distribution $D_{\ZZ,σ'}$
+  dgsl_rot_mp_t *D_sigma_s;           //!< discrete Gaussian distribution $D_{\ZZ,σ^*}$
+  fmpz_mod_poly_oz_ntt_precomp_t ntt; //!< pre-computation data for computing in the NTT domain
 };
+
+/**
+   \brief GGHLite Public key
+
+   @see _gghlite_pk_struct
+*/
 
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
 
 /**
-   GGHLite Secret Key.
-
-   FIELDS:
-
-  - the corresponding GGHLite public key
-  - an ideal generator `<g>`
-  - `g^-1` in `K[x]/(x^n+1)`
-  - the masking element `z`
-  - the masking element `h`
-  - an element `a mod <g> = 1`
-  - an element `b mod <g> = 0`
-*/
+   \brief GGHLite Secret Key.
+g*/
 
 struct _gghlite_struct {
-  gghlite_pk_t pk;
-
-  gghlite_clr_t g;
-  gghlite_enc_t z;
-  gghlite_enc_t z_inv;
-  gghlite_clr_t h;
-  gghlite_clr_t a;
-  gghlite_clr_t b[KAPPA][2];
-
-  dgsl_rot_mp_t *D_g;
-
-  uint64_t t_is_prime;
-  uint64_t t_is_subideal;
-  uint64_t t_sample;
+  gghlite_pk_t pk;             //!< the GGHLite public key
+  gghlite_clr_t g;             //!< an ideal generator $\ideal{g}$
+  gghlite_enc_t z;             //!< $g^{-1}$ in $\\ZZ_q[x]/(x^n+1)$
+  gghlite_enc_t z_inv;         //!< masking element $z$
+  gghlite_clr_t h;             //!< masking element $h$
+  gghlite_clr_t a;             //!< an element $a \\bmod \\ideal{g} = 1$
+  gghlite_clr_t b[KAPPA][2];   //!< an element $b \\bmod \\ideal{g} = 0$
+  dgsl_rot_mp_t *D_g;          //!< discrete Gaussian distribution $D_{R,σ'}$ with $R = \\ZZ[x]/(x^n+1)$
+  uint64_t t_is_prime;         //!< time spent on checking if g is prime in μs
+  uint64_t t_is_subideal;      //!< time spent on verifying that $\\ideal{b_0,b_1} = \\ideal{g}$ in μs
+  uint64_t t_sample;           //!< time spent on sampling  in μs
 };
 
 typedef struct _gghlite_struct gghlite_t[1];
