@@ -107,7 +107,7 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 
 
 /**
-   \brief Return true if neither $b_0$ or $b_1$ has prime factors in `small_primes` and @f$\ideal{b_0, b_1} = \ideal{1}@f$.
+   \brief Return true if @f$\ideal{b_0, b_1} = \ideal{1}@f$.
 
    @parqam b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
    @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
@@ -116,16 +116,13 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
    @param k             number of primes in `small_primes`, must be ≥ 0
    @param small_primes  a list of small primes which are checked first
 
-   1. This function checks if \f$\res{b_j,x^n+1} = 0 \bmod p_i\f$ for $0 ≤ j < 2$ and $0 ≤ i < k$
-      where $p_i$ is a small prime in the list `small_primes`. We return false in this case.
+   1. This function checks if \f$\res{b_0,x^n+1} = 0 \bmod p_i\f$ and \f$\res{b_1,x^n+1} = 0 \bmod
+      p_i\f$ for $0 ≤ i < k$ where $p_i$ is a small prime in the list `small_primes`. We return
+      false in this case.
 
    2. If this test passes and `sloppy = 0` we compute the the resultants \f$r_0 = \res{b_0,
       x^n+1}\f$ and \f$r_1 = \res{b_1,x^n+1}\f$ and return true if \f$\gcd{r_0, r_1} = 1\f$ and
       false otherwise.
-
-   The rationale behind step 1 is that we call this function on $b_0, b_1$ which are then used to
-   produce $b_0·g,b_1·g$ on which we would call fmpz_poly_oz_ideal_span(). To disable step 1, set `k =
-   0`.
  */
 
 int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
