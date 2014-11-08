@@ -109,7 +109,7 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 /**
    \brief Return true if @f$\ideal{b_0, b_1} = \ideal{1}@f$.
 
-   @parqam b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
+   @param b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
    @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param n             degree of cyclotomic polynomial, must be power of two
    @param sloppy        only check modulo primes in `small_primes`
