@@ -3,68 +3,6 @@
 #include "util.h"
 #include "oz.h"
 
-static inline mp_bitcnt_t _fmpq_poly_oz_ideal_norm_bound(const fmpq_poly_t f, const long n) {
-  mp_bitcnt_t bits1 = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
-  mp_bitcnt_t bound = 2*n*FLINT_BIT_COUNT((20*n + 26)/27) + 3;
-  bound += (n - 1) + n*bits1;
-  return bound;
-}
-
-void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
-  fmpq_poly_t modulus;
-
-  if (prec == 0) {
-    mp_bitcnt_t bound = _fmpq_poly_oz_ideal_norm_bound(f, n);
-    fmpq_poly_init_oz_modulus(modulus, n);
-    fmpq_poly_resultant_modular_bound(norm, f, modulus, bound);
-    fmpq_poly_clear(modulus);
-
-  } else if  (prec < 0) {
-
-    mpfr_t norm_f;
-    mpfr_init2(norm_f, -prec);
-    fmpq_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
-    mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
-    fmpq_set_mpfr(norm, norm_f, MPFR_RNDN);
-    mpfr_clear(norm_f);
-
-  } else {
-
-    fmpq_poly_init_oz_modulus(modulus, n);
-    fmpq_poly_t f_trunc;
-    fmpq_poly_init(f_trunc);
-    fmpq_poly_set(f_trunc, f);
-    fmpq_poly_truncate(f_trunc, prec);
-
-    mp_bitcnt_t bound = _fmpq_poly_oz_ideal_norm_bound(f_trunc, n);
-    fmpq_poly_resultant_modular_bound(norm, f_trunc, modulus, bound);
-
-    fmpq_poly_clear(modulus);
-    fmpq_poly_clear(f_trunc);
-  }
-}
-
-void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec) {
-  mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
-  mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
-  if (prec == 0) {
-    fmpz_poly_t modulus;
-    fmpz_poly_init_oz_modulus(modulus, n);
-    fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
-    fmpz_poly_clear(modulus);
-  } else {
-    mpfr_t norm_f;
-    mpfr_init2(norm_f, prec);
-    fmpz_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
-    mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
-    mpz_t norm_z;
-    mpz_init(norm_z);
-    mpfr_get_z(norm_z, norm_f, MPFR_RNDN);
-    fmpz_set_mpz(norm, norm_z);
-    mpfr_clear(norm_f);
-    mpz_clear(norm_z);
-  }
-}
 
 void fmpz_poly_oz_conjugate(fmpz_poly_t fT, const fmpz_poly_t f, const long n) {
   fmpz_poly_zero(fT);

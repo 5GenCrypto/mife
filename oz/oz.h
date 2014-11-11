@@ -44,9 +44,6 @@ void fmpz_poly_oz_conjugate(fmpz_poly_t fT, const fmpz_poly_t f, const long n);
 
 void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n);
 
-void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec);
-
-void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec);
 
 /**
    Return list of likely prime factors of ideal norms.
@@ -133,5 +130,6 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
 #include "ntt.h"
 #include "invert.h"
 #include "sqrt.h"
+#include "norm.h"
 
 #endif /* _OZ_H_ */

@@ -6,7 +6,7 @@ lib_LTLIBRARIES = liboz.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 
-liboz_la_SOURCES = oz.c flint-addons.c util.c sqrt.c invert.c mul.c ntt.c
+liboz_la_SOURCES = oz.c flint-addons.c util.c sqrt.c invert.c mul.c ntt.c norm.c
 liboz_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 liboz_la_INCLUDEDOR = $(includedir)/oz
 
