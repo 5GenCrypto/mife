@@ -39,6 +39,7 @@ void _nmod_poly_oz_ntt(nmod_poly_t rop, const nmod_poly_t op, const nmod_poly_t 
 mp_limb_t nmod_poly_oz_resultant(const nmod_poly_t a, const long n);
 
 void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, mpfr_prec_t prec);
+void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const size_t n);
 void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec);
 
 #endif /* NORM_H */

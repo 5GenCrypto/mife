@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   int status = 0;
 
-  unsigned long n[4] = {32,64,128,0};
+  unsigned long n[5] = {32,64,128,256,0};
 
   for(int i=0; n[i]; i++) {
     for(mp_bitcnt_t bits=2; bits<=2*n[i]; bits=2*bits) {

@@ -81,7 +81,7 @@ mp_limb_t nmod_poly_oz_resultant(const nmod_poly_t a, const long n) {
   return res;
 }
 
-void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n) {
+void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const size_t n) {
   mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
   mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
 
@@ -94,7 +94,7 @@ void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n) {
   fmpz_t fc;  fmpz_init(fc);
   _fmpz_vec_content(fc, f->coeffs, n);
 
-  /* divide poly1 and poly2 by their content */
+  /* divide f by content */
   fmpz *F = _fmpz_vec_init(n);
   _fmpz_vec_scalar_divexact_fmpz(F, f->coeffs, n, fc);
 
@@ -103,7 +103,7 @@ void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n) {
   fmpz_set(l, f->coeffs + n-1);
 
   /* set size of first prime */
-  pbits = FLINT_BITS/2;
+  pbits = FLINT_D_BITS - 1;
 
   num_primes = (bound + pbits - 1)/pbits;
   mp_ptr parr = _nmod_vec_init(num_primes);
