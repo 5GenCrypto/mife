@@ -100,7 +100,6 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
   mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
-  const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
 
   for(size_t k=0; k<self->pk->kappa; k++) {
     fmpz_poly_init(self->b[k][0]);
@@ -119,7 +118,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 
       t = ggh_walltime(0);
       const int coprime = fmpz_poly_oz_coprime(self->b[k][0], self->b[k][1],
-                                               self->pk->n, sloppy, nsp, small_primes);
+                                               self->pk->n, 0, nsp, small_primes);
       self->t_is_subideal += ggh_walltime(t);
 
       if (!coprime) {
