@@ -87,7 +87,10 @@ int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int slop
       mp_limb_t p = small_primes[i+j];
       nmod_poly_init(a[j], p); fmpz_poly_get_nmod_poly(a[j], f);
       nmod_poly_init(b[j], p); fmpz_poly_get_nmod_poly(b[j], g);
-      r[j] = nmod_poly_resultant(a[j], b[j]);
+      if(p%(2*n) == 1)
+        r[j] = nmod_poly_oz_resultant(a[j], n);
+      else
+        r[j] = nmod_poly_resultant(a[j], b[j]);
       nmod_poly_clear(a[j]);
       nmod_poly_clear(b[j]);
     }
