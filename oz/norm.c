@@ -51,7 +51,7 @@ void _nmod_vec_oz_ntt(mp_ptr rop, const mp_ptr op, const mp_ptr w, const size_t 
 }
 
 
-mp_limb_t _nmod_poly_oz_resultant(const mp_ptr a, const long n, nmod_t q) {
+mp_limb_t _nmod_vec_oz_resultant(const mp_ptr a, const long n, nmod_t q) {
   const mp_limb_t w_ = _nmod_nth_root(2*n, q.n);
   mp_ptr w = _nmod_vec_init(2*n);
   mp_ptr t = _nmod_vec_init(2*n);
@@ -76,7 +76,7 @@ mp_limb_t nmod_poly_oz_resultant(const nmod_poly_t a, const long n) {
   _nmod_vec_set(t, a->coeffs, a->length);
   for(long i=a->length; i<2*n; i++)
     t[i] = 0;
-  mp_limb_t res = _nmod_poly_oz_resultant(t, n, q);
+  mp_limb_t res = _nmod_vec_oz_resultant(t, n, q);
   _nmod_vec_clear(t);
   return res;
 }
@@ -139,7 +139,7 @@ void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const size_t n) 
     /* reduce polynomials modulo p */
     _fmpz_vec_get_nmod_vec(a[id], F, n, mod);
     /* compute resultant over Z/pZ */
-    rarr[i] = _nmod_poly_oz_resultant(a[id], n, mod);
+    rarr[i] = _nmod_vec_oz_resultant(a[id], n, mod);
   }
 
   fmpz_comb_init(comb, parr, num_primes);
