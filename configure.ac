@@ -1,7 +1,5 @@
 AC_INIT([gghflint], [20140613])
 
-AM_SILENT_RULES([yes])
-
 AC_CONFIG_AUX_DIR([.])
 
 AC_CONFIG_SRCDIR([gghlite/gghlite.c])
