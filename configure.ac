@@ -43,8 +43,7 @@ AC_CONFIG_SUBDIRS([dgs])
 
 AC_ARG_VAR(FLINT, [If set to no then calling configure on FLINT is skipped])
 
-
-if test "$FLINT" -neq "no"; then
+if test "x$FLINT" != "xno"; then
    cd flint && ./configure --prefix=${prefix} && cd ..
 fi   
 
