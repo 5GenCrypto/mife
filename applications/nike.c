@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
     printf("-----------------------------------------------------\n");
 
 
-  printf("λ: %3ld, N: %2ld, n: %6ld, seed: 0x%08lx, sloppy: %ld, success: %d, time: %10.2fs\n",
-         cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_SLOPPY,
+  printf("λ: %3ld, N: %2ld, n: %6ld, seed: 0x%08lx, prime: %ld, success: %d, time: %10.2fs\n",
+         cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_PRIME_G,
          ret==0, ggh_walltime(t_total)/1000000.0);
 
   for(int i=0; i<cmdline_params->N; i++) {

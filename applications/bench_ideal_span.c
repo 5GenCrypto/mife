@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   gghlite_init_instance(self, randstate);
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
 
   printf("number of small primes: %4d\n",nsp);
 
@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
     fmpz_poly_sample_D(b1, self->D_g, randstate);
 
     t0 = ggh_walltime(0);
-    r0 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 1, nsp, small_primes);
+    r0 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 1, primes);
     t0 = ggh_walltime(t0);
 
     t1 = ggh_walltime(0);
-    r1 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 0, nsp, small_primes);
+    r1 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 0, primes);
     t1 = ggh_walltime(t1);
 
     T0 += t0;
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   }
   printf("\n");
 
+  free(primes);
   fmpz_poly_clear(b0);
   fmpz_poly_clear(b1);
 

@@ -52,25 +52,91 @@ void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n) {
   fmpq_clear(t0);
 }
 
-mp_limb_t *_fmpz_poly_oz_ideal_small_primes(const long n, const int k) {
+
+mp_limb_t *_fmpz_poly_oz_ideal_probable_prime_factors(const long n, const size_t k) {
   assert(k>=1);
   mp_limb_t q = 1;
-  mp_limb_t *small_primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k);
-  small_primes[0] = 2;
+  mp_limb_t *primes = (mp_limb_t*)calloc(sizeof(mp_limb_t), k+1);
+  primes[0] = k;
+  primes[1] = 2;
 
-  for(int i=1; i<k; ) {
+  for(size_t i=2; i<k+1; ) {
     q += n;
     if (n_is_probabprime(q)) {
-      small_primes[i] = q;
+      primes[i] = q;
       i++;
     }
   }
-  return small_primes;
+  return primes;
 }
 
-int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int sloppy, const int k, const mp_limb_t *small_primes) {
+
+mp_limb_t *_fmpz_poly_oz_ideal_small_prime_factors(const long n, mp_limb_t bound) {
+  size_t kmax = ceil(bound/log((double)bound));
+  size_t i;
+
+  mp_limb_t *primes = (mp_limb_t*)malloc(sizeof(mp_limb_t) * kmax+1);
+  mp_limb_t *t = NULL;
+  primes[1] = 2;
+
+  mp_limb_t q = 1;
+  for(i=2; i<kmax+1 && q < bound; ) {
+    q += n;
+    if (n_is_probabprime(q)) {
+      primes[i] = q;
+      i++;
+      if (i == kmax) {
+        kmax = 2*kmax;
+        t = realloc(primes, sizeof(mp_limb_t) * kmax);
+        if (t == NULL)
+          oz_die("Not enough memory");
+        else
+          primes = t;
+      }
+    }
+  }
+  q = 2;
+  for( ; q < bound; ) {
+    q = n_nextprime(q, 0);
+    if (q%n != 1) {
+      primes[i] = q;
+      i++;
+      if (i == kmax) {
+        kmax = 2*kmax;
+        t = realloc(primes, sizeof(mp_limb_t) * kmax);
+        if (t == NULL)
+          oz_die("Not enough memory");
+        else
+          primes = t;
+      }
+    }
+  }
+  t = realloc(primes, sizeof(mp_limb_t) * i);
+  if (t == NULL)
+    oz_die("memory allocation error");
+  else
+    primes = t;
+  primes[0] = i-1;
+  return primes;
+}
+
+int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int sloppy, const mp_limb_t *primes) {
+  int r = fmpz_poly_oz_ideal_not_prime_factors(f, n, primes);
+  if (r) {
+    fmpz_t norm;
+    fmpz_init(norm);
+    fmpz_poly_oz_ideal_norm(norm, f, n, 0);
+    r = fmpz_is_probabprime(norm);
+    fmpz_clear(norm);
+  }
+  return r;
+}
+
+int fmpz_poly_oz_ideal_not_prime_factors(const fmpz_poly_t f, const long n, const mp_limb_t *primes) {
   fmpz_poly_t g; fmpz_poly_init_oz_modulus(g, n);
   int num_threads = omp_get_max_threads();
+
+  const size_t k = primes[0];
 
   nmod_poly_t a[num_threads];
   nmod_poly_t b[num_threads];
@@ -79,12 +145,12 @@ int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int slop
   for(int j=0; j<num_threads; j++)
     r[j] = 1;
 
-  for(int i=0; i<k; i+=num_threads) {
-    if (k-i < num_threads)
+  for(size_t i=0; i<k; i+=num_threads) {
+    if (k-i < (unsigned long)num_threads)
       num_threads = k-i;
 #pragma omp parallel for
     for (int j=0; j<num_threads; j++) {
-      mp_limb_t p = small_primes[i+j];
+      mp_limb_t p = primes[1+i+j];
       nmod_poly_init(a[j], p); fmpz_poly_get_nmod_poly(a[j], f);
       nmod_poly_init(b[j], p); fmpz_poly_get_nmod_poly(b[j], g);
       if(p%(2*n) == 1)
@@ -95,7 +161,7 @@ int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int slop
       nmod_poly_clear(b[j]);
     }
     for(int j=0; j<num_threads; j++)
-      if (r[j]==0) {
+      if (r[j] == 0) {
         r[0] = 0;
         break;
       }
@@ -103,25 +169,16 @@ int fmpz_poly_oz_ideal_is_probaprime(const fmpz_poly_t f, const long n, int slop
       break;
   }
   fmpz_poly_clear(g);
-  if (sloppy)
-    return r[0];
-
-  if (r[0]) {
-    fmpz_t norm;
-    fmpz_init(norm);
-    fmpz_poly_oz_ideal_norm(norm, f, n, 0);
-    r[0] = fmpz_is_probabprime(norm);
-    fmpz_clear(norm);
-  }
   return r[0];
 }
 
-
 int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
-                            const int sloppy, const int k, const mp_limb_t *small_primes) {
+                            const int sloppy, const mp_limb_t *primes) {
 
   fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
   int num_threads = omp_get_max_threads();
+
+  const long k = primes[0];
 
   nmod_poly_t n0[num_threads];
   nmod_poly_t n1[num_threads];
@@ -139,7 +196,7 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
       num_threads = k-i;
 #pragma omp parallel for
     for (int j=0; j<num_threads; j++) {
-      mp_limb_t p = small_primes[i+j];
+      mp_limb_t p = primes[1+i+j];
       nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], b0);
       nmod_poly_init(n1[j], p); fmpz_poly_get_nmod_poly(n1[j], b1);
       nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);
@@ -191,10 +248,12 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 
 
 int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
-                         const int sloppy, const int k, const mp_limb_t *small_primes) {
+                         const int sloppy, const mp_limb_t *primes) {
 
   fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
   int num_threads = omp_get_max_threads();
+
+  const size_t k = primes[0];
 
   nmod_poly_t n0[num_threads];
   nmod_poly_t n1[num_threads];
@@ -207,12 +266,12 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
     r0[j] = 1;
     r1[j] = 1;
   }
-  for(int i=0; i<k; i+=num_threads) {
-    if (k-i < num_threads)
+  for(size_t i=0; i<k; i+=num_threads) {
+    if (k-i < (unsigned long)num_threads)
       num_threads = k-i;
 #pragma omp parallel for
     for (int j=0; j<num_threads; j++) {
-      mp_limb_t p = small_primes[i+j];
+      mp_limb_t p = primes[1+i+j];
       nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], b0);
       nmod_poly_init(n1[j], p); fmpz_poly_get_nmod_poly(n1[j], b1);
       nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);

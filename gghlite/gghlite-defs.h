@@ -34,8 +34,8 @@ typedef fmpz_mod_poly_t gghlite_enc_t;
 
 typedef enum {
   GGHLITE_FLAGS_DEFAULT  = 0x0, //!< default behaviour
-  GGHLITE_FLAGS_SLOPPY  =  0x1, //!< skip some expensive steps
-  GGHLITE_FLAGS_VERBOSE =  0x2, //!< be more verbose
+  GGHLITE_FLAGS_PRIME_G  = 0x1, //!< enforce that @f$\ideal{g}@f$ is a prime ideal (expensive!)
+  GGHLITE_FLAGS_VERBOSE  = 0x2, //!< be more verbose
 } gghlite_flags_t;
 
 /**

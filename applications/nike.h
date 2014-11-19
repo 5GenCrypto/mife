@@ -26,7 +26,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-l   security parameter λ > 0 (default: %d)\n", DEFAULT_LAMBDA);
   printf("-N   number of parties N > 2 (default: %d)\n", DEFAULT_N);
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
-  printf("-f   skip some expensive tests (default: False)\n");
+  printf("-p   enforce that g generates a prime ideal (default: False)\n");
   printf("-v   be more verbose (default: False)\n");
   if (extra)
     printf("%s\n", extra);
@@ -48,7 +48,7 @@ static inline int parse_cmdline(cmdline_params_t cmdline_params, int argc, char 
   cmdline_params->flags  =  GGHLITE_FLAGS_DEFAULT;
 
   int c;
-  while ((c = getopt(argc, argv, "l:N:s:fv")) != -1) {
+  while ((c = getopt(argc, argv, "l:N:s:pv")) != -1) {
     switch(c) {
     case 'l':
       cmdline_params->lambda = (long)atol(optarg);
@@ -59,8 +59,8 @@ static inline int parse_cmdline(cmdline_params_t cmdline_params, int argc, char 
     case 's':
       cmdline_params->seed = (long)atol(optarg);
       break;
-    case 'f':
-      cmdline_params->flags |= GGHLITE_FLAGS_SLOPPY;
+    case 'p':
+      cmdline_params->flags |= GGHLITE_FLAGS_PRIME_G;
       break;
     case 'v':
       cmdline_params->flags |= GGHLITE_FLAGS_VERBOSE;

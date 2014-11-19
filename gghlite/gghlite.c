@@ -99,7 +99,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 #endif //GGHLITE_CHECK_SIGMA_N
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
 
   for(size_t k=0; k<self->pk->kappa; k++) {
     fmpz_poly_init(self->b[k][0]);
@@ -118,7 +118,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
 
       t = ggh_walltime(0);
       const int coprime = fmpz_poly_oz_coprime(self->b[k][0], self->b[k][1],
-                                               self->pk->n, 0, nsp, small_primes);
+                                               self->pk->n, 0, primes);
       self->t_is_subideal += ggh_walltime(t);
 
       if (!coprime) {
@@ -151,7 +151,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
     }
     printf("\n");
   }
-  free(small_primes);
+  free(primes);
   mpfr_clear(sqrtn_sigma_p);
   mpfr_clear(sigma_n);
   fmpz_poly_clear(B);
@@ -185,9 +185,16 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   fmpq_poly_t g_inv;
   fmpq_poly_init(g_inv);
 
-  const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(self->pk->n, nsp);
-  const int sloppy = self->pk->flags & GGHLITE_FLAGS_SLOPPY;
+  const int check_prime = self->pk->flags & GGHLITE_FLAGS_PRIME_G;
+
+  int prime_pass = 0;
+  mp_limb_t *primes;
+  if (check_prime) {
+    const int nsp = _gghlite_nsmall_primes(self->pk);
+    primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
+  } else {
+    primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, 2*self->pk->n);
+  }
 
   while(1) {
     printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
@@ -205,12 +212,14 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
 
     /* 1. check if prime */
     t = ggh_walltime(0);
-    if (!fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, sloppy, nsp, small_primes)) {
+    if (check_prime)
+      prime_pass = fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, 0, primes);
+    else
+      prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->pk->n, primes);
+    self->t_is_prime += ggh_walltime(t);
+    if (!prime_pass) {
       fail[1]++;
-      self->t_is_prime += ggh_walltime(t);
       continue;
-    } else {
-      self->t_is_prime += ggh_walltime(t);
     }
 
     /* 2. check norm of inverse */
@@ -223,7 +232,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     break;
   }
 
-  free(small_primes);
+  free(primes);
 
   printf("\n");
   fflush(0);
@@ -312,9 +321,6 @@ void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate) {
 void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->lambda);
   assert(self->pk->kappa);
-
-  if (self->pk->flags & GGHLITE_FLAGS_SLOPPY)
-    fprintf(stderr, "#### WARNING: GGHLITE_FLAGS_SLOPPY is set.####\n");
 
   _gghlite_sample_g(self, randstate);
   _gghlite_sample_z(self, randstate);

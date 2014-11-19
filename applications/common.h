@@ -18,7 +18,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("####################################################################\n");
   printf("-l   security parameter λ > 0 (default: %d)\n", DEFAULT_LAMBDA);
   printf("-k   multi-linearity parameter k > 1 (default: %d)\n", DEFAULT_KAPPA);
-  printf("-f   skip some expensive tests (default: False)\n");
+  printf("-p   enforce prime g (default: False)\n");
   printf("-r   re-randomisation mask (default: 0x%016lx for level-1 re-randomisation\n", DEFAULT_RERAND);
   printf("-v   be more verbose (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
@@ -58,7 +58,7 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
   params->rerand =  DEFAULT_RERAND;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:s:vfr:")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:s:vpr:")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -69,11 +69,11 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
     case 's':
       params->seed = (long)atol(optarg);
       break;
-    case 'f':
-      params->flags |= GGHLITE_FLAGS_SLOPPY;
-      break;
     case 'v':
       params->flags |= GGHLITE_FLAGS_VERBOSE;
+      break;
+    case 'p':
+      params->flags |= GGHLITE_FLAGS_PRIME_G;
       break;
     case 'r':
       params->rerand = (uint64_t)strtoul(optarg,NULL,10);

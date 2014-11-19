@@ -9,8 +9,8 @@ int main(int argc, char *argv[]) {
 
   print_header("GGHLite Check Primality", params);
 
-  if (!(params->flags & GGHLITE_FLAGS_SLOPPY))
-    ggh_die("Not setting GGHLITE_FLAGS_SLOPPY defeats the purpose of this program.");
+  if (params->flags & GGHLITE_FLAGS_PRIME_G)
+    ggh_die("Setting GGHLITE_FLAGS_PRIME_G defeats the purpose of this application.");
 
   flint_rand_t randstate;
   flint_randinit_seed(randstate, params->seed, 1);

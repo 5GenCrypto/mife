@@ -26,19 +26,19 @@ int main(int argc, char *argv[]) {
   if (k < 20)
     k = 20;
 
-  mp_limb_t *small_primes = _fmpz_poly_oz_ideal_small_primes(n, k);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(n, k);
 
   int r = 0;
   for(long i=0; i<m; i++) {
     fmpz_poly_sample_sigma(g, n, sigma, randstate);
     uint64_t t0 = ggh_walltime(0);
-    r += fmpz_poly_oz_ideal_is_probaprime(g, n, 0, k, small_primes);
+    r += fmpz_poly_oz_ideal_is_probaprime(g, n, 0, primes);
     t += ggh_walltime(t0);
     printf("\rm: %6ld, #prime: %d,",i+1, r); fflush(0);
   }
   printf(" n: %4ld, log σ': %7.2f, t: %.6f\n",n, log2(_gghlite_sigma(n)), t/1000000.0/m);
 
-  free(small_primes);
+  free(primes);
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
   flint_randclear(randstate);
