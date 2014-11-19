@@ -45,7 +45,7 @@ typedef enum {
 #define KAPPA (sizeof(uint64_t)<<3)
 
 /**
-   \brief GGHLite Public key Struct
+   @brief GGHLite Public key Struct
 
    This struct represents a GGHLite public key or `params`. We emphasise computation speed over
    memory size and hence include various caches to speed up computations.
@@ -74,7 +74,7 @@ struct _gghlite_pk_struct {
 };
 
 /**
-   \brief GGHLite Public key
+   @brief GGHLite Public key
 
    @see _gghlite_pk_struct
 */
@@ -82,8 +82,8 @@ struct _gghlite_pk_struct {
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
 
 /**
-   \brief GGHLite Secret Key.
-g*/
+   @brief GGHLite Secret Key.
+*/
 
 struct _gghlite_struct {
   gghlite_pk_t pk;             //!< the GGHLite public key

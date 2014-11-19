@@ -152,8 +152,7 @@ a.qindexHL {
 
 a.el {
 	font-family: Source Code Pro, Consolas, monospace;
-	//font-weight: bold;
-	font-weight: normal;
+	font-weight: bold;
 }
 
 a.elRef {
@@ -478,8 +477,7 @@ table.memberdecls {
 .mdescLeft, .mdescRight,
 .memItemLeft, .memItemRight,
 .memTemplItemLeft, .memTemplItemRight, .memTemplParams {
-	//background-color: #F9FAFC;
-	background-color: white;
+        background-color: #F9FAFC;
 	border: none;
 	margin: 4px;
 	padding: 1px 0 0 8px;
@@ -568,7 +566,7 @@ table.memberdecls {
 
 .memname {
 	   font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
-	   font-weight: 400;
+	   font-weight: bold;
 	   font-size: 100%;
 	   margin-left: 0px;
 }
@@ -614,19 +612,20 @@ dl.reflist dd {
 }
 
 .paramtype {
-	white-space: nowrap;
+    white-space: nowrap;
+    font-weight: normal;
 }
 
 .paramname {
-	//color: #602020;
 	color: rgb(37, 53, 85);
 	white-space: nowrap;
 }
+
 .paramname em {
-	font-style: italic;
-	font-weight: normal;
-	//font-style: normal;
+	font-style: normal;
+	font-weight: bold;
 }
+
 .paramname code {
         line-height: 14px;
 }

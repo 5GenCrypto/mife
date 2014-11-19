@@ -1,4 +1,5 @@
 /** @file oz.h
+    @brief Computing in \f$\R\f$ and \f$\QQ[x]/\ideal{x^n+1}\f$, main include file.
 */
 #ifndef _OZ_H_
 #define _OZ_H_
@@ -14,17 +15,30 @@ typedef enum {
   OZ_VERBOSE    = 0x1, //< print debug messages
 } oz_flag_t;
 
+/**
+   @brief Initialise $f$ to $x^n+1 \\in \\ZZ[x]$.
+*/
+
 static inline void fmpz_poly_init_oz_modulus(fmpz_poly_t f, const long n) {
   fmpz_poly_init(f);
   fmpz_poly_set_coeff_si(f, 0, 1);
   fmpz_poly_set_coeff_si(f, n, 1);
 }
 
+/**
+   @brief Initialise $f$ to $x^n+1 \\in \\QQ[x]$.
+*/
+
+
 static inline void fmpq_poly_init_oz_modulus(fmpq_poly_t f, const long n) {
   fmpq_poly_init(f);
   fmpq_poly_set_coeff_si(f, 0, 1);
   fmpq_poly_set_coeff_si(f, n, 1);
 }
+
+/**
+   @brief Initialise $f$ to $x^n+1 \\in \\ZZ_q[x]$.
+*/
 
 static inline void fmpz_mod_poly_init_oz_modulus(fmpz_mod_poly_t f, const fmpz_t q, const long n) {
   fmpz_mod_poly_init(f, q);
@@ -33,20 +47,20 @@ static inline void fmpz_mod_poly_init_oz_modulus(fmpz_mod_poly_t f, const fmpz_t
 }
 
 /**
-   Set $f^T$ to $f$'s conjugate.
-
-   @param fT  pre-allocated output for \f$f^T \in \R\f$
-   @param f   input \f$f \in \R\f$
-   @param n   degree of cyclotomic polynomial, must be power of two
+   @brief Set $f^T$ to $f$'s conjugate in $\\R$.
 */
 
 void fmpz_poly_oz_conjugate(fmpz_poly_t fT, const fmpz_poly_t f, const long n);
+
+/**
+   @brief Set $f^T$ to $f$'s conjugate in $\\QQ[x]/(x^n+1)$.
+*/
 
 void fmpq_poly_oz_conjugate(fmpq_poly_t fT, const fmpq_poly_t f, const long n);
 
 
 /**
-   Return list of likely prime factors of ideal norms.
+   @brief Return list with $k$ likely prime factors of ideal norms in $R$.
 */
 
 
@@ -104,9 +118,9 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 
 
 /**
-   \brief Return true if @f$\ideal{b_0, b_1} = \ideal{1}@f$.
+   \brief Return true if @f$\ideal{b_0} + \ideal{b_1} = R@f$.
 
-   @param b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
+   @param b0            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param n             degree of cyclotomic polynomial, must be power of two
    @param sloppy        only check modulo primes in `small_primes`

@@ -175,7 +175,7 @@ void fmpz_mod_poly_oz_ntt_precomp_init(fmpz_mod_poly_oz_ntt_precomp_t op, const 
   fmpz_mod_poly_oz_set_powers(op->phi_inv, n, phi);
   fmpz_clear(phi);
 
-  /** We fold 1/n into φ^-1 **/
+  /** @note We fold 1/n into φ^-1 **/
   fmpz_t n_inv;  fmpz_init_set_ui(n_inv, n);
   fmpz_invmod(n_inv, n_inv, q);
 
@@ -272,8 +272,6 @@ void fmpz_mod_poly_oz_ntt_dec(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, con
 void _fmpz_mod_poly_oz_mul_nttnwc(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const fmpz_mod_poly_t g, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
   const size_t n = precomp->n;
   const fmpz *q = fmpz_mod_poly_modulus(f);
-
-  /* printf("w: "); fmpz_print(w); printf(", phi: "); fmpz_print(phi); printf("\n"); */
 
   fmpz_mod_poly_t F;  fmpz_mod_poly_init2(F, q, n);
   fmpz_mod_poly_t G;  fmpz_mod_poly_init2(G, q, n);
