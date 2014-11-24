@@ -426,9 +426,6 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   fmpq_poly_neg(x,x);
   fmpq_clear(tmp);
 
-  /* TODO: check if this indeed has the right distribution, we are only getting
-     one sample, but still, might as well do this right.
-   */
   fmpq_poly_t B_inv;
   fmpq_poly_init(B_inv);
   fmpq_poly_t B;
