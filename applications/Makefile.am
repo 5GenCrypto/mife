@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -fopenmp
 
-AM_LDFLAGS = -Wl,-rpath -Wl,$(top_builddir)/flint
+AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint
 
 LDADD = $(top_builddir)/gghlite/libgghlite.la \
 	$(top_builddir)/dgs/libdgs.la \
