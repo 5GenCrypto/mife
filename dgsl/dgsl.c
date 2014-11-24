@@ -338,7 +338,13 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
     fmpq_poly_init(self->sigma_sqrt);
     long r= 2*ceil(sqrt(log(n)));
 
+    fmpq_poly_t Bq;    fmpq_poly_init(Bq);
+    fmpq_poly_set_fmpz_poly(Bq, self->B);
+    fmpq_poly_oz_invert_approx(self->B_inv, Bq, n, self->prec, flags);
+    fmpq_poly_clear(Bq);
+
     _dgsl_rot_mp_sqrt_sigma_2(self->sigma_sqrt, self->B, sigma, r, n, self->prec, flags);
+
     mpfr_init2(self->r_f, self->prec);
     mpfr_set_ui(self->r_f, r, MPFR_RNDN);
 
@@ -411,39 +417,45 @@ int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, 
   return 0;
 }
 
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, uint64_t flags) {
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
   const long n = self->n;
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
   fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
+  fmpq_poly_neg(x, x); // (-x2)
 
-  fmpq_t tmp;
-  fmpq_init(tmp);
-  fmpq_poly_get_coeff_fmpq(tmp, x, 0);
-  fmpq_add_si(tmp, tmp, -1);
-  fmpq_poly_set_coeff_fmpq(x, 0, tmp);
-  fmpq_poly_neg(x,x);
-  fmpq_clear(tmp);
-
-  fmpq_poly_t B_inv;
-  fmpq_poly_init(B_inv);
-  fmpq_poly_t B;
-  fmpq_poly_init(B);
-  fmpq_poly_set_fmpz_poly(B, self->B);
-  /** TODO: This should be done only once **/
-  fmpq_poly_oz_invert_approx(B_inv, B, n, self->prec, flags);
-  fmpq_poly_sub(x, x, B_inv);
-  fmpq_poly_clear(B_inv);
-  fmpq_poly_clear(B);
+  // we sample with centre c = -1/g
+  fmpq_poly_sub(x, x, self->B_inv); // (c+x2)
 
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
-  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   fmpz_poly_neg(rop, rop);
+  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   fmpz_add_ui(rop->coeffs, rop->coeffs, 1);
 
   fmpq_poly_clear(x);
   return 0;
+}
+
+int dgsl_rot_mp_call_with_c(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, const fmpq_poly_t c) {
+  fmpq_poly_t x;
+  fmpq_poly_init(x);
+  fmpq_poly_sample_D1(x, self->n, self->prec, state);
+  fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
+  fmpq_poly_neg(x, x);
+
+  // we sample with centre c/g
+  fmpq_poly_t t;  fmpq_poly_init(t);
+  fmpq_poly_oz_mul(t, c, self->B_inv, self->n);
+  fmpq_poly_add(x, t, x); // (c+x2)
+  fmpq_poly_clear(t);
+
+  fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
+  fmpz_poly_oz_mul(rop, self->B, rop, self->n);
+
+  fmpq_poly_clear(x);
+  return 0;
+
 }
 
 int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
@@ -452,7 +464,9 @@ int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t 
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, n, self->prec, state);
   fmpq_poly_oz_mul(x, self->sigma_sqrt, x, self->n);
+  fmpq_poly_neg(x, x);;
   fmpz_poly_disc_gauss_rounding(rop, x, self->r_f, state);
+  fmpz_poly_neg(rop, rop);;
   fmpq_poly_clear(x);
   return 0;
 }
@@ -473,6 +487,8 @@ void dgsl_rot_mp_clear(dgsl_rot_mp_t *self) {
 
   if (!fmpz_poly_is_zero(self->B))
      fmpz_poly_clear(self->B);
+  if (!fmpq_poly_is_zero(self->B_inv))
+     fmpq_poly_clear(self->B_inv);
 
   if(self->call == dgsl_rot_mp_call_identity) {
     if(self->D) {

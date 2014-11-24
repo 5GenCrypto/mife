@@ -26,10 +26,11 @@ struct _dgsl_mp_t;
 
 typedef struct _dgsl_rot_mp_t{
   long n;        //< dimension
-  fmpz_poly_t B; //< basis matrix
-  fmpz_poly_t c_z; //< center
-  fmpq_poly_t c; //< center
-  mpfr_t sigma; //< Gaussian parameter
+  fmpz_poly_t B;     //< basis matrix
+  fmpq_poly_t B_inv; //< approximate inverse
+  fmpz_poly_t c_z;   //< centre
+  fmpq_poly_t c;     //< centre
+  mpfr_t sigma;      //< Gaussian parameter
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
 
   int (*call) (fmpz_poly_t rop,  const struct _dgsl_rot_mp_t *self, gmp_randstate_t state); //< call this function
@@ -71,7 +72,8 @@ int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, 
 
 int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, uint64_t flags);
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_with_c(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, const fmpq_poly_t c);
 
 /**
    Return a fresh sample when B is the identity
@@ -117,7 +119,7 @@ static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_ran
 static inline void fmpz_poly_sample_D_plus1(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_rand_t randstate) {
   assert(D); assert(randstate->gmp_init);
   assert(D->call == dgsl_rot_mp_call_inlattice);
-  dgsl_rot_mp_call_plus1(f, D, randstate->gmp_state, OZ_VERBOSE);
+  dgsl_rot_mp_call_plus1(f, D, randstate->gmp_state);
 }
 
 static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
