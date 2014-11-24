@@ -5,7 +5,7 @@
    Let @f$ω_n@f$ be an $n$th root of unity in @f$\ZZ_q@f$ and @f$φ^2 = ω_n@f$.  Let @f$a =
    \sum_{i=0}^{n-1} a_i x^i@f$, @f$b = \sum_{i=0}^{n-1} b_i x^i@f$ and @f$c = a · b \in
    \ZZ_q[x]/\ideal{x^n+1}@f$. Let @f$\overline{a} = (a_0, φa_1, \dots, φ^{n-1}a_{n-1})@f$ and define
-   @f$\overline{b}@f$ and @f$\overline{c}@f$ analogously. Then @f$\overline{c} =
+   @f$\overline{b}@f$ and @f$\overline{c}@f$ analogously. Then @f$\overline{c} = 1/n ·
    \mbox{NTT}_{ω_n}^{-1}(\mbox{NTT}_{ω_n}(\overline{a}) \odot \mbox{NTT}_{ω_n}(\overline{b}))@f$
    where @f$\mbox{NTT}_{ω_n}(·)@f$ is the number-theoretic transform and
    @f$\mbox{NTT}_{ω_n}^{-1}(·)@f$ is its inverse.
