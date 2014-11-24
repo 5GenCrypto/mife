@@ -251,7 +251,6 @@ void _gghlite_set_pzt(gghlite_t self) {
   assert(fmpz_cmp_ui(self->pk->q,0)>0);
   assert(!fmpz_mod_poly_is_zero(self->z));
   assert(!fmpz_poly_is_zero(self->h));
-  assert(fmpz_mod_poly_degree(self->pk->modulus) == self->pk->n);
 
   fmpz_mod_poly_t z_kappa;  fmpz_mod_poly_init(z_kappa, self->pk->q);
   fmpz_mod_poly_set(z_kappa, self->z);
