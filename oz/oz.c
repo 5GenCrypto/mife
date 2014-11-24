@@ -159,6 +159,7 @@ int fmpz_poly_oz_ideal_not_prime_factors(const fmpz_poly_t f, const long n, cons
         r[j] = nmod_poly_resultant(a[j], b[j]);
       nmod_poly_clear(a[j]);
       nmod_poly_clear(b[j]);
+      flint_cleanup();
     }
     for(int j=0; j<num_threads; j++)
       if (r[j] == 0) {
@@ -279,6 +280,8 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
       r1[j] = nmod_poly_resultant(n1[j], nm[j]);
       nmod_poly_clear(n0[j]);
       nmod_poly_clear(n1[j]);
+      nmod_poly_clear(nm[j]);
+      flint_cleanup();
     }
     for(int j=0; j<num_threads; j++) {
       /* if both resultants are zero we're in a sub-ideal as g is expected to not to be divisible by

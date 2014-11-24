@@ -59,6 +59,7 @@ void fmpz_mod_poly_oz_set_powers(fmpz_mod_poly_t op, const size_t n, const fmpz_
   }
   op->length = n;
   _fmpz_mod_poly_normalise(op);
+  fmpz_clear(acc);
 }
 
 void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_t w, const size_t n) {

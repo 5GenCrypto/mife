@@ -149,6 +149,9 @@ int main(int argc, char *argv[]) {
     gghlite_enc_clear(u[i]);
     gghlite_clr_clear(s[i]);
   }
+  free(e);
+  free(u);
+  free(s);
   gghlite_pk_clear(params);
 
   flint_randclear(randstate);

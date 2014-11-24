@@ -154,6 +154,7 @@ void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate) {
   free(primes);
   mpfr_clear(sqrtn_sigma_p);
   mpfr_clear(sigma_n);
+  mpfr_clear(norm);
   fmpz_poly_clear(B);
 }
 

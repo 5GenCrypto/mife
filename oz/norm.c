@@ -140,6 +140,7 @@ void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const size_t n) 
     _fmpz_vec_get_nmod_vec(a[id], F, n, mod);
     /* compute resultant over Z/pZ */
     rarr[i] = _nmod_vec_oz_resultant(a[id], n, mod);
+    flint_cleanup();
   }
 
   fmpz_comb_init(comb, parr, num_primes);

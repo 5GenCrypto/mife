@@ -522,6 +522,7 @@ void gghlite_pk_clear(gghlite_pk_t self) {
     }
   }
 
+  mpfr_clear(self->xi);
   dgsl_rot_mp_clear(self->D_sigma_s);
   mpfr_clear(self->sigma_s);
   mpfr_clear(self->ell_b);

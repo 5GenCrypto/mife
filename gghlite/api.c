@@ -157,4 +157,7 @@ void gghlite_print_params(const gghlite_pk_t self) {
     sd = sd/1024;
   }
   printf("      |par|: %6.1f %s\n", sd, units[i-1]);
+
+  mpfr_clear(enc);
+  mpfr_clear(par);
 }
