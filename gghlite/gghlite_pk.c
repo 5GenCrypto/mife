@@ -109,7 +109,6 @@ void _gghlite_pk_set_q(gghlite_pk_t self) {
       break;
     fmpz_add_ui(self->q, self->q, 2*self->n);
   }
-  fmpz_mod_poly_oz_ntt_precomp_init(self->ntt, self->n, self->q);
 }
 
 #ifndef GGHLITE_HEURISTICS

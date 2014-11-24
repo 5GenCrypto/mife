@@ -322,6 +322,8 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->lambda);
   assert(self->pk->kappa);
 
+  fmpz_mod_poly_oz_ntt_precomp_init(self->pk->ntt, self->pk->n, self->pk->q);
+
   _gghlite_sample_g(self, randstate);
   _gghlite_sample_z(self, randstate);
   _gghlite_sample_h(self, randstate);

@@ -55,7 +55,7 @@ void fmpz_mod_poly_oz_set_powers(fmpz_mod_poly_t op, const size_t n, const fmpz_
   for(size_t i=1; i<n; i++) {
     fmpz_mul(acc, acc, w);
     fmpz_mod(acc, acc, fmpz_mod_poly_modulus(op));
-    fmpz_set(op->coeffs + i, acc);
+    fmpz_set(op->coeffs+i, acc);
   }
   op->length = n;
   _fmpz_mod_poly_normalise(op);
@@ -101,9 +101,9 @@ void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
         fmpz_add(b_hdl + j + n/2, b_hdl + j + n/2, q);
     }
     if(i!=k-1) {
-      fmpz *tmp = a_hdl;
+      fmpz *t = a_hdl;
       a_hdl = b_hdl;
-      b_hdl = tmp;
+      b_hdl = t;
     }
   }
   fmpz_mod_poly_realloc(rop, n);
@@ -111,6 +111,7 @@ void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
   rop->length = n;
   fmpz_mod_poly_clear(b);
   fmpz_mod_poly_clear(a);
+  fmpz_clear(tmp);
 }
 
 void fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
