@@ -147,7 +147,13 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_t par;
   mpfr_init2(par, _gghlite_prec(self));
   mpfr_set(par, enc, MPFR_RNDN);
-  mpfr_mul_ui(par, par, self->kappa*2 + 1 + 1, MPFR_RNDN);
+
+  int count = 0;
+  for(size_t k=0; k<self->kappa; k++)
+    if (self->rerand_mask & (1ULL)<<k)
+      count++;
+
+  mpfr_mul_ui(par, par, count*2 + 1 + 1, MPFR_RNDN);
 
   mpfr_get_d(par, MPFR_RNDN);
   sd = mpfr_get_d(par, MPFR_RNDN)/8.0;
