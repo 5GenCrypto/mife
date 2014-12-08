@@ -392,7 +392,7 @@ void gghlite_print_norms(const gghlite_t self) {
 
   printf("  log(|g|): %6.1f ?< %6.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
 
-  for(int k=0; k<self->pk->kappa; k++) {
+  for(size_t k=0; k<self->pk->kappa; k++) {
     if ((1ULL<<k) & self->pk->rerand_mask) {
       mpfr_set(bound, self->pk->sigma_p, MPFR_RNDN);
       mpfr_log2(bound, bound, MPFR_RNDN);
