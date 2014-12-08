@@ -295,10 +295,22 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
 
   assert(mpfr_cmp_ui(sqrt_q,0)>0);
 
+  const int nsp = _gghlite_nsmall_primes(self->pk);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
+
   fmpz_poly_init(self->h);
   uint64_t t = ggh_walltime(0);
-  fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
+
+  while(1) {
+    fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
+
+    const int coprime = fmpz_poly_oz_coprime(self->g, self->h, self->pk->n, 0, primes);
+    if(coprime)
+      break;
+  }
+
   self->t_sample +=  ggh_walltime(t);
+  free(primes);
 
   mpfr_clear(sqrt_q);
 }
