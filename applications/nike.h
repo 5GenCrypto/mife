@@ -27,6 +27,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-N   number of parties N > 2 (default: %d)\n", DEFAULT_N);
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   printf("-p   enforce that g generates a prime ideal (default: False)\n");
+  printf("-d   pick parameters to make GDDH hard (default: False)\n");
   printf("-v   be more verbose (default: False)\n");
   if (extra)
     printf("%s\n", extra);
@@ -48,7 +49,7 @@ static inline int parse_cmdline(cmdline_params_t cmdline_params, int argc, char 
   cmdline_params->flags  =  GGHLITE_FLAGS_DEFAULT;
 
   int c;
-  while ((c = getopt(argc, argv, "l:N:s:pv")) != -1) {
+  while ((c = getopt(argc, argv, "l:N:s:pvd")) != -1) {
     switch(c) {
     case 'l':
       cmdline_params->lambda = (long)atol(optarg);
@@ -64,6 +65,9 @@ static inline int parse_cmdline(cmdline_params_t cmdline_params, int argc, char 
       break;
     case 'v':
       cmdline_params->flags |= GGHLITE_FLAGS_VERBOSE;
+      break;
+    case 'd':
+      cmdline_params->flags |= GGHLITE_FLAGS_GDDH_HARD;
       break;
     case ':':  /* without operand */
       print_help_and_exit(name, NULL);

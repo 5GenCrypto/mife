@@ -340,8 +340,8 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
   mpfr_log(eps, eps, MPFR_RNDN);
   mpfr_div_ui(eps, eps, self->kappa, MPFR_RNDN); // ε_d
 
+  /* σ^* ≥ n^(3/2) · (σ')^2 · sqrt(8π/ε_d)/ℓ_b */
 
-  /* `σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}` */
   mpfr_pow_ui(sigma_s0, self->sigma_p, 2, MPFR_RNDN); // σ^* := (σ')^2
 
   mpfr_div(tmp, pi, eps, MPFR_RNDN);  // π/ε_d
@@ -379,6 +379,18 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
   else
     mpfr_set(self->sigma_s, sigma_s1, MPFR_RNDN);
 
+  if(self->flags & GGHLITE_FLAGS_GDDH_HARD) {
+    /* GGH: 2^λ λ n^{4.5} κ vs. GGHLite n^{5.5} sqrt(κ) → 2^λ λ sqrt(κ)/n */
+    mpfr_set_ui(tmp, 2, MPFR_RNDN);
+    mpfr_pow_ui(tmp, tmp, self->lambda, MPFR_RNDN);
+    mpfr_mul(self->sigma_s, self->sigma_s, tmp, MPFR_RNDN); // · 2^λ
+    mpfr_mul_ui(self->sigma_s, self->sigma_s, self->lambda, MPFR_RNDN); // · λ 2^λ
+    mpfr_sqrt_ui(tmp, self->kappa, MPFR_RNDN);
+    mpfr_mul(self->sigma_s, self->sigma_s, tmp, MPFR_RNDN);  // · λ 2^λ sqrt(κ)
+    mpfr_div_ui(self->sigma_s, self->sigma_s, self->n, MPFR_RNDN);
+  }
+
+
   mpfr_clear(eps);
   mpfr_clear(pow);
   mpfr_clear(pi);
@@ -400,20 +412,23 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_t target_norm;
   mpfr_init2(target_norm, _gghlite_prec(self));
 
-  mpfr_mul_ui(target_norm, self->sigma_p, 3, MPFR_RNDN);
-  mpfr_mul(target_norm, target_norm, self->sigma_s, MPFR_RNDN);
-  mpfr_pow_ui(target_norm, target_norm, self->kappa, MPFR_RNDN); // ((m+1) · σ' · σ^*)^κ
-
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
+
+  mpfr_mul_ui(target_norm, self->sigma_p, 3, MPFR_RNDN);
+  mpfr_mul(target_norm, target_norm, self->sigma_s, MPFR_RNDN);
+  mpfr_mul(tmp, self->sigma_p, self->sigma_p, MPFR_RNDN);
+  mpfr_add(target_norm, target_norm, tmp, MPFR_RNDN);
+  mpfr_pow_ui(target_norm, target_norm, self->kappa, MPFR_RNDN); // (σ'^2 +  m·σ'·σ^*)^κ
+
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
   mpfr_pow_ui(tmp, tmp, 2*self->kappa, MPFR_RNDN);
   mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN);
-  mpfr_mul_ui(target_norm, target_norm, 2, MPFR_RNDN); // 2 · n^(2κ) · ((m+1) · σ' · σ^*)^κ
+  mpfr_mul_ui(target_norm, target_norm, 2, MPFR_RNDN); // 2 · n^(2κ) · (σ'^2 +  m·σ'·σ^*)^κ
 
   mpfr_set_ui(tmp, self->n, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
-  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · ((m+1) · σ' · σ^*)^κ
+  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · (σ'^2 +  m·σ'·σ^*)^κ
 
   _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);

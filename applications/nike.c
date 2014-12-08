@@ -33,7 +33,14 @@ int main(int argc, char *argv[]) {
   uint64_t t_total = ggh_walltime(0);
 
   gghlite_t self;
-  gghlite_pk_init_params(self->pk, 2*cmdline_params->lambda+1, cmdline_params->N-1, 1<<0,
+
+  long mlm_lambda;
+  if (cmdline_params->flags & GGHLITE_FLAGS_GDDH_HARD)
+    mlm_lambda = cmdline_params->lambda;
+  else
+    mlm_lambda = 2*cmdline_params->lambda+1;
+
+  gghlite_pk_init_params(self->pk, mlm_lambda, cmdline_params->N-1, 1<<0,
                          cmdline_params->flags);
   gghlite_print_params(self->pk);
   printf("\n---\n");
