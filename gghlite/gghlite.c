@@ -194,6 +194,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     const int nsp = _gghlite_nsmall_primes(self->pk);
     primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
   } else {
+    /* we only need 2κ but κ^2 doesn't cost much, so we rule out prime factors up to κ^2 */
     primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, self->pk->kappa*self->pk->kappa);
   }
 
