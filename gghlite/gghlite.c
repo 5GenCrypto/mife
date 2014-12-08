@@ -288,7 +288,7 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
   _gghlite_get_q_mpfr(sqrt_q, self->pk, MPFR_RNDN);
   mpfr_sqrt(sqrt_q, sqrt_q, MPFR_RNDN);
 
-  /* GPV samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
+  /* dgsl samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
      specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
   */
   mpfr_mul_d(sqrt_q, sqrt_q, S_TO_SIGMA, MPFR_RNDN);
