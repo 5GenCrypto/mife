@@ -284,8 +284,7 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
       flint_cleanup();
     }
     for(int j=0; j<num_threads; j++) {
-      /* if both resultants are zero we're in a sub-ideal as g is expected to not to be divisible by
-         any small prime */
+      /* if both resultants are zero they share the prime factor p */
       if (r0[j] == 0 && r1[j] == 0) {
         r0[0] = 0;
         break;
