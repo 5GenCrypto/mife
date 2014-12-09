@@ -289,29 +289,29 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
   mpfr_sqrt(sqrt_q, sqrt_q, MPFR_RNDN);
 
   /* dgsl samples proportionally to `\exp(-(x-c)²/(2σ²))` but GGHLite is
-     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π}
-  */
+     specifiied with respect to `\exp(-π(x-c)²/σ²)`. So we divide by \sqrt{2π} */
   mpfr_mul_d(sqrt_q, sqrt_q, S_TO_SIGMA, MPFR_RNDN);
 
-  assert(mpfr_cmp_ui(sqrt_q,0)>0);
+  fmpz_poly_init(self->h);
 
   const int nsp = _gghlite_nsmall_primes(self->pk);
   mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
 
-  fmpz_poly_init(self->h);
-  uint64_t t = ggh_walltime(0);
+  fmpz_t det_g;
+  fmpz_init(det_g);
+  fmpz_poly_oz_ideal_norm(det_g, self->g, self->pk->n, 0);
 
+  uint64_t t = ggh_walltime(0);
   while(1) {
     fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
-
-    const int coprime = fmpz_poly_oz_coprime(self->g, self->h, self->pk->n, 0, primes);
+    const int coprime = fmpz_poly_oz_coprime_det(self->h, det_g, self->pk->n, 0, primes);
     if(coprime)
       break;
   }
-
   self->t_sample +=  ggh_walltime(t);
-  free(primes);
 
+  fmpz_clear(det_g);
+  free(primes);
   mpfr_clear(sqrt_q);
 }
 

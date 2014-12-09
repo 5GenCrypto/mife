@@ -315,3 +315,62 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
   fmpz_clear(tmp);
   return r0[0];
 }
+
+int fmpz_poly_oz_coprime_det(const fmpz_poly_t b0, const fmpz_t det_b1, const long n,
+                              const int sloppy, const mp_limb_t *primes) {
+
+  fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
+  int num_threads = omp_get_max_threads();
+
+  const size_t k = primes[0];
+
+  nmod_poly_t n0[num_threads];
+  nmod_poly_t nm[num_threads];
+
+  int r0[num_threads];
+
+  for(int j=0; j<num_threads; j++) {
+    r0[j] = 1;
+  }
+  for(size_t i=0; i<k; i+=num_threads) {
+    if (k-i < (unsigned long)num_threads)
+      num_threads = k-i;
+#pragma omp parallel for
+    for (int j=0; j<num_threads; j++) {
+      mp_limb_t p = primes[1+i+j];
+      nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], b0);
+      nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);
+      r0[j] = nmod_poly_resultant(n0[j], nm[j]);
+      nmod_poly_clear(n0[j]);
+      nmod_poly_clear(nm[j]);
+      flint_cleanup();
+    }
+    for(int j=0; j<num_threads; j++) {
+      /* if both resultants are zero they share the prime factor p */
+      if (r0[j] == 0) {
+        r0[0] = 0;
+        break;
+      } else
+        r0[0] = 1;
+    }
+    if (r0[0] == 0)
+      break;
+  }
+  fmpz_poly_clear(mod);
+
+  if (sloppy || r0[0] == 0)
+    return (r0[0] != 0);
+
+  fmpz_t det_b0;
+  fmpz_init(det_b0);
+
+  fmpz_poly_oz_ideal_norm(det_b0, b0, n, 0);
+
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  fmpz_gcd(tmp, det_b0, det_b1);
+  fmpz_clear(det_b0);
+  r0[0] = fmpz_equal_si(tmp, 1);
+  fmpz_clear(tmp);
+  return r0[0];
+}

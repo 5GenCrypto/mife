@@ -140,8 +140,8 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 /**
    \brief Return true if @f$\ideal{b_0} + \ideal{b_1} = R@f$.
 
-   @param b0            an element in $\\ideal{ g }$, otherwise behaviour is undefined
-   @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
+   @param b0            an element
+   @param b1            an element
    @param n             degree of cyclotomic polynomial, must be power of two
    @param sloppy        only check modulo primes in `primes`
    @param primes        an array list of probable primes which are checked first
@@ -160,6 +160,28 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
                          const int sloppy, const mp_limb_t *small_primes);
 
+
+/**
+   \brief Return true if the norm of @f$\ideal{b_0}@f$ and @f$det_{b_1}@f$ are co-prime
+
+   @param b0            an element
+   @param det_b1        the norm of another element
+   @param n             degree of cyclotomic polynomial, must be power of two
+   @param sloppy        only check modulo primes in `primes`
+   @param primes        an array list of probable primes which are checked first
+
+   1. This function checks if \f$\res{b_0,x^n+1} = 0 \bmod p_i\f$ for $0 ≤ i < k$ where $p_i$ is a
+      small prime in the list `small_primes`. We return false in this case.
+
+   2. If this test passes and `sloppy = 0` we compute the the resultants \f$r_0 = \res{b_0,
+      x^n+1}\f$ and return true if \f$\gcd{r_0, det_{b_1}} = 1\f$ and false otherwise.
+
+   @see _fmpz_poly_oz_ideal_probable_prime_factors
+ */
+
+
+int fmpz_poly_oz_coprime_det(const fmpz_poly_t b0, const fmpz_t det_b1, const long n,
+                             const int sloppy, const mp_limb_t *primes);
 
 #include "mul.h"
 #include "ntt.h"
