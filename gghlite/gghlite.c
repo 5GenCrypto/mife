@@ -294,23 +294,22 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
 
   fmpz_poly_init(self->h);
 
-  const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
-
-  fmpz_t det_g;
-  fmpz_init(det_g);
-  fmpz_poly_oz_ideal_norm(det_g, self->g, self->pk->n, 0);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, 2*self->pk->lambda);
 
   uint64_t t = ggh_walltime(0);
-  while(1) {
+
+  /** We don't need to check if g and h share no small common factors because <g> has no small
+      factors and because the probability of a false positive is exponentially small in any case. On
+      the other hand, it doesn't cost much so we might as well do it.
+   */
+
+  int no_small_common = 0;
+  while(!no_small_common) {
     fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
-    const int coprime = fmpz_poly_oz_coprime_det(self->h, det_g, self->pk->n, 0, primes);
-    if(coprime)
-      break;
-  }
+    no_small_common = fmpz_poly_oz_coprime(self->h, self->g, self->pk->n, 1, primes);
+   }
   self->t_sample +=  ggh_walltime(t);
 
-  fmpz_clear(det_g);
   free(primes);
   mpfr_clear(sqrt_q);
 }

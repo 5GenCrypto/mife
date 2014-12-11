@@ -22,6 +22,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-r   re-randomisation mask (default: 0x%016lx for level-1 re-randomisation\n", DEFAULT_RERAND);
   printf("-d   pick parameters to make GDDH hard (default: False)\n");
   printf("-v   be more verbose (default: False)\n");
+  printf("-f   skip some expensive checks (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   if (extra)
     printf("%s\n", extra);
@@ -59,7 +60,7 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
   params->rerand =  DEFAULT_RERAND;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:s:vpr:d")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:s:vpr:df")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -75,6 +76,9 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
       break;
     case 'd':
       params->flags |= GGHLITE_FLAGS_GDDH_HARD;
+      break;
+    case 'f':
+      params->flags |= GGHLITE_FLAGS_SLOPPY;
       break;
     case 'p':
       params->flags |= GGHLITE_FLAGS_PRIME_G;
