@@ -15,4 +15,6 @@ LDFLAGS = -no-install
 TESTS = test_dgsl test_norm test_invert test_mul
 check_PROGRAMS = $(TESTS)
 
+@VALGRIND_CHECK_RULES@
+
 all: $(TESTS)

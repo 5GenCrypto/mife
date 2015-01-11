@@ -10,6 +10,8 @@ AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_CONFIG_HEADERS([gghlite/config.h])
 
+AM_PROG_AR()
+
 AC_PROG_LIBTOOL()
 
 AC_PROG_CC_C99()
@@ -26,6 +28,8 @@ if test "x$enable_debug" = x"yes"; then
 else
    AC_DEFINE(NDEBUG,1,[Define whether debugging is enabled])
 fi
+
+AX_VALGRIND_CHECK()
 
 # Heuristics
 if test "x$enable_heuristics" = x"yes"; then

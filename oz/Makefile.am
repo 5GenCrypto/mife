@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign -Wall
 
 AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir) -fopenmp
 
-lib_LTLIBRARIES = liboz.la
+lib_LTLIBRARIES=liboz.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 

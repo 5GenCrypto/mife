@@ -9,7 +9,6 @@ configure
 depcomp
 install-sh
 ltmain.sh
-m4/
 missing
 */config.h.in
 */config.h
@@ -49,3 +48,8 @@ callgrind.*
 /applications/bench_ideal_span
 /doc/doxygen_sqlite3.db
 /doc/html/
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
