@@ -14,7 +14,6 @@ We ship these libraries as submodules.
 
     git clone --recursive https://bitbucket.org/malb/gghlite-flint
     cd gghlite-flint
-    mkdir m4
     mkdir dgs/m4
     autoreconf -i
     export CFLAGS="-O3"
@@ -36,10 +35,9 @@ Instantiates a GGHLite instance
 A non-interactive key exchange (but we skip running the hash function in the end). For example,
 calling
 
-    ./applications/nike -l 80 -N 7 - f
+    ./applications/nike -l 80 -N 7
 
-will run 7-partite NIKE with security level λ=80. The parameter -f specifies that we are not
-checking if our ideal is a prime ideal.
+will run 7-partite NIKE with security level λ=80.
 
 ## Subdirectories ##
 
@@ -55,3 +53,4 @@ checking if our ideal is a prime ideal.
 
 This code has bugs, help us fix them.
 
+[![Build Status](https://drone.io/bitbucket.org/malb/gghlite-flint/status.png)](https://drone.io/bitbucket.org/malb/gghlite-flint/latest)
