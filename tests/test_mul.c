@@ -13,13 +13,10 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
   fmpz_mul_2exp(q, q, n_flog(n,2)+1);
   fmpz_add_ui(q, q, 1);
   for(int i=0; ; i++) {
-    printf("\rfinding suitable prime: testing %5d-th candidate",i);
-    fflush(0);
     if (fmpz_is_probabprime(q))
       break;
     fmpz_add_ui(q, q, 2*n);
   }
-  printf("\r");
   fmpz_mod_poly_t f0;  fmpz_mod_poly_init(f0, q);
   fmpz_mod_poly_t f1;  fmpz_mod_poly_init(f1, q);
   fmpz_mod_poly_t g;  fmpz_mod_poly_init_oz_modulus(g, q, n);
