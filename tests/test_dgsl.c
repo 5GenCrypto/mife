@@ -282,7 +282,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
   mpfr_clear(sigma_);
   mpfr_clear(sigma_p_);
   fmpz_poly_clear(B);
-  if (ratio < 1.4)
+  if (ratio < 1.5)
     return 0;
   else
     return 1;
@@ -503,8 +503,8 @@ int main(int argc, char *argv[]) {
 
   status += test_dgsl_run( test_dist_rot_inlattice(     16,  1000.0,    100000.0, 1<<10, randstate, 1) );
   status += test_dgsl_run( test_dist_rot_inlattice(     32, 10000.0,  10000000.0, 1<<10, randstate, 1) );
-  status += test_dgsl_run( test_dist_rot_inlattice(     64,  1000.0,  10000000.0, 1<<10, randstate, 1) );
-  status += test_dgsl_run( test_dist_rot_inlattice(    128,  1000.0, 100000000.0, 1<<10, randstate, 1) );
+  status += test_dgsl_run( test_dist_rot_inlattice(     64, 10000.0,  10000000.0, 1<<10, randstate, 1) );
+  status += test_dgsl_run( test_dist_rot_inlattice(    128, 10000.0, 100000000.0, 1<<10, randstate, 1) );
   printf("\n");
 
   status += test_dgsl_run( test_dist_inlattice(30, 30,  2,  1849.0, 1<<10, randstate) );
