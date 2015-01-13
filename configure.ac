@@ -8,6 +8,11 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
+# support older automake versions
+m4_ifdef([AM_SILENT_RULES],
+         [AM_SILENT_RULES([yes])],
+         [AC_SUBST([AM_DEFAULT_VERBOSITY], [1])])
+
 AC_CONFIG_HEADERS([gghlite/config.h])
 
 AM_PROG_AR()
