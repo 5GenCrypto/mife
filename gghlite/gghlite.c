@@ -178,7 +178,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
 
   dgsl_rot_mp_t *D = _gghlite_dgsl_from_n(self->pk->n, self->pk->sigma);
 
-  long fail[3] = {0,0,0};
+  long fail[4] = {0,0,0,0};
 
   fmpq_poly_t g_q;
   fmpq_poly_init(g_q);
@@ -198,8 +198,11 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, self->pk->kappa*self->pk->kappa);
   }
 
+  fmpz_t N;
+  fmpz_init(N);
+
   while(1) {
-    printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld",fail[0], fail[1], fail[2]);
+    printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld, !N: %4ld",fail[0], fail[1], fail[2], fail[3]);
     fflush(0);
 
     uint64_t t = ggh_walltime(0);
@@ -231,9 +234,16 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
       fail[2]++;
       continue;
     }
+
+    fmpz_poly_oz_ideal_norm(N, self->g, self->pk->n, 2);
+    if (fmpz_sizeinbase(N, 2) < (size_t)self->pk->n) {
+      fail[3]++;
+      continue;
+    }
+
     break;
   }
-
+  fmpz_clear(N);
   free(primes);
 
   printf("\n");
