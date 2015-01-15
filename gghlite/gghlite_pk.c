@@ -493,7 +493,7 @@ int gghlite_pk_check_sec(const gghlite_pk_t self) {
 
   double c = 3*log2(self->n)  - 2*log2(k) + log2(log2(self->n));
   double rt0 = 0.3774*k + 20 + c; // BKZ + Sieving
-  double rt1 = 0.00119*k*k + 0.2275*k + 21.59 + c; // BKZ + Enumeration
+  double rt1 = 0.002898*k*k - 0.122662*k + 23.8311 + c; // BKZ + Enumeration
 
   return ((rt0 >= self->lambda) && (rt1 >= self->lambda));
 }
