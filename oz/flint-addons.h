@@ -42,22 +42,6 @@ static inline void fmpq_set_mpfr(fmpq_t rop, const mpfr_t op, mpfr_rnd_t rnd) {
    fmpz_mat_t
 */
 
-static inline int fmpz_mat_is_one(const fmpz_mat_t mat) {
-  if (!fmpz_mat_is_square(mat))
-    return 0;
-  for(long i=0; i<mat->r; i++) {
-    for(long j=0; j<i; j++)
-      if(!fmpz_is_zero(&mat->rows[i][j]))
-        return 0;
-    if(!fmpz_is_one(&mat->rows[i][i]))
-      return 0;
-    for(long j=i+1; j<mat->c; j++)
-      if(!fmpz_is_zero(&mat->rows[i][j]))
-        return 0;
-  }
-  return 1;
-}
-
 static inline void _fmpz_vec_mul(fmpz_t rop, fmpz *a, fmpz *b, long len) {
   fmpz_zero(rop);
   for (long i = 0; i < len; i++)
