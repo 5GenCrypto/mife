@@ -60,11 +60,12 @@ int main(int argc, char *argv[]) {
 
   t = ggh_walltime(0);
 
-  gghlite_enc_t *e = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
-  gghlite_enc_t *u = calloc(cmdline_params->N, sizeof(gghlite_enc_t));
-  gghlite_clr_t *s = calloc(cmdline_params->N, sizeof(gghlite_clr_t));
+  gghlite_enc_t *e = calloc(2, sizeof(gghlite_enc_t));
+  gghlite_enc_t *u = calloc(2, sizeof(gghlite_enc_t));
+  gghlite_enc_t *b = calloc(2, sizeof(gghlite_enc_t));
+  gghlite_clr_t *s = calloc(2, sizeof(gghlite_clr_t));
 
-  for(int i=0; i<cmdline_params->N; i++) {
+  for(int i=0; i<2; i++) {
     if (verbose)
       printf("%8s samples e_%d, ",agents[i],i);
     gghlite_enc_init(e[i], params);
@@ -77,11 +78,11 @@ int main(int argc, char *argv[]) {
   }
 
   if (verbose)
-    printf("\n");
+    printf("\n… and so on\n\n");
   else
     printf("  ");
   t = ggh_walltime(t);
-  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/cmdline_params->N);
+  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/2);
 
   printf("-----------------------------------------------------\n");
   printf("Step 3: KeyGen");
@@ -89,40 +90,50 @@ int main(int argc, char *argv[]) {
     printf("\n-----------------------------------------------------\n");
 
   t = ggh_walltime(0);
+  uint64_t t_sample = 0;
+
+  for(int i=0; i<2; i++) {
+    gghlite_enc_init(b[i], params);
+    gghlite_enc_set_ui(b[i], 1, params);
+    gghlite_mul(b[i], params, b[i], e[i]);
+  }
+
+  if(verbose)
+    printf("%8s computes e_%d·u_%d", agents[0], 0, 1);
 
   gghlite_enc_t tmp;
-  for(int i=0; i<cmdline_params->N; i++) {
-    if (verbose)
-      printf("%8s computes: s_%d = ", agents[i], i);
-    gghlite_enc_init(tmp, params);
-    gghlite_enc_set_ui(tmp, 1, params);
-    for(int j=0; j<cmdline_params->N; j++) {
-      if (i==j) {
-        gghlite_mul(tmp, params, tmp, e[j]);
-        if (verbose)
-          printf("e_%d",j);
-      } else {
-        gghlite_mul(tmp, params, tmp, u[j]);
-        if (verbose)
-          printf("u_%d",j);
-      }
-      if(j<cmdline_params->N-1)
-        if (verbose)
-          printf("·");
-    }
-    if (verbose)
-      printf("\n");
+  gghlite_enc_init(tmp, params);
+  for(int j=2; j<cmdline_params->N; j++) {
+    uint64_t t_s = ggh_walltime(0);
+    gghlite_sample(tmp, params, 0, randstate);
+    gghlite_elevate(tmp, params, tmp, 1, 0, 1, randstate);
+    t_s = ggh_walltime(t_s);
+    t_sample += t_s;
+
+    if(verbose)
+      printf("·u_%d", j);
+
+    for(int i=0; i<2; i++)
+      gghlite_mul(b[i], params, b[i], tmp);
+  }
+  gghlite_enc_clear(tmp);
+
+  gghlite_mul(b[0], params, b[0], e[1]);
+  gghlite_mul(b[1], params, b[1], e[0]);
+
+  for(int i=0; i<2; i++) {
     gghlite_clr_init(s[i]);
-    gghlite_extract(s[i], params, tmp);
-    gghlite_enc_clear(tmp);
+    gghlite_extract(s[i], params, b[i]);
+    gghlite_enc_clear(b[i]);
   }
 
   if (verbose)
-    printf("\n");
+    printf("\n\n… and so on\n\n");
   else
-    printf("   ");
-  t = ggh_walltime(t);
-  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/cmdline_params->N);
+    printf("  ");
+
+  t = ggh_walltime(t) - t_sample;
+  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/2);
 
 
   printf("-----------------------------------------------------\n");
@@ -131,17 +142,16 @@ int main(int argc, char *argv[]) {
     printf("\n-----------------------------------------------------\n");
 
   int ret = 0;
-  for(int i=1; i<cmdline_params->N; i++) {
-    if(verbose)
-      printf("s_%d == s_%d: ",0, i);
-    assert(!fmpz_poly_is_zero(s[i]));
-    if (gghlite_clr_equal(s[i], s[0])) {
-      verbose ? printf("TRUE\n")  : printf("+");
-    } else {
-      verbose ? printf("FALSE\n") : printf("-");
-      ret = -1;
-    }
+  if(verbose)
+    printf("s_0 == s_1: ");
+  assert(!fmpz_poly_is_zero(s[0]));
+  if (gghlite_clr_equal(s[1], s[0])) {
+    verbose ? printf("TRUE\n")  : printf("+");
+  } else {
+    verbose ? printf("FALSE\n") : printf("-");
+    ret = -1;
   }
+
   printf("\n");
   if (!verbose)
     printf("-----------------------------------------------------\n");
@@ -151,7 +161,7 @@ int main(int argc, char *argv[]) {
          cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_PRIME_G,
          ret==0, ggh_walltime(t_total)/1000000.0);
 
-  for(int i=0; i<cmdline_params->N; i++) {
+  for(int i=0; i<2; i++) {
     gghlite_enc_clear(e[i]);
     gghlite_enc_clear(u[i]);
     gghlite_clr_clear(s[i]);
@@ -159,6 +169,7 @@ int main(int argc, char *argv[]) {
   free(e);
   free(u);
   free(s);
+  free(b);
   gghlite_pk_clear(params);
 
   flint_randclear(randstate);
