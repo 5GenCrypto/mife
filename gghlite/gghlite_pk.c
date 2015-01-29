@@ -472,32 +472,31 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
     return delta_0_ntru;
 }
 
-int gghlite_pk_check_sec(const gghlite_pk_t self) {
-
+double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self) {
   const double delta_0 = gghlite_pk_get_delta_0(self);
-  if (delta_0 >= 1.0219)
-    return 3*log2(self->n) >= self->lambda;
+  if (delta_0 >= 1.0219) // LLL
+    return 3*log2(self->n);
+  const int k = _gghlite_k_from_delta(delta_0);
+  const double r = _gghlite_repeat_from_n_k(self->n, k);
+  return 0.002898*k*k - 0.122662*k + 23.8311 + r;
+}
 
-  int k;
-  for(k=40; k<MAX_K; k++) {
-    if (delta_from_k[k] <= delta_0)
-      break;
-  }
-  if (k == MAX_K)
-    ggh_die("Cannot establish required block size");
+double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self) {
+  const double delta_0 = gghlite_pk_get_delta_0(self);
+  if (delta_0 >= 1.0219) // LLL
+    return 3*log2(self->n);
+  const int k = _gghlite_k_from_delta(delta_0);
+  const double r = _gghlite_repeat_from_n_k(self->n, k);
+  return 0.3774*k + 20 + r;
+}
 
-  /*
-    See Theorem 1 in *Analyzing Blockwise Lattice Algorithms using Dynamical
-    Systems* by Guillaume Hanrot, Xavier Pujol, and Damien Stehlé.
-  */
 
-  double c = 3*log2(self->n)  - 2*log2(k) + log2(log2(self->n));
-  double rt0 = 0.3774*k + 20 + c; // BKZ + Sieving
-  double rt1 = 0.002898*k*k - 0.122662*k + 23.8311 + c; // BKZ + Enumeration
+int gghlite_pk_check_sec(const gghlite_pk_t self) {
+  double rt0 = gghlite_pk_cost_bkz_enum(self);
+  double rt1 = gghlite_pk_cost_bkz_sieve(self);
 
   return ((rt0 >= self->lambda) && (rt1 >= self->lambda));
 }
-
 
 
 void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, uint64_t flags) {

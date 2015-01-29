@@ -18,8 +18,6 @@ static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_in
   return r;
 }
 
-
-
 /**
    Return precision used for floating point computations
 */
@@ -233,7 +231,6 @@ static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_r
 
 void _gghlite_pk_set_ell(gghlite_pk_t self);
 
-
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate);
 
 void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate);
@@ -260,8 +257,63 @@ dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t 
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma);
 
+
 #define MAX_K 1024
 
 extern double delta_from_k[MAX_K];
+
+/**
+   Return suitable k for given δ_0.
+
+   :param delta_0: root-Hermite factor δ_0
+*/
+
+static inline long _gghlite_k_from_delta(const double delta_0) {
+  long k;
+  for(k=40; k<MAX_K; k++) {
+    if (delta_from_k[k] <= delta_0)
+      break;
+  }
+  if (k == MAX_K)
+    ggh_die("Cannot establish required block size");
+  return k;
+}
+
+/**
+   Return expected number of BKZ rounds.
+
+   :param n: lattice dimension
+   :param k: block size
+
+   See Theorem 1 in *Analyzing Blockwise Lattice Algorithms using Dynamical Systems* by Guillaume
+   Hanrot, Xavier Pujol, and Damien Stehlé.
+*/
+
+static inline double _gghlite_repeat_from_n_k(const long n, const long k) {
+  return 3*log2(n)  - 2*log2(k) + log2(log2(n));
+}
+
+/**
+   Return expected cost of BKZ with SVP oracle implemented by enumeration.
+
+   :param self: GGHLite public key
+
+   See *On the concrete hardness of Learning with Errors* by Martin R. Albrecht, Rachel Player and
+   Sam Scott, Cryptology ePrint Archive, Report 2015/046
+*/
+
+double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self);
+
+/**
+   Return expected cost of BKZ with SVP oracle implemented by sieving.
+
+   :param self: GGHLite public key
+
+   See *On the concrete hardness of Learning with Errors* by Martin R. Albrecht, Rachel Player and
+   Sam Scott, Cryptology ePrint Archive, Report 2015/046
+*/
+
+double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self);
+
 
 #endif /* _GGHLITE_INTERNALS_H_ */
