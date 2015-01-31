@@ -119,7 +119,8 @@ void gghlite_print_params(const gghlite_pk_t self) {
   const long kappa = self->kappa;
   const long n = self->n;
   printf("        λ: %9ld,          k: %9ld\n",lambda, kappa);
-  printf("        n: %9ld,        δ_0: %9.4f\n",n, gghlite_pk_get_delta_0(self));
+  printf("        n: %9ld,        δ_0: %9.6f\n",n, gghlite_pk_get_delta_0(self));
+  printf("log(t_en): %9.2f,  log(t_sv): %9.2f\n", gghlite_pk_cost_bkz_enum(self), gghlite_pk_cost_bkz_sieve(self));
   printf("   log(q): %9ld,          ξ: %9.4f\n", fmpz_sizeinbase(self->q, 2), mpfr_get_d(self->xi, MPFR_RNDN));
   printf("   log(σ): %9.2f,   log(ℓ_g): %9.2f\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)));
   printf("  log(σ'): %9.2f,   log(ℓ_b): %9.2f\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)));

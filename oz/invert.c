@@ -22,11 +22,10 @@ void fmpz_mod_poly_oz_invert(fmpz_mod_poly_t f_inv, const fmpz_mod_poly_t f, con
   fmpz_t tmp;
   fmpz_init(tmp);
 
-  int deg;
   if (n > 1) {
     /* set V2(x) = V(-x) */
     fmpz_mod_poly_set(V2, V);
-    deg = fmpz_mod_poly_degree(V2);
+    int deg = fmpz_mod_poly_degree(V2);
     for (int i = 1 ; i <= deg ; i += 2) {
       /* negate odd coefficients */
       fmpz_mod_poly_get_coeff_fmpz(tmp,V2,i);
@@ -123,11 +122,10 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const l
   for(int i=0; i<2*n; i++)
     mpq_init(tmp_q[i]);
 
-  int deg;
   if (n > 1) {
     /* set V2(x) = V(-x) */
     fmpq_poly_set(V2, V);
-    deg = fmpq_poly_degree(V2);
+    int deg = fmpq_poly_degree(V2);
     for (int i = 1 ; i <= deg ; i += 2) {
       /* negate odd coefficients */
       fmpz_neg(fmpq_poly_numref(V2) + i, fmpq_poly_numref(V2) + i);
