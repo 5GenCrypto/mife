@@ -71,7 +71,7 @@ mp_limb_t *_fmpz_poly_oz_ideal_probable_prime_factors(const long n, const size_t
 }
 
 
-mp_limb_t *_fmpz_poly_oz_ideal_small_prime_factors(const long n, mp_limb_t bound) {
+mp_limb_t *_fmpz_poly_oz_ideal_small_prime_factors(const long n, const mp_limb_t bound) {
   size_t kmax = ceil(bound/log((double)bound));
   size_t i;
 
