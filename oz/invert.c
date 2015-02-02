@@ -161,6 +161,8 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const l
     fmpq_poly_set_array_mpq(V, (const mpq_t*)tmp_q, deg/2+1);
     fmpq_poly_truncate(V,deg/2+1);
 
+    if (prec)
+      fmpq_poly_truncate_prec(V, prec);
     _fmpq_poly_oz_invert_approx(V2, V, n/2, prec);
 
     deg = fmpq_poly_degree(V2);
