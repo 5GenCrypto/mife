@@ -180,10 +180,16 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
       break;
     }
 
+    if (k>0 && mpfr_cmp_ui_2exp(norm, 1, bound) >= 0) {
+      /* something went really wrong */
+      r = -1;
+      break;
+    }
+
     mpfr_div_ui(prev_norm, prev_norm, 2, MPFR_RNDN);
     if (k>0 && mpfr_cmp(norm, prev_norm) >= 0) {
       /*  we don't converge any more */
-      r = -1;
+      r = 1;
       break;
     }
     mpfr_set(prev_norm, norm, MPFR_RNDN);
