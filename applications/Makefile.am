@@ -19,4 +19,5 @@ bin_PROGRAMS = gghlite_params \
                gghlite_false_friends \
                bench_dgsl \
                bench_prime_g \
-               bench_ideal_span
+               bench_ideal_span \
+               bench_invert
