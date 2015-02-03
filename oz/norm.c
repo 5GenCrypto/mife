@@ -34,11 +34,12 @@ void _nmod_vec_oz_ntt(mp_ptr rop, const mp_ptr op, const mp_ptr w, const size_t 
   for(size_t i=0; i<n; i++)
     b[i] = 0;
 
+  const double ninv = n_precompute_inverse(q.n);
   for(size_t i=0; i<k; i++) {
+    const mp_limb_t tkm = ~(((1UL)<<(k-1-i)) - 1);
     for(size_t j=0; j<n/2; j++) {
-      const size_t tk  = (1UL<<(k-1-i));
-      const size_t pij = (j/tk) * tk;
-      mp_limb_t tmp = n_mulmod2_preinv(a[2*j+1], w[pij], q.n, q.ninv);
+      const size_t pij = j & tkm;
+      mp_limb_t tmp = n_mulmod_precomp(a[2*j+1], w[pij], q.n, ninv);
       b[j]      = n_addmod(a[2*j], tmp, q.n);
       b[j+n/2]  = n_submod(a[2*j], tmp, q.n);
     }
