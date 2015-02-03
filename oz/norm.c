@@ -81,7 +81,7 @@ mp_limb_t nmod_poly_oz_resultant(const nmod_poly_t a, const long n) {
   return res;
 }
 
-void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const size_t n) {
+void _fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n) {
   mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
   mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
 
