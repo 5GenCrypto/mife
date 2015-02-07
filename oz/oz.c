@@ -247,6 +247,35 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
   return r0[0];
 }
 
+void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n) {
+  fmpq_poly_t fq; fmpq_poly_init(fq);
+  fmpq_poly_set_fmpz_poly(fq, f);
+  fmpq_poly_oz_rem(fq, fq, n);
+
+  fmpq_poly_t gq; fmpq_poly_init(gq);
+  fmpq_poly_set_fmpz_poly(gq, g);
+
+  const mpfr_prec_t prec = labs(_fmpz_vec_max_bits(f->coeffs, fmpz_poly_length(f)));
+
+  fmpq_poly_t ginv; fmpq_poly_init(ginv);
+  fmpq_poly_oz_invert_approx(ginv, gq, n, prec, 0);
+
+  fmpq_poly_oz_mul(fq, ginv, fq, n);
+
+  fmpz_t t; fmpz_init(t);
+  for(int i=0; i<fmpq_poly_length(fq); i++) {
+    fmpz_tdiv_q(t, fq->coeffs + i, fq->den);
+    fmpz_poly_set_coeff_fmpz(rem, i, t);
+  }
+  fmpz_clear(t);
+
+  fmpz_poly_oz_mul(rem, rem, g, n);
+  fmpz_poly_sub(rem, f, rem);
+
+  fmpq_poly_clear(fq);
+  fmpq_poly_clear(gq);
+  fmpq_poly_clear(ginv);
+}
 
 int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
                          const int sloppy, const mp_limb_t *primes) {

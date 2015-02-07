@@ -12,7 +12,7 @@ LDADD = $(top_builddir)/gghlite/libgghlite.la \
 
 LDFLAGS = -no-install
 
-TESTS = test_dgsl test_norm test_invert test_mul
+TESTS = test_dgsl test_norm test_invert test_mul test_rem_small
 check_PROGRAMS = $(TESTS)
 
 @VALGRIND_CHECK_RULES@
