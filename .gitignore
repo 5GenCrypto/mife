@@ -55,3 +55,5 @@ callgrind.*
 /m4/lt~obsolete.m4
 /ar-lib
 /applications/bench_invert
+/tests/test_rem_small
+/applications/bench_co_prime

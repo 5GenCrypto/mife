@@ -248,8 +248,11 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 }
 
 void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n) {
+  fmpz_poly_t fc; fmpz_poly_init(fc);
+  fmpz_poly_set(fc, f);
+
   fmpq_poly_t fq; fmpq_poly_init(fq);
-  fmpq_poly_set_fmpz_poly(fq, f);
+  fmpq_poly_set_fmpz_poly(fq, fc);
   fmpq_poly_oz_rem(fq, fq, n);
 
   fmpq_poly_t gq; fmpq_poly_init(gq);
@@ -270,8 +273,9 @@ void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_pol
   fmpz_clear(t);
 
   fmpz_poly_oz_mul(rem, rem, g, n);
-  fmpz_poly_sub(rem, f, rem);
+  fmpz_poly_sub(rem, fc, rem);
 
+  fmpz_poly_clear(fc);
   fmpq_poly_clear(fq);
   fmpq_poly_clear(gq);
   fmpq_poly_clear(ginv);

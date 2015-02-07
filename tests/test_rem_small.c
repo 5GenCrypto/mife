@@ -36,9 +36,6 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
   fmpq_poly_oz_mul(tq, tq, ginv, n);
 
-  /* fmpq_poly_print_pretty(tq, "x"); */
-  /* printf("\n"); */
-
   int r = (fmpz_is_one(tq->den)) ? 0 : 1;
 
   printf("n: %4ld, bits: %4ld:", n, bits);
@@ -60,7 +57,6 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
 
 int main(int argc, char *argv[]) {
-
   flint_rand_t state;
   flint_randinit_seed(state, 0x1337, 1);
 
@@ -69,7 +65,7 @@ int main(int argc, char *argv[]) {
   long n[5] = {32,64,128,256,0};
 
   for(int i=0; n[i]; i++)
-    for(mp_bitcnt_t bits=2; bits<=2*n[i]; bits=2*bits)
+    for(mp_bitcnt_t bits=2; bits<=(mp_bitcnt_t)2*n[i]; bits=2*bits)
       status += test_fmpz_poly_oz_rem_small(n[i], bits, state);
 
   flint_randclear(state);
