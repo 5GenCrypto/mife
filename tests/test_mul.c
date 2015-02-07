@@ -64,7 +64,7 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
   fmpz_mod_poly_clear(g);
   fmpz_mod_poly_clear(r0);
   fmpz_mod_poly_clear(r1);
-  return 0;
+  return !r;
 }
 
 int test_fmpz_mod_poly_oz_mul(long n, long q_, flint_rand_t state) {
