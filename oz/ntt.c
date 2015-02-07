@@ -199,6 +199,7 @@ void fmpz_mod_poly_oz_ntt_mul(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const 
   const fmpz *q = fmpz_mod_poly_modulus(f);
   fmpz_mod_poly_realloc(h, n);
 
+#pragma omp parallel for
   for(size_t i=0; i<n; i++) {
     fmpz_mul(h->coeffs + i, f->coeffs + i, g->coeffs + i);
     fmpz_mod(h->coeffs + i, h->coeffs+i, q);
@@ -210,6 +211,7 @@ void fmpz_mod_poly_oz_ntt_inv(fmpz_mod_poly_t h, const fmpz_mod_poly_t f, const 
   const fmpz *q = fmpz_mod_poly_modulus(f);
   fmpz_mod_poly_realloc(h, n);
 
+#pragma omp parallel for
   for(size_t i=0; i<n; i++)
     fmpz_invmod(h->coeffs + i, f->coeffs + i, q);
   h->length = n;
@@ -240,6 +242,8 @@ void fmpz_mod_poly_oz_ntt_pow_ui(fmpz_mod_poly_t rop, const fmpz_mod_poly_t f, u
 void fmpz_mod_poly_oz_ntt_enc_fmpz_poly(fmpz_mod_poly_t rop, const fmpz_poly_t op, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
   const fmpz *q = fmpz_mod_poly_modulus(precomp->phi);
   fmpz_mod_poly_realloc(rop, precomp->n);
+
+#pragma omp parallel for
   for(size_t i=0; i<precomp->n; i++) {
     fmpz_mul(rop->coeffs+i, precomp->phi->coeffs+i, op->coeffs+i);
     fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
@@ -251,6 +255,8 @@ void fmpz_mod_poly_oz_ntt_enc_fmpz_poly(fmpz_mod_poly_t rop, const fmpz_poly_t o
 void fmpz_mod_poly_oz_ntt_enc(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {
   const fmpz *q = fmpz_mod_poly_modulus(op);
   fmpz_mod_poly_realloc(rop, precomp->n);
+
+#pragma omp parallel for
   for(size_t i=0; i<precomp->n; i++) {
     fmpz_mul(rop->coeffs+i, precomp->phi->coeffs+i, op->coeffs+i);
     fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
@@ -264,6 +270,7 @@ void fmpz_mod_poly_oz_ntt_dec(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, con
 
   _fmpz_mod_poly_oz_ntt(rop, op, precomp->w_inv, precomp->n);
 
+#pragma omp parallel for
   for(size_t i=0; i<precomp->n; i++) {
     fmpz_mul(rop->coeffs+i, precomp->phi_inv->coeffs+i, rop->coeffs+i);
     fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
