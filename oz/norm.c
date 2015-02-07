@@ -215,16 +215,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
 void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, const mpfr_prec_t prec) {
   if (prec == 0) {
-#if 0
-    mp_bitcnt_t bits = FLINT_ABS(_fmpz_vec_max_bits(f->coeffs, f->length));
-    mp_bitcnt_t bound = f->length * (bits + n_clog(f->length, 2));
-    fmpz_poly_t modulus;
-    fmpz_poly_init_oz_modulus(modulus, n);
-    fmpz_poly_resultant_modular_bound(norm, f, modulus, bound);
-    fmpz_poly_clear(modulus);
-#else
     _fmpz_poly_oz_ideal_norm(norm, f, n);
-#endif
   } else {
     mpfr_t norm_f;
     mpfr_init2(norm_f, prec);
