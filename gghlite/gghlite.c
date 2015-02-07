@@ -189,12 +189,13 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   const int check_prime = self->pk->flags & GGHLITE_FLAGS_PRIME_G;
 
   int prime_pass = 0;
-  mp_limb_t *primes;
-  if (check_prime) {
-    const int nsp = _gghlite_nsmall_primes(self->pk);
-    primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
-  } else {
-    primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, 2*(self->pk->kappa+1));
+  mp_limb_t *primes_s, *primes_p;
+
+  const int nsp = _gghlite_nsmall_primes(self->pk);
+  primes_p = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
+
+  if (!check_prime) {
+    primes_s = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, 2*(self->pk->kappa+1));
   }
 
   fmpz_t N;
@@ -217,9 +218,14 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     /* 1. check if prime */
     t = ggh_walltime(0);
     if (check_prime)
-      prime_pass = fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, 0, primes);
-    else
-      prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->pk->n, primes);
+      prime_pass = fmpz_poly_oz_ideal_is_probaprime(self->g, self->pk->n, 0, primes_p);
+    else {
+      /** we first check for probable prime factors */
+      prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->pk->n, primes_p);
+      if (prime_pass)
+        /* if that passes we exclude small prime factors, regardless of how probable they are */
+        prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->pk->n, primes_s);
+    }
     self->t_is_prime += ggh_walltime(t);
     if (!prime_pass) {
       fail[1]++;
@@ -243,7 +249,9 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
     break;
   }
   fmpz_clear(N);
-  free(primes);
+  free(primes_p);
+  if (!check_prime)
+    free(primes_s);
 
   printf("\n");
   fflush(0);
@@ -303,21 +311,20 @@ void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate) {
 
   fmpz_poly_init(self->h);
 
-  mp_limb_t *primes = _fmpz_poly_oz_ideal_small_prime_factors(self->pk->n, 2*self->pk->lambda);
+  /* we already ruled out probable prime factors when sampling <g> */
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, 2);
 
-  uint64_t t = ggh_walltime(0);
-
-  /** We don't need to check if g and h share no small common factors because <g> has no small
-      factors and because the probability of a false positive is exponentially small in any case. On
-      the other hand, it doesn't cost much so we might as well do it.
-   */
-
-  int no_small_common = 0;
-  while(!no_small_common) {
+  uint64_t t = 0;
+  int coprime = 0;
+  while(!coprime) {
+    t = ggh_walltime(0);
     fmpz_poly_sample_sigma(self->h, self->pk->n, sqrt_q, randstate);
-    no_small_common = fmpz_poly_oz_coprime(self->h, self->g, self->pk->n, 1, primes);
-   }
-  self->t_sample +=  ggh_walltime(t);
+    self->t_sample += ggh_walltime(t);
+    t = ggh_walltime(0);
+    coprime = fmpz_poly_oz_coprime(self->g, self->h, self->pk->n, 0, primes);
+    self->t_coprime +=  ggh_walltime(t);
+  }
+
 
   free(primes);
   mpfr_clear(sqrt_q);
@@ -445,9 +452,10 @@ void gghlite_print_norms(const gghlite_t self) {
 }
 
 void gghlite_print_times(const gghlite_t self) {
-  printf("        sampling: %7.1fs\n", self->t_sample/1000000.0);
-  printf("  primality test: %7.1fs\n", self->t_is_prime/1000000.0);
-  printf("<b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
+  printf("           sampling: %7.1fs\n", self->t_sample/1000000.0);
+  printf("     primality test: %7.1fs\n", self->t_is_prime/1000000.0);
+  printf("gcd(N(g),N(h)) == 1: %7.1fs\n", self->t_coprime/1000000.0);
+  printf("   <b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
 }
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t c, dgsl_alg_t algorithm) {

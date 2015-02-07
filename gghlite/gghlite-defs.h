@@ -96,9 +96,10 @@ struct _gghlite_struct {
   gghlite_clr_t a;             //!< an element $a \\bmod \\ideal{g} = 1$
   gghlite_clr_t b[KAPPA][2];   //!< an element $b \\bmod \\ideal{g} = 0$
   dgsl_rot_mp_t *D_g;          //!< discrete Gaussian distribution $D_{R,σ'}$ with $R = \\ZZ[x]/(x^n+1)$
-  uint64_t t_is_prime;         //!< time spent on checking if g is prime in μs
+  uint64_t t_is_prime;         //!< time spent on checking for small prime factors of g in μs
   uint64_t t_is_subideal;      //!< time spent on verifying that $\\ideal{b_0,b_1} = \\ideal{g}$ in μs
   uint64_t t_sample;           //!< time spent on sampling  in μs
+  uint64_t t_coprime;          //!< time spent on checking if g and h are co-prime in μs
 };
 
 typedef struct _gghlite_struct gghlite_t[1];

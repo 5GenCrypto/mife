@@ -287,6 +287,23 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
   fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
   int num_threads = omp_get_max_threads();
 
+  /* If one operand is much larger than the other consider it mod the other */
+  const mp_bitcnt_t s0 = labs(fmpz_poly_max_bits(b0));
+  const mp_bitcnt_t s1 = labs(fmpz_poly_max_bits(b1));
+  fmpz_poly_t v0; fmpz_poly_init(v0);
+  fmpz_poly_t v1; fmpz_poly_init(v1);
+
+  if (s0 > 1.1*s1) {
+    fmpz_poly_oz_rem_small(v0, b0, b1, n);
+    fmpz_poly_set(v1, b1);
+  } else if (s1 > 1.1*s0) {
+    fmpz_poly_set(v0, b0);
+    fmpz_poly_oz_rem_small(v1, b1, b0, n);
+  } else {
+    fmpz_poly_set(v0, b0);
+    fmpz_poly_set(v1, b1);
+  }
+
   const size_t k = primes[0];
 
   nmod_poly_t n0[num_threads];
@@ -306,14 +323,20 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
 #pragma omp parallel for
     for (int j=0; j<num_threads; j++) {
       mp_limb_t p = primes[1+i+j];
-      nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], b0);
-      nmod_poly_init(n1[j], p); fmpz_poly_get_nmod_poly(n1[j], b1);
-      nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);
-      r0[j] = nmod_poly_resultant(n0[j], nm[j]);
-      r1[j] = nmod_poly_resultant(n1[j], nm[j]);
+
+      nmod_poly_init(n0[j], p); fmpz_poly_get_nmod_poly(n0[j], v0);
+      nmod_poly_init(n1[j], p); fmpz_poly_get_nmod_poly(n1[j], v1);
+      if(p%(2*n) == 1) {
+        r0[j] = nmod_poly_oz_resultant(n0[j], n);
+        r1[j] = nmod_poly_oz_resultant(n1[j], n);
+      } else {
+        nmod_poly_init(nm[j], p); fmpz_poly_get_nmod_poly(nm[j], mod);
+        r0[j] = nmod_poly_resultant(n0[j], nm[j]);
+        r1[j] = nmod_poly_resultant(n1[j], nm[j]);
+        nmod_poly_clear(nm[j]);
+      }
       nmod_poly_clear(n0[j]);
       nmod_poly_clear(n1[j]);
-      nmod_poly_clear(nm[j]);
       flint_cleanup();
     }
     for(int j=0; j<num_threads; j++) {
@@ -332,19 +355,27 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
   if (sloppy || r0[0] == 0)
     return (r0[0] != 0);
 
-  fmpz_t det_b0, det_b1;
-  fmpz_init(det_b0);
-  fmpz_init(det_b1);
+  fmpz_t det_v0, det_v1;
+  fmpz_init(det_v0);
+  fmpz_init(det_v1);
 
-  fmpz_poly_oz_ideal_norm(det_b0, b0, n, 0);
-  fmpz_poly_oz_ideal_norm(det_b1, b1, n, 0);
+  fmpz_poly_oz_ideal_norm(det_v0, v0, n, 0);
+  fmpz_poly_oz_ideal_norm(det_v1, v1, n, 0);
 
   fmpz_t tmp;
   fmpz_init(tmp);
-  fmpz_gcd(tmp, det_b0, det_b1);
-  fmpz_clear(det_b0);
-  fmpz_clear(det_b1);
+  fmpz_gcd(tmp, det_v0, det_v1);
+
+  fmpz_clear(det_v0);
+  fmpz_clear(det_v1);
+  fmpz_poly_clear(v0);
+  fmpz_poly_clear(v1);
+
   r0[0] = fmpz_equal_si(tmp, 1);
+  if (!r0[0]) {
+    fmpz_print(tmp);
+    printf("\n");
+  }
   fmpz_clear(tmp);
   return r0[0];
 }
