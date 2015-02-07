@@ -84,10 +84,10 @@ void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
   fmpz *a_hdl = a->coeffs;
   fmpz *b_hdl = b->coeffs;
 
-  fmpz_t tmp;
-  fmpz_init(tmp);
   for(size_t i=0; i<k; i++) {
+#pragma omp parallel for
     for(size_t j=0; j<n/2; j++) {
+      fmpz_t tmp;  fmpz_init(tmp);
       const size_t tk  = (1UL<<(k-1-i));
       const size_t pij = (j/tk) * tk;
       fmpz_mul(tmp, a_hdl + 2*j+1, w->coeffs + pij);
@@ -99,6 +99,8 @@ void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
       fmpz_sub(b_hdl + j + n/2, a_hdl + 2*j, tmp);
       if (fmpz_sgn(b_hdl + j + n/2) < 0)
         fmpz_add(b_hdl + j + n/2, b_hdl + j + n/2, q);
+      fmpz_clear(tmp);
+      flint_cleanup();
     }
     if(i!=k-1) {
       fmpz *t = a_hdl;
@@ -111,7 +113,6 @@ void _fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const 
   rop->length = n;
   fmpz_mod_poly_clear(b);
   fmpz_mod_poly_clear(a);
-  fmpz_clear(tmp);
 }
 
 void fmpz_mod_poly_oz_ntt(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const size_t n) {
