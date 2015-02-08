@@ -59,7 +59,7 @@ void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n,
   mpfr_clear(tmp);
 }
 
-int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t prec_bound, uint64_t flags, const fmpq_poly_t init) {
+int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t bound, uint64_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;      fmpq_poly_init(y);
   fmpq_poly_t y_next; fmpq_poly_init(y_next);
 
@@ -85,12 +85,12 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
     fmpq_poly_scalar_div_si(y_next, y_next, 2);
     fmpq_poly_set(y, y_next);
 
-    r = _fmpq_poly_oz_sqrt_approx_break(norm, y, f, n, prec_bound, prec);
+    r = _fmpq_poly_oz_sqrt_approx_break(norm, y, f, n, bound, prec);
 
     if(flags & OZ_VERBOSE) {
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
-      fprintf(stderr, " <? %4ld, ", -prec_bound);
+      fprintf(stderr, " <? %4ld, ", -bound);
       fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
       fflush(0);
     }
@@ -100,10 +100,16 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
       break;
     }
 
+    if (k>0 && mpfr_cmp_ui_2exp(norm, 1, bound) >= 0) {
+      /* something went really wrong */
+      r = -1;
+      break;
+    }
+
     mpfr_div_ui(prev_norm, prev_norm, 2, MPFR_RNDN);
     if (k>0 && mpfr_cmp(norm, prev_norm) >= 0) {
       /*  we don't converge any more */
-      r = -1;
+      r = 1;
       break;
     }
     mpfr_set(prev_norm, norm, MPFR_RNDN);
@@ -316,9 +322,14 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
     }
 
     if (cont) {
+      if (k>0 && mpfr_cmp_ui_2exp(norm, 1, bound) >= 0) {
+        /* something went really wrong */
+        r = -1;
+        break;
+      }
       if (k>0 && mpfr_cmp(norm, prev_norm) >= 0) {
         /*  we don't converge any more */
-        r = -1;
+        r = 1;
         break;
       }
       mpfr_set(prev_norm, norm, MPFR_RNDN);
