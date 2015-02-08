@@ -18,8 +18,6 @@ void _nmod_vec_oz_ntt(mp_ptr rop, const mp_ptr op, const mp_ptr w, const size_t 
   const size_t k = n_flog(n,2);
 
   mp_ptr a = _nmod_vec_init(n);
-  for(size_t i=0; i<n; i++)
-    a[i] = 0;
 
   for (size_t i = 0; i < n; i++) {
     size_t ii = i, r=0;
@@ -31,8 +29,6 @@ void _nmod_vec_oz_ntt(mp_ptr rop, const mp_ptr op, const mp_ptr w, const size_t 
   }
 
   mp_ptr b = _nmod_vec_init(n);
-  for(size_t i=0; i<n; i++)
-    b[i] = 0;
 
   const double ninv = n_precompute_inverse(q.n);
   for(size_t i=0; i<k; i++) {
@@ -178,6 +174,7 @@ static inline mp_bitcnt_t _fmpq_poly_oz_ideal_norm_bound(const fmpq_poly_t f, co
   bound += (n - 1) + n*bits1;
   return bound;
 }
+
 
 void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, const mpfr_prec_t prec) {
   fmpq_poly_t modulus;
