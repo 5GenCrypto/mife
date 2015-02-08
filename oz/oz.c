@@ -352,36 +352,33 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
   }
   fmpz_poly_clear(mod);
 
-  if (sloppy || r0[0] == 0)
-    return (r0[0] != 0);
+  /* run expensive test if we're not sloppy and we haven't ruled out co-primality yet */
+  if (!sloppy && r0[0] == 1) {
+    fmpz_t det_v0, det_v1;
+    fmpz_init(det_v0);
+    fmpz_init(det_v1);
 
-  fmpz_t det_v0, det_v1;
-  fmpz_init(det_v0);
-  fmpz_init(det_v1);
+    fmpz_poly_oz_ideal_norm(det_v0, v0, n, 0);
+    fmpz_poly_oz_ideal_norm(det_v1, v1, n, 0);
 
-  fmpz_poly_oz_ideal_norm(det_v0, v0, n, 0);
-  fmpz_poly_oz_ideal_norm(det_v1, v1, n, 0);
+    fmpz_t tmp;
+    fmpz_init(tmp);
+    fmpz_gcd(tmp, det_v0, det_v1);
 
-  fmpz_t tmp;
-  fmpz_init(tmp);
-  fmpz_gcd(tmp, det_v0, det_v1);
+    r0[0] = fmpz_equal_si(tmp, 1);
+    fmpz_clear(tmp);
 
-  fmpz_clear(det_v0);
-  fmpz_clear(det_v1);
+    fmpz_clear(det_v0);
+    fmpz_clear(det_v1);
+  }
   fmpz_poly_clear(v0);
   fmpz_poly_clear(v1);
 
-  r0[0] = fmpz_equal_si(tmp, 1);
-  if (!r0[0]) {
-    fmpz_print(tmp);
-    printf("\n");
-  }
-  fmpz_clear(tmp);
   return r0[0];
 }
 
 int fmpz_poly_oz_coprime_det(const fmpz_poly_t b0, const fmpz_t det_b1, const long n,
-                              const int sloppy, const mp_limb_t *primes) {
+                             const int sloppy, const mp_limb_t *primes) {
 
   fmpz_poly_t mod; fmpz_poly_init_oz_modulus(mod, n);
   int num_threads = omp_get_max_threads();
