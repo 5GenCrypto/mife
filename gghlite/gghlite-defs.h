@@ -37,7 +37,7 @@ typedef enum {
   GGHLITE_FLAGS_PRIME_G   = 0x1, //!< enforce that @f$\ideal{g}@f$ is a prime ideal (expensive!)
   GGHLITE_FLAGS_VERBOSE   = 0x2, //!< be more verbose
   GGHLITE_FLAGS_GDDH_HARD = 0x4, //!< pick σ_1^* so that GDDH is hard
-} gghlite_flags_t;
+} gghlite_flag_t;
 
 /**
    Maximum supported multi-linearity level.
@@ -56,7 +56,7 @@ struct _gghlite_pk_struct {
   size_t lambda;                      //!< security parameter $λ$
   size_t kappa;                       //!< multi-linearity parameter $κ ≤$ `KAPPA`
   uint64_t rerand_mask;               //!< mask where $i$-th bit toggles generation of re-randomisers for level-$i$
-  uint64_t flags;                     //!< see @ref gghlite_flags_t
+  gghlite_flag_t flags;               //!< see @ref gghlite_flags_t
   long n;                             //!< dimension of the lattice $n$
   long ell;                           //!< number of bits $ℓ$ in each coefficient used for extraction
   fmpz_t q;                           //!< modulus $q$

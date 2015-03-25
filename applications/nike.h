@@ -9,7 +9,7 @@
 struct _cmdline_params_struct{
   long lambda;
   long N;
-  uint64_t flags;
+  gghlite_flag_t flags;
   mp_limb_t seed;
 };
 

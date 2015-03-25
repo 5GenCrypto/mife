@@ -499,7 +499,7 @@ int gghlite_pk_check_sec(const gghlite_pk_t self) {
 }
 
 
-void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, uint64_t flags) {
+void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
 

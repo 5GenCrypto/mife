@@ -22,7 +22,7 @@
    @param flags       flags controlling the behaviour of the algorithms such as verbosity etc.
 */
 
-void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, uint64_t flags);
+void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags);
 
 /**
    Generate fields requiring randomness.
@@ -47,7 +47,7 @@ void gghlite_init_instance(gghlite_t self, flint_rand_t randstate);
 */
 
 void gghlite_init(gghlite_t self, const size_t lambda, const size_t kappa,
-                  const uint64_t rerand_mask, const uint64_t flags, flint_rand_t randstate);
+                  const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate);
 
 /**
    Get a reference to the public parameters of ``op``.

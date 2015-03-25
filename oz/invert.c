@@ -214,7 +214,7 @@ void _fmpq_poly_oz_invert_approx(fmpq_poly_t f_inv, const fmpq_poly_t f, const l
 }
 
 void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long n,
-                                const mpfr_prec_t prec, const uint64_t flags) {
+                                const mpfr_prec_t prec, const oz_flag_t flags) {
 
   if (prec == 0) {
     _fmpq_poly_oz_invert_approx(rop, f, n, prec);

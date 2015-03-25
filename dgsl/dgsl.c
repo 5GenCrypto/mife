@@ -586,7 +586,7 @@ void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, gmp_randstate_t
 */
 
 void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma,
-                              const int r, const long n, const mpfr_prec_t prec, const uint64_t flags) {
+                              const int r, const long n, const mpfr_prec_t prec, const oz_flag_t flags) {
   fmpq_poly_zero(rop);
 
   fmpq_t r_q2;

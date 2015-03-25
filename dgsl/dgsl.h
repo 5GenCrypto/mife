@@ -147,7 +147,7 @@ static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma,
 }
 
 void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma,
-                              const int r, const long n, const mpfr_prec_t prec, const uint64_t flags);
+                              const int r, const long n, const mpfr_prec_t prec, const oz_flag_t flags);
 
 void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, gmp_randstate_t randstate);
 

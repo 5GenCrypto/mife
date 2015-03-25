@@ -32,7 +32,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
 struct _cmdline_params_struct{
   long lambda;
   long kappa;
-  uint64_t flags;
+  gghlite_flag_t flags;
   uint64_t rerand;
   mp_limb_t seed;
 };

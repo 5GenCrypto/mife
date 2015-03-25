@@ -59,7 +59,7 @@ void _fmpq_poly_oz_sqrt_approx_scale(fmpq_poly_t y, fmpq_poly_t z, const long n,
   mpfr_clear(tmp);
 }
 
-int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t bound, uint64_t flags, const fmpq_poly_t init) {
+int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t bound, oz_flag_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;      fmpq_poly_init(y);
   fmpq_poly_t y_next; fmpq_poly_init(y_next);
 
@@ -123,7 +123,7 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
   return r;
 }
 
-int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t bound, uint64_t flags, const fmpq_poly_t init) {
+int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const mpfr_prec_t prec, const mpfr_prec_t bound, oz_flag_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;       fmpq_poly_init(y);
   fmpq_poly_t y_next;  fmpq_poly_init(y_next);
   fmpq_poly_t z;       fmpq_poly_init(z);
@@ -212,7 +212,7 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
   return r;
 }
 
-int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const int p, const mpfr_prec_t prec, const mpfr_prec_t bound, uint64_t flags, const fmpq_poly_t init) {
+int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const long n, const int p, const mpfr_prec_t prec, const mpfr_prec_t bound, oz_flag_t flags, const fmpq_poly_t init) {
   fmpq_poly_t y;       fmpq_poly_init(y);
   fmpq_poly_t y_next;  fmpq_poly_init(y_next);
   fmpq_poly_t z;       fmpq_poly_init(z);
