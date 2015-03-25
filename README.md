@@ -46,7 +46,7 @@ will run 7-partite NIKE with security level λ=80.
  * **dgsl** discrete Gaussians over arbitrary regular lattices and ideal lattices modulo $x^{2^k}+1$
  * **flint** a current snapshot of the FLINT library
  * **gghlite** the actual GGHLite implementation
- * **oz** efficient functions for computing in $Z[x]/(x^{2^k}+1)$ and $Z_q[x]/(x^{2^k}+1)$
+ * **oz** efficient functions for computing in $\\mathbb{Z}[x]/(x^{2^k}+1)$ and $\\mathbb{Z}_q[x]/(x^{2^k}+1)$
  * **tests** correctness tests
 
 ## Bugs ##

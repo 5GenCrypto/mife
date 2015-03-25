@@ -1,3 +1,10 @@
+/**
+   @file gghlite-internals.h
+   @brief GGHLite internal API
+
+   @note Most users should not have to rely on this interface.
+*/
+
 #ifndef _GGHLITE_INTERNALS_H_
 #define _GGHLITE_INTERNALS_H_
 
@@ -6,7 +13,7 @@
 #include "oz/oz.h"
 
 /**
-   Check if @f$|g^-1| ≤ ℓ_g@f$
+   Check if @f$|g^{-1}| ≤ ℓ_g@f$
 */
 
 static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
@@ -48,7 +55,7 @@ static inline double _gghlite_sigma(double n) {
 
    CONSTRAINTS:
 
-   #. @f$σ = 4·π·n·\sqrt{e·log(8n)/π}/p_g@f$, cf. [LSS14]_ p.16.
+   - @f$σ = 4·π·n·\sqrt{e·\log(8n)/π}/p_g@f$, cf. [LSS14]_ p.16.
 */
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self);
@@ -72,7 +79,7 @@ static inline double _gghlite_ell_g(double n) {
 
    CONSTRAINTS:
 
-   #. `σ = \sqrt{n}
+   - $σ = \sqrt{n}$
 */
 
 /**
@@ -119,9 +126,9 @@ static inline int _gghlite_nsmall_primes(const gghlite_pk_t self) {
 
   CONSTRAINTS:
 
-   #. @f$ℓ_g = 4·sqrt(π·e·n)/(p_g·σ)`, cf. [LSS14]_ p.16@f$
+  - @f$ℓ_g = 4·\sqrt(π·e·n)/(p_g·σ)@f$, cf. [LSS14]_ p.16
 
-   @note: We assume @f$p_b = 1@f$
+  @note We assume @f$p_b = 1@f$
 */
 
 void _gghlite_pk_set_ell_g(gghlite_pk_t self);
@@ -148,8 +155,8 @@ static inline double _gghlite_sigma_p(double n) {
 
    CONSTRAINTS:
 
-   #. @f$σ' ≥ 2n^{1.5}·σ\sqrt{e·log(8n)/π}/p_b@f$, cf. [LSS14]_, Eq. (5), p.16
-   #. @f$σ' ≥ 7n^{2.5}·ln(n)^{1.5}·σ@f$, cf. [LSS14]_, p.17
+   - @f$σ' ≥ 2n^{1.5}·σ\sqrt{e·\log(8n)/π}/p_b@f$, cf. [LSS14]_, Eq. (5), p.16
+   - @f$σ' ≥ 7n^{2.5}·ln(n)^{1.5}·σ@f$, cf. [LSS14]_, p.17
 */
 
 void _gghlite_pk_set_sigma_p(gghlite_pk_t self);
@@ -171,11 +178,11 @@ static inline double _gghlite_ell_b(double n) {
 /**
    Compute @f$ℓ_b@f$.
 
-   CONSTRAINTS:
+   CONSTRAINTS
 
-   #. @f$ℓ_b = p_b/(2\sqrt{π·e·n})·σ'@f$, cf. [LSS14]_, p.17
+   - @f$ℓ_b = p_b/(2\sqrt{π·e·n})·σ'@f$, cf. [LSS14]_, p.17
 
-   @note: We assume @f$p_b = 1@f$
+   @note We assume @f$p_b = 1@f$
 */
 
 void _gghlite_pk_set_ell_b(gghlite_pk_t self);
@@ -203,9 +210,9 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa, con
 
    CONSTRAINTS:
 
-   #. @f$σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}@f$, cf. [LSS14]_, p.17, Eq. (8)
-   #. @f$σ^* ≥ n^{1.5}·(σ')²\sqrt{8πε_d^{-1}}/ℓ_b@f$, cf. [LSS14]_, p.17, Eq. (9) with
-   @f$εₑ^{-1} = O(log λ/κ)@f$.
+   - @f$σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·\log(4nε_ρ^{-1})/π}@f$, cf. [LSS14]_, p.17, Eq. (8)
+   - @f$σ^* ≥ n^{1.5}·(σ')²\sqrt{8πε_d^{-1}}/ℓ_b@f$, cf. [LSS14]_, p.17, Eq. (9) with
+   @f$εₑ^{-1} = O(\log λ/κ)@f$.
 */
 
 void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
@@ -249,10 +256,10 @@ void _gghlite_set_pzt(gghlite_t self);
 /**
    Set $c = (c⋅g)/z$ for some small $c$.
 
-   If GGHLITE_FLAGS_ASYMMETRIC == 0, produce encodings of zero for all levels specified in
+   If ``GGHLITE_FLAGS_ASYMMETRIC == 0``, produce encodings of zero for all levels specified in
    the rerandomisation mask.
 
-   If GGHLITE_FLAGS_ASYMMETRIC == 1, produce encodings of zero for all source groups specified in
+   If ``GGHLITE_FLAGS_ASYMMETRIC == 1``, produce encodings of zero for all source groups specified in
    the rerandomisation mask.
  */
 
@@ -276,7 +283,7 @@ dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t 
 dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma, const oz_flag_t flags);
 
 
-#define MAX_K 1024
+#define MAX_K 1024 //<! maximum block size for BKZ estimation
 
 extern double delta_from_k[MAX_K];
 

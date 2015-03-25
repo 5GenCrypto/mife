@@ -1,5 +1,6 @@
 /**
    @file gghlite-defs.h
+   @brief Definitions
 */
 
 #ifndef _DEFS_H_
@@ -21,8 +22,8 @@ typedef fmpz_poly_t     gghlite_clr_t;
 
 /**
    Encodings are represented as evaluations of polynomials, i.e. as vectors `e`
-   of length `n` where `e_i` holds our element evaluated at `ω_n^i` where `ω_n`
-   as some root of unity in Z_q.
+   of length `n` where $e_i$ holds our element evaluated at `ω_n^i` where `ω_n`
+   as some root of unity in $\ZZ_q$.
 **/
 
 typedef fmpz_mod_poly_t gghlite_enc_t;

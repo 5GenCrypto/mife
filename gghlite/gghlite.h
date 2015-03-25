@@ -1,3 +1,8 @@
+/**
+   @file gghlite.h
+   @brief GGHLite public API
+ */
+
 #ifndef _GGHLITE_H_
 #define _GGHLITE_H_
 
@@ -112,7 +117,7 @@ static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const g
 /**
    Rerandomise encoding at level $k$.
 
-   Computes @f$f = f + ρ_0·b_{k,0} + ρ_1·b_{k,1}@f$ where `ρ_i ← D_{R,σ^*}`.
+   Computes @f$f = f + ρ_0·b_{k,0} + ρ_1·b_{k,1}@f$ where @f$ρ_i ← D_{R,σ^*}@f$.
 
    @param f         initialised encoding at level `k`
    @param self      initialise GGHLite public key
@@ -121,10 +126,7 @@ static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const g
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                      ``_flint_rand_init_gmp(randstate)`` was called
 
-   .. note::
-
-       Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
-       If it is not the output of this function is essentially a random element.
+   @note Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
 */
 
 void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k,
@@ -142,10 +144,7 @@ void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_en
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                     ``_flint_rand_init_gmp(randstate)`` was called
 
-   .. note::
-
-       Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
-       If it is not the behaviour of this function is undefined.
+   @note Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
 */
 
 void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, size_t k, size_t kprime, size_t i,
@@ -162,10 +161,7 @@ void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, siz
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                     ``_flint_rand_init_gmp(randstate)`` was called
 
-   .. note::
-
-       Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
-       If it is not the behaviour of this function is undefined.
+   @note Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
 
 */
 
@@ -181,6 +177,7 @@ void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, size_t k, size_t i, fl
    @param i         source group index (must be zero in the symmetric case)
    @param rerand    rerandomise.
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
+                    ``_flint_rand_init_gmp(randstate)`` was called
 
 */
 
@@ -206,11 +203,11 @@ static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const g
 }
 
 /**
-   Multiply ``op`` by ``pzt``
+   Multiply @f$op@f$ by @f$p_{zt}@f$.
 
    @param rop       initialised encoding, return value
    @param self      initialise GGHLite public key
-   @param op        valid encoding at level-`k`
+   @param op        valid encoding at level-$k$
 */
 
 void _gghlite_extract_raw(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op);
@@ -220,7 +217,7 @@ void _gghlite_extract_raw(gghlite_clr_t rop, const gghlite_pk_t self, const gghl
 
    @param rop       initialised encoding, return value
    @param self      initialise GGHLite public key
-   @param op        valid encoding at level-`k`
+   @param op        valid encoding at level-$k$
 */
 
 void gghlite_extract(fmpz_poly_t rop, const gghlite_pk_t self, const gghlite_enc_t op);
@@ -229,7 +226,7 @@ void gghlite_extract(fmpz_poly_t rop, const gghlite_pk_t self, const gghlite_enc
    Return 1 if op is an encoding of zero at level κ
 
    @param self      initialise GGHLite public key
-   @param op        valid encoding at level-`k`
+   @param op        valid encoding at level-$k$
 */
 
 int gghlite_is_zero(const gghlite_pk_t self, const gghlite_enc_t op);
