@@ -531,7 +531,7 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   fmpz_mod_poly_clear(self->y);
 
   for(size_t k=0; k<self->kappa; k++) {
-    if(self->rerand_mask && (1ULL)<<k) {
+    if (gghlite_pk_have_rerand(self, k)) {
       fmpz_mod_poly_clear(self->x[k][0]);
       fmpz_mod_poly_clear(self->x[k][1]);
     }

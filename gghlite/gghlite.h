@@ -238,4 +238,14 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self);
 
 int gghlite_pk_check_sec(const gghlite_pk_t self);
 
+/**
+   Return true if rerandomisation elements are available for $i+1$ level (symmetric case) or $i$-th
+   source group (asymmetric case)
+*/
+
+static inline int gghlite_pk_have_rerand(const gghlite_pk_t self, const size_t i) {
+  return (self->rerand_mask & (1ULL)<<i);
+}
+
+
 #endif //_GGHLITE_H_
