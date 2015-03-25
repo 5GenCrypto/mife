@@ -279,7 +279,8 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
 void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_p));
-  self->D_sigma_p = _gghlite_dgsl_from_n(self->n, self->sigma_p);
+  const oz_flag_t flags = (self->flags & GGHLITE_FLAGS_QUIET) ? 0 : OZ_VERBOSE;
+  self->D_sigma_p = _gghlite_dgsl_from_n(self->n, self->sigma_p, flags);
 }
 
 
@@ -402,7 +403,8 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_s));
-  self->D_sigma_s = _gghlite_dgsl_from_n(self->n, self->sigma_s);
+  const oz_flag_t flags = (self->flags & GGHLITE_FLAGS_QUIET) ? 0 : OZ_VERBOSE;
+  self->D_sigma_s = _gghlite_dgsl_from_n(self->n, self->sigma_s, flags);
 }
 
 double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
