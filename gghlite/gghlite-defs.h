@@ -33,10 +33,11 @@ typedef fmpz_mod_poly_t gghlite_enc_t;
 */
 
 typedef enum {
-  GGHLITE_FLAGS_DEFAULT   = 0x0, //!< default behaviour
-  GGHLITE_FLAGS_PRIME_G   = 0x1, //!< enforce that @f$\ideal{g}@f$ is a prime ideal (expensive!)
-  GGHLITE_FLAGS_VERBOSE   = 0x2, //!< be more verbose
-  GGHLITE_FLAGS_GDDH_HARD = 0x4, //!< pick σ_1^* so that GDDH is hard
+  GGHLITE_FLAGS_DEFAULT    = 0x00, //!< default behaviour
+  GGHLITE_FLAGS_PRIME_G    = 0x01, //!< enforce that @f$\ideal{g}@f$ is a prime ideal (expensive!)
+  GGHLITE_FLAGS_VERBOSE    = 0x02, //!< be more verbose
+  GGHLITE_FLAGS_GDDH_HARD  = 0x04, //!< pick @f$σ_1^*@f$ so that GDDH is hard
+  GGHLITE_FLAGS_ASYMMETRIC = 0x08, //!< implement asymmetric graded encoding scheme
   GGHLITE_FLAGS_QUIET      = 0x10, //!< suppress most printing
 } gghlite_flag_t;
 
@@ -68,8 +69,18 @@ struct _gghlite_pk_struct {
   mpfr_t ell_g;                       //!< bound $ℓ_g$ on $|g^-1|$
   mpfr_t xi;                          //!< fraction $ξ$ of $q$ used for zero-testing
   gghlite_enc_t pzt;                  //!< zero-testing parameter $p_{zt}$
-  gghlite_enc_t x[KAPPA][2];          //!< level-$k$ encodings of zero $x_{k,i}$ for each level $k$ specified by rerandomisation mask
-  gghlite_enc_t y;                    //!< one level-1 encoding of 1
+
+  /** two encodings of zero
+
+     - symmetric case: level-$k$ encodings of zero $x_{k,i}$ for each level $k$ specified by
+       rerandomisation mask
+
+     - asymmetric case: level-$1$ encodings of zero $x_{k,i}$ for each source group specified in the
+       rerandomisation mask
+  */
+
+  gghlite_enc_t x[KAPPA][2];
+  gghlite_enc_t y[KAPPA];             //!< one level-1 encodings of 1 (for each source group)
   dgsl_rot_mp_t *D_sigma_p;           //!< discrete Gaussian distribution $D_{\ZZ,σ'}$
   dgsl_rot_mp_t *D_sigma_s;           //!< discrete Gaussian distribution $D_{\ZZ,σ^*}$
   fmpz_mod_poly_oz_ntt_precomp_t ntt; //!< pre-computation data for computing in the NTT domain
@@ -90,10 +101,10 @@ typedef struct _gghlite_pk_struct gghlite_pk_t[1];
 struct _gghlite_struct {
   gghlite_pk_t pk;             //!< the GGHLite public key
   gghlite_clr_t g;             //!< an ideal generator $\ideal{g}$
-  gghlite_enc_t z;             //!< $g^{-1}$ in $\\ZZ_q[x]/(x^n+1)$
-  gghlite_enc_t z_inv;         //!< masking element $z$
+  gghlite_enc_t z[KAPPA];      //!< masking elements $z_i$
+  gghlite_enc_t z_inv[KAPPA];  //!< inverse of masking element $z_i$
   gghlite_clr_t h;             //!< masking element $h$
-  gghlite_clr_t a;             //!< an element $a \\bmod \\ideal{g} = 1$
+  gghlite_clr_t a[KAPPA];      //!< an element $a \\bmod \\ideal{g} = 1$ (for each source group)
   gghlite_clr_t b[KAPPA][2];   //!< an element $b \\bmod \\ideal{g} = 0$
   dgsl_rot_mp_t *D_g;          //!< discrete Gaussian distribution $D_{R,σ'}$ with $R = \\ZZ[x]/(x^n+1)$
   uint64_t t_is_prime;         //!< time spent on checking for small prime factors of g in μs

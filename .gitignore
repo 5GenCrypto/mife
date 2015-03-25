@@ -57,3 +57,4 @@ callgrind.*
 /applications/bench_invert
 /tests/test_rem_small
 /applications/bench_co_prime
+/tests/test_instgen

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     gghlite_enc_set_ui(tmp, 1, self->pk);
     for(int k=0; k<params->kappa; k++) {
       gghlite_enc_set_ui(u[k], 0, self->pk);
-      gghlite_enc(u[k], self->pk, u[k], 1, 1, randstate);
+      gghlite_enc(u[k], self->pk, u[k], 1, 0, 1, randstate);
       gghlite_mul(tmp, self->pk, tmp, u[k]);
     }
     gghlite_extract(out, self->pk, tmp);

@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
     if (verbose)
       printf("%8s samples e_%d, ",agents[i],i);
     gghlite_enc_init(e[i], params);
-    gghlite_sample(e[i], params, 0, randstate);
+    gghlite_sample(e[i], params, 0, 0, randstate);
 
     if (verbose)
       printf("computes u_%d and publishes it\n", i);
     gghlite_enc_init(u[i], params);
-    gghlite_elevate(u[i], params, e[i], 1, 0, 1, randstate);
+    gghlite_elevate(u[i], params, e[i], 1, 0, 0, 1, randstate);
   }
 
   if (verbose)
@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
   gghlite_enc_init(tmp, params);
   for(int j=2; j<cmdline_params->N; j++) {
     uint64_t t_s = ggh_walltime(0);
-    gghlite_sample(tmp, params, 0, randstate);
-    gghlite_elevate(tmp, params, tmp, 1, 0, 1, randstate);
+    gghlite_sample(tmp, params, 0, 0, randstate);
+    gghlite_elevate(tmp, params, tmp, 1, 0, 0, 1, randstate);
     t_s = ggh_walltime(t_s);
     t_sample += t_s;
 

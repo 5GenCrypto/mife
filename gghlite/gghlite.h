@@ -110,31 +110,34 @@ static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const g
 #define gghlite_clr_equal fmpz_poly_equal
 
 /**
-   Rerandomise encoding at level `k`.
+   Rerandomise encoding at level $k$.
 
    Computes @f$f = f + ρ_0·b_{k,0} + ρ_1·b_{k,1}@f$ where `ρ_i ← D_{R,σ^*}`.
 
    @param f         initialised encoding at level `k`
    @param self      initialise GGHLite public key
    @param k         level `1 ≤ k ≤ κ`
+   @param i         source group index (must be zero in the symmetric case)
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                      ``_flint_rand_init_gmp(randstate)`` was called
 
    .. note::
 
        Note that we have no means to check that ``rop`` is indeed a level-`k'` encoding.
-       If it is not the behaviour of this function is undefined.
+       If it is not the output of this function is essentially a random element.
 */
 
-void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k, flint_rand_t randstate);
+void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k,
+                    size_t i, flint_rand_t randstate);
 
 /**
-   Elevate an encoding at levek `k'` to level `k` and re-randomise if requested.
+   Elevate an encoding at levek $k'$ to level $k$ and re-randomise if requested.
 
    @param rop       initialised encoding at level `k'`
    @param self      initialise GGHLite public key
    @param k         targer level `1 ≤ k ≤ κ`
    @param kprime    current level of ``rop`` satisfying `0 ≤ k' ≤ k`
+   @param i         source group index (must be zero in the symmetric case)
    @param rerand    flag controlling if re-randomisation is run after elevation
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                     ``_flint_rand_init_gmp(randstate)`` was called
@@ -145,15 +148,17 @@ void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_en
        If it is not the behaviour of this function is undefined.
 */
 
-void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, long kprime, int rerand, flint_rand_t randstate);
+void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, size_t k, size_t kprime, size_t i,
+                     int rerand, flint_rand_t randstate);
 
 /**
 
-   Sample a new random encoding at levek `k`.
+   Sample a new random encoding at levek $k$ in group $i$.
 
    @param rop       initialised encoding, return value
    @param self      initialise GGHLite public key
    @param k         targer level `0 ≤ k ≤ κ`
+   @param i         source group index (must be zero in the symmetric case)
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                     ``_flint_rand_init_gmp(randstate)`` was called
 
@@ -164,26 +169,27 @@ void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, lon
 
 */
 
-void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, long k, flint_rand_t randstate);
+void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, size_t k, size_t i, flint_rand_t randstate);
 
 /**
-   Encode level-0 encoding ``op`` at level `k`.
+   Encode level-0 encoding ``op`` at level $k$.
 
    @param rop       initialised encoding, return value
    @param self      initialise GGHLite public key
    @param op        valid level-0 encoding
-   @param k         targer level `0 ≤ k ≤ κ`
+   @param k         targer level $0 ≤ k ≤ κ$
+   @param i         source group index (must be zero in the symmetric case)
    @param rerand    rerandomise.
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
 
 */
 
-static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, long k, int rerand, flint_rand_t randstate) {
-  gghlite_elevate(rop, self, op, k, 0, rerand, randstate);
+static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, size_t k, size_t i, int rerand, flint_rand_t randstate) {
+  gghlite_elevate(rop, self, op, k, 0, i, rerand, randstate);
 }
 
 /**
-   Compute `h = f·g`.
+   Compute @f$h = f·g@f$.
 
    @param h         initialised encoding, return value
    @param self      initialise GGHLite public key
@@ -201,7 +207,7 @@ static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const g
 
 
 /**
-   Extract canonical string from ``op``
+   Extract canonical string from @f$`op`@f$
 
    @param rop       initialised encoding, return value
    @param self      initialise GGHLite public key
@@ -220,7 +226,7 @@ void gghlite_extract(fmpz_poly_t rop, const gghlite_pk_t self, const gghlite_enc
 int gghlite_is_zero(const gghlite_pk_t self, const gghlite_enc_t op);
 
 /**
-   Return root-Hermite factor `δ_0` required to break the scheme
+   Return root-Hermite factor @f$δ_0@f$ required to break the scheme
 
    @param self      initialise GGHLite public key
 
@@ -237,6 +243,15 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self);
 */
 
 int gghlite_pk_check_sec(const gghlite_pk_t self);
+
+
+/**
+   Return true if public key is for a symmetric graded encoding scheme.
+*/
+
+static inline int gghlite_pk_is_symmetric(const gghlite_pk_t self) {
+  return !(self->flags & GGHLITE_FLAGS_ASYMMETRIC);
+}
 
 /**
    Return true if rerandomisation elements are available for $i+1$ level (symmetric case) or $i$-th

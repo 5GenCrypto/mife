@@ -183,8 +183,6 @@ void _gghlite_pk_set_ell_b(gghlite_pk_t self);
 static inline double _gghlite_sigma_s(double n, double lambda, double kappa, const uint64_t rerand_mask) {
   if(rerand_mask == 0)
     return 1;
-  if (rerand_mask > 1)
-    ggh_die("Re-randomisation at higher levels is not implemented yet.");
   const double sigma_p = _gghlite_sigma_p(n);
   const double pi = 3.14159265358979;
   const double ell_g = _gghlite_ell_g(n);
@@ -233,6 +231,11 @@ void _gghlite_pk_set_ell(gghlite_pk_t self);
 
 void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate);
 
+/**
+   Sample $z_i$ and $z_i^{-1}$.
+
+ */
+
 void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate);
 
 void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate);
@@ -243,7 +246,22 @@ void _gghlite_sample_a(gghlite_t self, flint_rand_t randstate);
 
 void _gghlite_set_pzt(gghlite_t self);
 
+/**
+   Set $c = (c⋅g)/z$ for some small $c$.
+
+   If GGHLITE_FLAGS_ASYMMETRIC == 0, produce encodings of zero for all levels specified in
+   the rerandomisation mask.
+
+   If GGHLITE_FLAGS_ASYMMETRIC == 1, produce encodings of zero for all source groups specified in
+   the rerandomisation mask.
+ */
+
+
 void _gghlite_set_x(gghlite_t self);
+
+/**
+   Set $y = (1 + c⋅g)/z$ for some small $c$ for each source group in rerand_mask.
+ */
 
 void _gghlite_set_y(gghlite_t self);
 
@@ -315,5 +333,12 @@ double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self);
 
 double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self);
 
+/**
+   Return true if self represents a symmetric graded encoding scheme.
+*/
+
+static inline int gghlite_is_symmetric(const gghlite_t self) {
+  return !(self->pk->flags & GGHLITE_FLAGS_ASYMMETRIC);
+}
 
 #endif /* _GGHLITE_INTERNALS_H_ */

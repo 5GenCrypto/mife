@@ -318,7 +318,7 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
     /* if there is no re-randomisation there is not σ^* */
     mpfr_set_d(self->sigma_s, 1.0, MPFR_RNDN);
     return;
-  } else if (self->rerand_mask != 1) {
+  } else if (gghlite_pk_is_symmetric(self) && self->rerand_mask != 1) {
     ggh_die("Re-randomisation at higher levels is not implemented yet.");
   }
 
@@ -528,12 +528,17 @@ void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint
 void gghlite_pk_clear(gghlite_pk_t self) {
   fmpz_mod_poly_clear(self->pzt);
 
-  fmpz_mod_poly_clear(self->y);
-
   for(size_t k=0; k<self->kappa; k++) {
     if (gghlite_pk_have_rerand(self, k)) {
       fmpz_mod_poly_clear(self->x[k][0]);
       fmpz_mod_poly_clear(self->x[k][1]);
+    }
+  }
+
+  const size_t bound = (gghlite_pk_is_symmetric(self)) ? 1 : self->kappa;
+  for(size_t i=0; i<bound; i++) {
+    if (gghlite_pk_have_rerand(self, i)) {
+      fmpz_mod_poly_clear(self->y[i]);
     }
   }
 

@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     printf("\rtesting: %d",j);
     fflush(0);
     for(int i=0; i<params->kappa; i++) {
-      gghlite_sample(u[i], self->pk, 1, randstate);
+      gghlite_sample(u[i], self->pk, 1, 0, randstate);
     }
     gghlite_enc_set_ui(tmp, 1, self->pk);
     for(int i=0; i<params->kappa; i++) {
