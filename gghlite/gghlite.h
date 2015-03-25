@@ -205,6 +205,15 @@ static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const g
   fmpz_mod_poly_add(h, f, g);
 }
 
+/**
+   Multiply ``op`` by ``pzt``
+
+   @param rop       initialised encoding, return value
+   @param self      initialise GGHLite public key
+   @param op        valid encoding at level-`k`
+*/
+
+void _gghlite_extract_raw(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op);
 
 /**
    Extract canonical string from @f$`op`@f$
