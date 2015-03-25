@@ -6,7 +6,7 @@
 #include "oz/oz.h"
 
 /**
-   Check if `|g^-1| ≤ ℓ_g`
+   Check if @f$|g^-1| ≤ ℓ_g@f$
 */
 
 static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
@@ -33,7 +33,7 @@ static inline mpfr_prec_t _gghlite_prec(const gghlite_pk_t self) {
 #ifndef GGHLITE_HEURISTICS
 
 /**
-   Compute `σ` in double precision.
+   Compute @f$σ@f$ in double precision.
 */
 
 static inline double _gghlite_sigma(double n) {
@@ -44,18 +44,18 @@ static inline double _gghlite_sigma(double n) {
 }
 
 /**
-   Compute `σ`.
+   Compute @f$σ@f$.
 
    CONSTRAINTS:
 
-   #. `σ = 4·π·n·\sqrt{e·log(8n)/π}/p_g`, cf. [LSS14]_ p.16.
+   #. @f$σ = 4·π·n·\sqrt{e·log(8n)/π}/p_g@f$, cf. [LSS14]_ p.16.
 */
 
 void _gghlite_pk_set_sigma(gghlite_pk_t self);
 
 
 /**
-  Compute `ℓ_g` in double precision.
+  Compute @f$ℓ_g@f$ in double precision.
 */
 
 static inline double _gghlite_ell_g(double n) {
@@ -68,7 +68,7 @@ static inline double _gghlite_ell_g(double n) {
 
 #else
 /**
-   Compute `σ`.
+   Compute @f$σ@f$.
 
    CONSTRAINTS:
 
@@ -76,7 +76,7 @@ static inline double _gghlite_ell_g(double n) {
 */
 
 /**
-   Compute `σ` in double precision.
+   Compute @f$σ@f$ in double precision.
 */
 
 static inline double _gghlite_sigma(double n) {
@@ -89,7 +89,7 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self);
 
 
 /**
-  Compute `ℓ_g` in double precision.
+  Compute @f$ℓ_g@f$ in double precision.
 */
 
 static inline double _gghlite_ell_g(double n) {
@@ -115,19 +115,19 @@ static inline int _gghlite_nsmall_primes(const gghlite_pk_t self) {
 }
 
 /**
-  Compute `ℓ_g`.
+  Compute @f$ℓ_g@f$.
 
   CONSTRAINTS:
 
-   #. `ℓ_g = 4·sqrt(π·e·n)/(p_g·σ)`, cf. [LSS14]_ p.16`
+   #. @f$ℓ_g = 4·sqrt(π·e·n)/(p_g·σ)`, cf. [LSS14]_ p.16@f$
 
-   @note: We assume `p_b = 1`
+   @note: We assume @f$p_b = 1@f$
 */
 
 void _gghlite_pk_set_ell_g(gghlite_pk_t self);
 
 /**
-   Compute `σ'` in double precision.
+   Compute @f$σ'@f$ in double precision.
 */
 
 static inline double _gghlite_sigma_p(double n) {
@@ -144,12 +144,12 @@ static inline double _gghlite_sigma_p(double n) {
 }
 
 /**
-   Compute `σ'`.
+   Compute @f$σ'@f$.
 
    CONSTRAINTS:
 
-   #. `σ' ≥ 2n^{1.5}·σ\sqrt{e·log(8n)/π}/p_b`, cf. [LSS14]_, Eq. (5), p.16
-   #. `σ' ≥ 7n^{2.5}·ln(n)^{1.5}·σ`, cf. [LSS14]_, p.17
+   #. @f$σ' ≥ 2n^{1.5}·σ\sqrt{e·log(8n)/π}/p_b@f$, cf. [LSS14]_, Eq. (5), p.16
+   #. @f$σ' ≥ 7n^{2.5}·ln(n)^{1.5}·σ@f$, cf. [LSS14]_, p.17
 */
 
 void _gghlite_pk_set_sigma_p(gghlite_pk_t self);
@@ -157,7 +157,7 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self);
 void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self);
 
 /**
-   Compute `ℓ_b` in double precision.
+   Compute @f$ℓ_b@f$ in double precision.
 */
 
 static inline double _gghlite_ell_b(double n) {
@@ -169,13 +169,13 @@ static inline double _gghlite_ell_b(double n) {
 }
 
 /**
-   Compute `ℓ_b`.
+   Compute @f$ℓ_b@f$.
 
    CONSTRAINTS:
 
-   #. `ℓ_b = p_b/(2\sqrt{π·e·n})·σ'`, cf. [LSS14]_, p.17
+   #. @f$ℓ_b = p_b/(2\sqrt{π·e·n})·σ'@f$, cf. [LSS14]_, p.17
 
-   @note: We assume `p_b = 1`
+   @note: We assume @f$p_b = 1@f$
 */
 
 void _gghlite_pk_set_ell_b(gghlite_pk_t self);
@@ -201,19 +201,19 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa, con
 }
 
 /**
-   Compute `σ^*`.
+   Compute @f$σ^*@f$.
 
    CONSTRAINTS:
 
-   #. `σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}`, cf. [LSS14]_, p.17, Eq. (8)
-   #. `σ^* ≥ n^{1.5}·(σ')²\sqrt{8πε_d^{-1}}/ℓ_b`, cf. [LSS14]_, p.17, Eq. (9) with
-   `εₑ^{-1} = O(log λ/κ)`.
+   #. @f$σ^* ≥ n^{1.5}·ℓ_g·σ'·\sqrt{2·log(4nε_ρ^{-1})/π}@f$, cf. [LSS14]_, p.17, Eq. (8)
+   #. @f$σ^* ≥ n^{1.5}·(σ')²\sqrt{8πε_d^{-1}}/ℓ_b@f$, cf. [LSS14]_, p.17, Eq. (9) with
+   @f$εₑ^{-1} = O(log λ/κ)@f$.
 */
 
 void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
 
 /**
-   Init `D_{σ^*}`.
+   Init @f$D_{σ^*}@f$.
 */
 
 void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self);
@@ -265,7 +265,7 @@ extern double delta_from_k[MAX_K];
 /**
    Return suitable k for given δ_0.
 
-   :param delta_0: root-Hermite factor δ_0
+   @param delta_0 root-Hermite factor δ_0
 */
 
 static inline long _gghlite_k_from_delta(const double delta_0) {
@@ -282,8 +282,8 @@ static inline long _gghlite_k_from_delta(const double delta_0) {
 /**
    Return expected number of BKZ rounds.
 
-   :param n: lattice dimension
-   :param k: block size
+   @param n lattice dimension
+   @param k block size
 
    See Theorem 1 in *Analyzing Blockwise Lattice Algorithms using Dynamical Systems* by Guillaume
    Hanrot, Xavier Pujol, and Damien Stehlé.
@@ -296,7 +296,7 @@ static inline double _gghlite_repeat_from_n_k(const long n, const long k) {
 /**
    Return expected cost of BKZ with SVP oracle implemented by enumeration.
 
-   :param self: GGHLite public key
+   @param self GGHLite public key
 
    See *On the concrete hardness of Learning with Errors* by Martin R. Albrecht, Rachel Player and
    Sam Scott, Cryptology ePrint Archive, Report 2015/046
@@ -307,7 +307,7 @@ double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self);
 /**
    Return expected cost of BKZ with SVP oracle implemented by sieving.
 
-   :param self: GGHLite public key
+   @param self GGHLite public key
 
    See *On the concrete hardness of Learning with Errors* by Martin R. Albrecht, Rachel Player and
    Sam Scott, Cryptology ePrint Archive, Report 2015/046
