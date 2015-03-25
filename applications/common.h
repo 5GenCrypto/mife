@@ -77,9 +77,6 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
     case 'd':
       params->flags |= GGHLITE_FLAGS_GDDH_HARD;
       break;
-    case 'f':
-      params->flags |= GGHLITE_FLAGS_SLOPPY;
-      break;
     case 'p':
       params->flags |= GGHLITE_FLAGS_PRIME_G;
       break;

@@ -37,7 +37,6 @@ typedef enum {
   GGHLITE_FLAGS_PRIME_G   = 0x1, //!< enforce that @f$\ideal{g}@f$ is a prime ideal (expensive!)
   GGHLITE_FLAGS_VERBOSE   = 0x2, //!< be more verbose
   GGHLITE_FLAGS_GDDH_HARD = 0x4, //!< pick σ_1^* so that GDDH is hard
-  GGHLITE_FLAGS_SLOPPY    = 0x8, //!< skip some expensive checks
 } gghlite_flags_t;
 
 /**
