@@ -49,6 +49,10 @@ will run 7-partite NIKE with security level λ=80.
  * **oz** efficient functions for computing in $\\mathbb{Z}[x]/(x^{2^k}+1)$ and $\\mathbb{Z}_q[x]/(x^{2^k}+1)$
  * **tests** correctness tests
 
+## Documentation ##
+
+Doxygen documentation is available [here](http://malb.bitbucket.org/gghlite-flint/).
+
 ## Bugs ##
 
 This code has bugs, help us fix them.
