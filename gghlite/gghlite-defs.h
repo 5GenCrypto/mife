@@ -70,8 +70,8 @@ struct _gghlite_params_struct {
   mpfr_t ell_g;                       //!< bound $ℓ_g$ on $|g^-1|$
   mpfr_t xi;                          //!< fraction $ξ$ of $q$ used for zero-testing
   gghlite_enc_t pzt;                  //!< zero-testing parameter $p_{zt}$
-  gghlite_enc_t x[KAPPA][KAPPA][2];   /*!< level-$k$ encodings of zero $x_{i,k,j}$ for each source
-                                           group $G_i$, level $k$ specified by rerandomisation mask, and $0 ≤ j < 2$. */
+  gghlite_enc_t x[KAPPA][KAPPA][2];   /*!< @brief level-$k$ encodings of zero $x_{i,k,j}$ for each source
+                                                  group $G_i$, level $k$ specified by rerand mask */
   gghlite_enc_t y[KAPPA];             //!< one level-1 encodings of 1 (for each source group $G_i$)
   dgsl_rot_mp_t *D_sigma_p;           //!< discrete Gaussian distribution $D_{\\ZZ,σ'}$
   dgsl_rot_mp_t *D_sigma_s;           //!< discrete Gaussian distribution $D_{\\ZZ,σ^*}$

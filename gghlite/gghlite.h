@@ -99,11 +99,11 @@ void gghlite_params_clear(gghlite_params_t self);
 /**
    @brief Clear GGHLite instance.
 
-   The parameter `clear_pk is useful to clear all secret data that was required to produce the
-   public set of parameters stored in `self->params`. After `gghlite_sk_clear(self, 0)` was called, it is
-   safe to forget about `self` and to use `self->params` independently (which can later be cleared by
-   calling `gghlite_params_clear(self->params)`. A reference to `self->params` can be obtained by calling
-   `gghlite_params_ref(·, self->params)`.
+   The parameter `clear_params` is useful to clear all secret data that was required to produce the
+   public set of parameters stored in `self->params`. After `gghlite_sk_clear(self, 0)` was called,
+   it is safe to forget about `self` and to use `self->params` independently (which can later be
+   cleared by calling `gghlite_params_clear(self->params)`. A reference to `self->params` can be
+   obtained by calling `gghlite_params_ref(·, self->params)`.
 
    @param self          all fields are cleared, except perhaps pk
    @param clear_params  if set, `params` are also cleared
@@ -170,8 +170,22 @@ static inline int gghlite_params_have_rerand(const gghlite_params_t self, const 
   return (self->rerand_mask & (1ULL)<<i);
 }
 
+/**
+   @brief Initialise a new clear text element
+*/
+
 #define gghlite_clr_init  fmpz_poly_init
+
+/**
+   @brief Clear a new clear text element
+*/
+
 #define gghlite_clr_clear fmpz_poly_clear
+
+/**
+   @brief Return true if two clear text elements are equal
+*/
+
 #define gghlite_clr_equal fmpz_poly_equal
 
 /**
@@ -197,7 +211,7 @@ void gghlite_enc_init(gghlite_enc_t op, const gghlite_params_t self);
 
    Computes $f = f + ρ_0·b_{k,0} + ρ_1·b_{k,1}$ where $ρ_i ← D_{R,σ^*}$.
 
-   @param f         initialised encoding at level `k`
+   @param f         initialised encoding at level $k$
    @param self      initialised GGHLite `params`
    @param k         level `1 ≤ k ≤ κ`
    @param i         group index (use zero in symmetric setting)
@@ -225,7 +239,7 @@ void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gg
    @param randstate entropy source, assumes `flint_randinit(randstate)` and
                     `_flint_rand_init_gmp(randstate)` was called
 
-   @note Note that we have no means to check that `op is indeed a level-$k$ encoding.
+   @note Note that we have no means to check that `op` is indeed a level-$k$ encoding.
 
    @ingroup encodings
 */
@@ -240,11 +254,11 @@ void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const ggh
    @param rop       initialised encoding
    @param self      initialised GGHLite `params`
    @param op        initialised encoding at level $l$
-   @param l         targer level `1 ≤ l ≤ κ`
+   @param l         targer level $1 ≤ l ≤ κ$
    @param randstate entropy source, assumes `flint_randinit(randstate)` and
                     `_flint_rand_init_gmp(randstate)` was called
 
-   @note Note that we have no means to check that `op is indeed a level-$k$ encoding.
+   @note Note that we have no means to check that `op` is indeed a level-$k$ encoding.
 
    @ingroup encodings
 */
@@ -264,7 +278,7 @@ static inline void gghlite_enc_raise0(gghlite_enc_t rop, gghlite_params_t self, 
    @param op        uninitialised polynomial
    @param c         a small integer
    @param self      initialised GGHLite `params`
-   @param k         targer level `1 ≤ k ≤ κ`
+   @param k         targer level $1 ≤ k ≤ κ$
    @param i         group index (zero in symmetric setting)
    @param rerand    flag controlling if re-randomisation is run after raising
    @param randstate entropy source, assumes `flint_randinit(randstate)` and
@@ -316,7 +330,7 @@ void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size
    @param rop       initialised encoding, return value
    @param self      initialised GGHLite instance
    @param f         an element in $\\ZZ[x]/(x^n+1)$
-   @param k         targer level `0 ≤ k ≤ κ`
+   @param k         targer level $0 ≤ k ≤ κ$
    @param i         group $G_i$ (zero in the symmetric case)
    @param rerand    flag controlling if re-randomisation is run after raising
    @param randstate entropy source, assumes `flint_randinit(randstate)` and

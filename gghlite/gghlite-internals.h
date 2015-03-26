@@ -128,7 +128,7 @@ static inline int _gghlite_nsmall_primes(const gghlite_params_t self) {
 
   - @f$ℓ_g = 4·\sqrt(π·e·n)/(p_g·σ)@f$, cf. [LSS14]_ p.16
 
-  @note We assume @f$p_b = 1@f$
+  @note We assume @f$p_g = 1@f$
 */
 
 void _gghlite_params_set_ell_g(gghlite_params_t self);
@@ -239,8 +239,7 @@ void _gghlite_params_set_ell(gghlite_params_t self);
 void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate);
 
 /**
-   Sample $z_i$ and $z_i^{-1}$.
-
+   @brief Sample $z_i$ and $z_i^{-1}$.
  */
 
 void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate);
@@ -257,11 +256,10 @@ void _gghlite_sk_set_pzt(gghlite_sk_t self);
    @brief Set $c = (c⋅g)/z$ for some small $c$.
  */
 
-
 void _gghlite_sk_set_x(gghlite_sk_t self);
 
 /**
-   Set $y = (1 + c⋅g)/z$ for some small $c$ for each source group in rerand_mask.
+   @brief Set $y = (1 + c⋅g)/z$ for some small $c$ for each source group in rerand_mask.
  */
 
 void _gghlite_sk_set_y(gghlite_sk_t self);
@@ -270,7 +268,12 @@ void gghlite_sk_print_norms(const gghlite_sk_t self);
 
 void gghlite_sk_print_times(const gghlite_sk_t self);
 
-#define S_TO_SIGMA 0.398942280401433 //<! 1/sqrt(2*pi)
+/**
+   @brief dgsl samples proportionally to $\exp(-(x-c)²/(2σ²))$ but GGHLite is specifiied with respect to
+   $\exp(-π(x-c)²/σ²)$. So we divide by $\sqrt{2π}$ in several places which we store in this macro.
+*/
+
+#define S_TO_SIGMA 0.398942280401433
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t c, dgsl_alg_t algorithm, const oz_flag_t flags);
 

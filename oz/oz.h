@@ -1,5 +1,6 @@
-/** @file oz.h
-    @brief Computing in \f$\R\f$ and \f$\QQ[x]/\ideal{x^n+1}\f$, main include file.
+/**
+    @file oz.h
+    @brief Computing in $\\R$ and @f$\QQ[x]/\ideal{x^n+1}@f$.
 */
 #ifndef _OZ_H_
 #define _OZ_H_
@@ -11,8 +12,12 @@
 #include <flint/fmpq_poly.h>
 #include <flint/fmpz_mod_poly.h>
 
+/**
+   @brief Flags
+*/
+
 typedef enum {
-  OZ_VERBOSE    = 0x1, //< print debug messages
+  OZ_VERBOSE    = 0x1, //!< print debug messages
 } oz_flag_t;
 
 /**
@@ -113,7 +118,7 @@ int fmpz_poly_oz_ideal_not_prime_factors(const fmpz_poly_t f, const long n, cons
    \brief Return true if @f$\ideal{b_0, b_1} = \ideal{g}@f$.
 
    @param g             an element $g$ in $\\R$
-   @param b0            an element in $\\langle g \\rangle$, otherwise behaviour is undefined
+   @param b0            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param b1            an element in $\\ideal{ g }$, otherwise behaviour is undefined
    @param n             degree of cyclotomic polynomial, must be power of two
    @param sloppy        only check modulo primes in `small_primes`
@@ -136,7 +141,7 @@ int fmpz_poly_oz_ideal_not_prime_factors(const fmpz_poly_t f, const long n, cons
 int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
                             const int sloppy, const mp_limb_t *primes);
 /**
-   @brief Return a small representative of @f$f \bmod \ideal{g}@f$.
+   @brief Return a small representative of $f \\mod \\ideal{g}$.
 
    @param rem           return value, a small representative of $f \bmod \ideal{g}$.
    @param f             an element $f$ in $\\R$
@@ -148,7 +153,7 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t ginv);
 
 /**
-   @brief Return a small representative of @f$f \bmod \ideal{g}@f$.
+   @brief Return a small representative of $f \\mod \\ideal{g}$.
 
    @param rem           return value, a small representative of $f \bmod \ideal{g}$.
    @param f             an element $f$ in \\R$

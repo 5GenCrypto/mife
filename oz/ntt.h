@@ -31,6 +31,10 @@ struct fmpz_mod_poly_oz_ntt_precomp_struct {
   fmpz_mod_poly_t phi_inv;    //!< a vector holding $φ^{-i}$ at index $i$ where @f$φ = \sqrt{ω_n} \bmod q@f$.
 };
 
+/**
+   @brief Pre-computed data for number-theoretic transform
+*/
+
 typedef struct fmpz_mod_poly_oz_ntt_precomp_struct fmpz_mod_poly_oz_ntt_precomp_t[1];
 
 /**

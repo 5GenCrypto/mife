@@ -595,7 +595,7 @@ table.memberdecls {
         //background-image:url('nav_g.png');
 	   background-image: none;
         //background-repeat:repeat-x;
-        background-color: #FFFFFF;
+        background-color: #F9FAFC; //lightgoldenrodyellow;
 }
 
 dl.reflist dt {
@@ -984,7 +984,6 @@ dl.note
         //padding-left: 8px;
         border-left:  6px solid;
         border-color: #D0C000;
-	   background-color: #fff799
 }
 
 dl.warning, dl.attention
