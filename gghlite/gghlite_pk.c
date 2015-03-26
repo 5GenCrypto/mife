@@ -3,8 +3,8 @@
 #include "gghlite-internals.h"
 #include "gghlite.h"
 
-void _gghlite_pk_initzero(gghlite_pk_t self, size_t lambda, size_t kappa) {
-  memset(self, 0, sizeof(struct _gghlite_struct));
+void _gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa) {
+  memset(self, 0, sizeof(struct _gghlite_params_struct));
 
   self->lambda = lambda;
   self->kappa = kappa;
@@ -17,7 +17,7 @@ void _gghlite_pk_initzero(gghlite_pk_t self, size_t lambda, size_t kappa) {
   mpfr_init2(self->xi, _gghlite_prec(self));
 }
 
-void _gghlite_pk_set_ell(gghlite_pk_t self) {
+void _gghlite_params_set_ell(gghlite_params_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
@@ -31,7 +31,7 @@ void _gghlite_pk_set_ell(gghlite_pk_t self) {
   mpfr_clear(tmp);
 }
 
-void _gghlite_pk_set_q(gghlite_pk_t self) {
+void _gghlite_params_set_q(gghlite_params_t self) {
   const size_t kappa  = self->kappa;
 
   mpfr_t q_base;
@@ -113,7 +113,7 @@ void _gghlite_pk_set_q(gghlite_pk_t self) {
 
 #ifndef GGHLITE_HEURISTICS
 
-void _gghlite_pk_set_sigma(gghlite_pk_t self) {
+void _gghlite_params_set_sigma(gghlite_params_t self) {
   assert(self->n > 0);
 
   mpfr_t pi;
@@ -146,7 +146,7 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   mpfr_clear(pi);
 }
 
-void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
+void _gghlite_params_set_ell_g(gghlite_params_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
@@ -174,7 +174,7 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
 }
 #else
 
-void _gghlite_pk_set_sigma(gghlite_pk_t self) {
+void _gghlite_params_set_sigma(gghlite_params_t self) {
   assert(self->n > 0);
 
   mpfr_set_ui(self->sigma, self->n, MPFR_RNDN);
@@ -191,7 +191,7 @@ void _gghlite_pk_set_sigma(gghlite_pk_t self) {
   mpfr_clear(pi);
 }
 
-void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
+void _gghlite_params_set_ell_g(gghlite_params_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma, 0)>0);
 
@@ -203,7 +203,7 @@ void _gghlite_pk_set_ell_g(gghlite_pk_t self) {
 #endif
 
 
-void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
+void _gghlite_params_set_sigma_p(gghlite_params_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma,0)>0);
 
@@ -276,7 +276,7 @@ void _gghlite_pk_set_sigma_p(gghlite_pk_t self) {
   mpfr_clear(sigma_p1);
 }
 
-void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
+void _gghlite_params_set_D_sigma_p(gghlite_params_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_p));
   const oz_flag_t flags = (self->flags & GGHLITE_FLAGS_QUIET) ? 0 : OZ_VERBOSE;
@@ -284,7 +284,7 @@ void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self) {
 }
 
 
-void _gghlite_pk_set_ell_b(gghlite_pk_t self) {
+void _gghlite_params_set_ell_b(gghlite_params_t self) {
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma_p, 0)>0);
 
@@ -313,12 +313,12 @@ void _gghlite_pk_set_ell_b(gghlite_pk_t self) {
 }
 
 
-void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
+void _gghlite_params_set_sigma_s(gghlite_params_t self) {
   if (self->rerand_mask == 0) {
     /* if there is no re-randomisation there is not σ^* */
     mpfr_set_d(self->sigma_s, 1.0, MPFR_RNDN);
     return;
-  } else if (gghlite_pk_is_symmetric(self) && self->rerand_mask != 1) {
+  } else if (gghlite_params_is_symmetric(self) && self->rerand_mask != 1) {
     ggh_die("Re-randomisation at higher levels is not implemented yet.");
   }
 
@@ -400,14 +400,14 @@ void _gghlite_pk_set_sigma_s(gghlite_pk_t self) {
   mpfr_clear(sigma_s0);
 }
 
-void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self) {
+void _gghlite_params_set_D_sigma_s(gghlite_params_t self) {
   assert(self->n);
   assert(!mpfr_zero_p(self->sigma_s));
   const oz_flag_t flags = (self->flags & GGHLITE_FLAGS_QUIET) ? 0 : OZ_VERBOSE;
   self->D_sigma_s = _gghlite_dgsl_from_n(self->n, self->sigma_s, flags);
 }
 
-double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
+double gghlite_params_get_delta_0(const gghlite_params_t self) {
 
   /* Finding a short d·g in <g> */
 
@@ -432,7 +432,7 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
   mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · (σ'^2 +  m·σ'·σ^*)^κ
 
-  _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
+  _gghlite_params_get_q_mpfr(tmp, self, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
 
   mpfr_div(target_norm, tmp, target_norm, MPFR_RNDN);
@@ -445,7 +445,7 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
 
   /* finding (~b0,~b1) from (x0/x1) */
 
-  _gghlite_get_q_mpfr(tmp, self, MPFR_RNDN);
+  _gghlite_params_get_q_mpfr(tmp, self, MPFR_RNDN);
   mpfr_sqrt(tmp, tmp, MPFR_RNDN);
 
   mpfr_set_ui(target_norm, 2, MPFR_RNDN);
@@ -474,8 +474,8 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self) {
     return delta_0_ntru;
 }
 
-double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self) {
-  const double delta_0 = gghlite_pk_get_delta_0(self);
+double gghlite_params_cost_bkz_enum(const gghlite_params_t self) {
+  const double delta_0 = gghlite_params_get_delta_0(self);
   if (delta_0 >= 1.0219) // LLL
     return 3*log2(self->n);
   const int k = _gghlite_k_from_delta(delta_0);
@@ -483,8 +483,8 @@ double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self) {
   return 0.002898*k*k - 0.122662*k + 23.8311 + r;
 }
 
-double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self) {
-  const double delta_0 = gghlite_pk_get_delta_0(self);
+double gghlite_params_cost_bkz_sieve(const gghlite_params_t self) {
+  const double delta_0 = gghlite_params_get_delta_0(self);
   if (delta_0 >= 1.0219) // LLL
     return 3*log2(self->n);
   const int k = _gghlite_k_from_delta(delta_0);
@@ -493,53 +493,51 @@ double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self) {
 }
 
 
-int gghlite_pk_check_sec(const gghlite_pk_t self) {
-  double rt0 = gghlite_pk_cost_bkz_enum(self);
-  double rt1 = gghlite_pk_cost_bkz_sieve(self);
+int gghlite_params_check_sec(const gghlite_params_t self) {
+  double rt0 = gghlite_params_cost_bkz_enum(self);
+  double rt1 = gghlite_params_cost_bkz_sieve(self);
 
   return ((rt0 >= self->lambda) && (rt1 >= self->lambda));
 }
 
 
-void gghlite_pk_init_params(gghlite_pk_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags) {
+void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
 
-  _gghlite_pk_initzero(self, lambda, kappa);
+  _gghlite_params_initzero(self, lambda, kappa);
 
   self->rerand_mask = rerand_mask;
   self->flags = flags;
 
   for(int log_n = 8; ; log_n++) {
     self->n = ((long)1)<<log_n;
-    _gghlite_pk_set_sigma(self);
-    _gghlite_pk_set_ell_g(self);
-    _gghlite_pk_set_ell(self);
-    _gghlite_pk_set_sigma_p(self);
-    _gghlite_pk_set_ell_b(self);
-    _gghlite_pk_set_sigma_s(self);
-    _gghlite_pk_set_q(self);
+    _gghlite_params_set_sigma(self);
+    _gghlite_params_set_ell_g(self);
+    _gghlite_params_set_ell(self);
+    _gghlite_params_set_sigma_p(self);
+    _gghlite_params_set_ell_b(self);
+    _gghlite_params_set_sigma_s(self);
+    _gghlite_params_set_q(self);
 
-    if (gghlite_pk_check_sec(self))
+    if (gghlite_params_check_sec(self))
       break;
   }
 }
 
-void gghlite_pk_clear(gghlite_pk_t self) {
+void gghlite_params_clear(gghlite_params_t self) {
   fmpz_mod_poly_clear(self->pzt);
 
-  for(size_t k=0; k<self->kappa; k++) {
-    if (gghlite_pk_have_rerand(self, k)) {
-      fmpz_mod_poly_clear(self->x[k][0]);
-      fmpz_mod_poly_clear(self->x[k][1]);
-    }
-  }
+  const size_t bound = (gghlite_params_is_symmetric(self)) ? 1 : self->kappa;
 
-  const size_t bound = (gghlite_pk_is_symmetric(self)) ? 1 : self->kappa;
   for(size_t i=0; i<bound; i++) {
-    if (gghlite_pk_have_rerand(self, i)) {
-      fmpz_mod_poly_clear(self->y[i]);
+    for(size_t k=0; k<self->kappa; k++) {
+      if (gghlite_params_have_rerand(self, k)) {
+        fmpz_mod_poly_clear(self->x[i][k][0]);
+        fmpz_mod_poly_clear(self->x[i][k][1]);
+      }
     }
+    fmpz_mod_poly_clear(self->y[i]);
   }
 
   mpfr_clear(self->xi);
@@ -554,6 +552,6 @@ void gghlite_pk_clear(gghlite_pk_t self) {
   fmpz_clear(self->q);
 }
 
-void gghlite_pk_ref(gghlite_pk_t rop, gghlite_t op) {
-  memcpy(rop, op->pk, sizeof(struct _gghlite_pk_struct));
+void gghlite_params_ref(gghlite_params_t rop, gghlite_sk_t op) {
+  memcpy(rop, op->params, sizeof(struct _gghlite_params_struct));
 }

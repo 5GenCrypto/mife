@@ -6,12 +6,12 @@ int main(int argc, char *argv[]) {
   const char *name = "GGHLite Parameters";
   parse_cmdline(params, argc, argv, name, NULL);
   print_header(name, params);
-  gghlite_t self;
+  gghlite_sk_t self;
 
-  gghlite_pk_init_params(self->pk, params->lambda, params->kappa, params->rerand, params->flags);
-  gghlite_print_params(self->pk);
+  gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);
+  gghlite_params_print(self->params);
 
-  gghlite_clear(self, 1);
+  gghlite_sk_clear(self, 1);
   flint_cleanup();
   mpfr_free_cache();
 }

@@ -12,23 +12,23 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, params->seed, 1);
 
-  gghlite_t self;
-  gghlite_pk_init_params(self->pk, params->lambda, params->kappa, params->rerand, params->flags);
-  gghlite_print_params(self->pk);
+  gghlite_sk_t self;
+  gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);
+  gghlite_params_print(self->params);
 
   printf("\n---\n");
 
-  gghlite_init_instance(self, randstate);
+  gghlite_sk_init(self, randstate);
 
   printf("\n---\n");
 
-  gghlite_print_norms(self);
+  gghlite_sk_print_norms(self);
 
   printf("\n---\n");
 
-  gghlite_print_times(self);
+  gghlite_sk_print_times(self);
 
-  gghlite_clear(self, 1);
+  gghlite_sk_clear(self, 1);
 
   flint_randclear(randstate);
   flint_cleanup();

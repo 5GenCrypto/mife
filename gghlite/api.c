@@ -3,12 +3,13 @@
 #include "gghlite.h"
 #include "gghlite-internals.h"
 
-void gghlite_enc_init(gghlite_enc_t op, const gghlite_pk_t self) {
+void gghlite_enc_init(gghlite_enc_t op, const gghlite_params_t self) {
   assert(!fmpz_is_zero(self->q));
   fmpz_mod_poly_init2(op, self->q, self->n);
 }
 
-void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_enc_t op, size_t k, size_t i, flint_rand_t randstate) {
+void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
+                        size_t k, size_t i, flint_rand_t randstate) {
   assert(self->D_sigma_s);
 
   if (k!=1)
@@ -18,54 +19,43 @@ void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_en
   gghlite_enc_init(tmp, self);
   fmpz_mod_poly_set(rop, op);
 
-  if (gghlite_pk_is_symmetric(self)) {
-    assert(i == 0);
-    assert(gghlite_pk_have_rerand(self, k-1));
-    assert(!fmpz_mod_poly_is_zero(self->x[k-1][0]) && !fmpz_mod_poly_is_zero(self->x[k-1][1]));
-    for(long j=0; j<2; j++) {
-      fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
-      fmpz_mod_poly_oz_ntt_enc(tmp, tmp, self->ntt);
-      fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[k-1][j], self->n);
-      fmpz_mod_poly_oz_ntt_add(rop, rop, tmp);
-    }
-  } else {
-    assert(gghlite_pk_have_rerand(self, i));
-    assert(!fmpz_mod_poly_is_zero(self->x[i][0]) && !fmpz_mod_poly_is_zero(self->x[i][1]));
-    for(long j=0; j<2; j++) {
-      fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
-      fmpz_mod_poly_oz_ntt_enc(tmp, tmp, self->ntt);
-      fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[i][j], self->n);
-      fmpz_mod_poly_oz_ntt_add(rop, rop, tmp);
-    }
+  assert(!fmpz_mod_poly_is_zero(self->x[i][k-1][0]) && !fmpz_mod_poly_is_zero(self->x[i][k-1][1]));
+
+  for(long j=0; j<2; j++) {
+    fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
+    fmpz_mod_poly_oz_ntt_enc(tmp, tmp, self->ntt);
+    fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[i][k-1][j], self->n);
+    fmpz_mod_poly_oz_ntt_add(rop, rop, tmp);
   }
+
   fmpz_mod_poly_clear(tmp);
 }
 
-void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, size_t k, size_t kprime, size_t i,
-                     int rerand, flint_rand_t randstate) {
-  assert(kprime <= k);
-  assert(k <= self->kappa);
+void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
+                       size_t l, size_t k, size_t i, int rerand, flint_rand_t randstate) {
+  assert(k <= l);
+  assert(l <= self->kappa);
 
-  if(!gghlite_pk_is_symmetric(self) && (k>1))
-    ggh_die("Elevation not implemented for asymmetric encodings");
+  if(!gghlite_params_is_symmetric(self) && (l>1))
+    ggh_die("Raising to higher levels than 1 not supported. Instead, multiply by the right combination of y_i.");
 
   assert(!fmpz_mod_poly_is_zero(self->y[i]));
 
-  if (k>kprime) {
+  if (l>k) {
     gghlite_enc_t yk;
     gghlite_enc_init(yk, self);
-    fmpz_mod_poly_oz_ntt_pow_ui(yk, self->y[i], k-kprime, self->n);
+    fmpz_mod_poly_oz_ntt_pow_ui(yk, self->y[i], l-k, self->n);
     fmpz_mod_poly_oz_ntt_mul(rop, op, yk, self->n);
     fmpz_mod_poly_clear(yk);
   }
 
-  if(rerand) {
-    gghlite_rerand(rop, self, rop, k, i, randstate);
+  if(rerand && k>0) {
+    gghlite_enc_rerand(rop, self, rop, k, i, randstate);
   }
 }
 
 
-void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, size_t k, size_t i, flint_rand_t randstate) {
+void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size_t i, flint_rand_t randstate) {
   assert(self->kappa);
   assert(k <= self->kappa);
 
@@ -73,60 +63,59 @@ void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, size_t k, size_t i, fl
   fmpz_mod_poly_oz_ntt_enc(rop, rop, self->ntt);
   if (k == 0)
     return;
-  gghlite_elevate(rop, self, rop, k, 0, i, 1, randstate);
+  gghlite_enc_raise(rop, self, rop, k, 0, i, 1, randstate);
 }
 
-void gghlite_enc0(gghlite_enc_t rop, const gghlite_t self, const gghlite_clr_t f, flint_rand_t randstate) {
+void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
+                                 const size_t k, const size_t i, const int rerand,
+                                 flint_rand_t randstate) {
+
   fmpz_poly_t t;  fmpz_poly_init(t);
-  _fmpz_poly_oz_rem_small(t, f, self->g, self->pk->n, self->g_inv);
+  _fmpz_poly_oz_rem_small(t, f, self->g, self->params->n, self->g_inv);
 
-  mpfr_t norm_f; mpfr_init2(norm_f, _gghlite_prec(self->pk));
-  mpfr_t norm_t; mpfr_init2(norm_t, _gghlite_prec(self->pk));
-
+  mpfr_t norm_f; mpfr_init2(norm_f, _gghlite_prec(self->params));
+  mpfr_t norm_t; mpfr_init2(norm_t, _gghlite_prec(self->params));
   fmpz_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
   fmpz_poly_eucl_norm_mpfr(norm_t, t, MPFR_RNDN);
 
-  mpfr_log2(norm_f, norm_f, MPFR_RNDN);
-  mpfr_log2(norm_t, norm_t, MPFR_RNDN);
-
-  fmpz_poly_t cg; fmpz_poly_init2(cg, self->pk->n);
-  fmpz_poly_sample_D(cg, self->D_g, randstate);
-
+  // if the new representative got bigger, use original
   if (mpfr_cmp(norm_f, norm_t) <= 0)
-    fmpz_poly_add(t, f, cg);
-  else
-    fmpz_poly_add(t, t, cg);
+    fmpz_poly_set(t, f);
 
-  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t, self->pk->ntt);
-
-  fmpz_poly_clear(cg);
-  fmpz_poly_clear(t);
   mpfr_clear(norm_f);
   mpfr_clear(norm_t);
+
+  // add some multiple of g
+  if (rerand) {
+    fmpz_poly_t cg; fmpz_poly_init2(cg, self->params->n);
+    fmpz_poly_sample_D(cg, self->D_g, randstate);
+    fmpz_poly_add(t, t, cg);
+    fmpz_poly_clear(cg);
+  }
+
+  // encode at level zero
+  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t, self->params->ntt);
+
+  fmpz_poly_clear(t);
+
+  // encode at level k
+  if(k > 0)
+    gghlite_enc_raise(rop, self->params, rop, k, 0, i, rerand, randstate);
 }
 
 
-void _gghlite_extract_raw(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
-  gghlite_enc_t t;
-  gghlite_enc_init(t, self);
-  fmpz_mod_poly_oz_ntt_mul(t, self->pzt, op, self->n);
-  fmpz_mod_poly_oz_ntt_dec(t, t, self->ntt);
-  fmpz_poly_set_fmpz_mod_poly(rop, t);
-  fmpz_mod_poly_clear(t);
-}
-
-void gghlite_extract(gghlite_clr_t rop, const gghlite_pk_t self, const gghlite_enc_t op) {
-  _gghlite_extract_raw(rop, self, op);
+void gghlite_enc_extract(gghlite_clr_t rop, const gghlite_params_t self, const gghlite_enc_t op) {
+  _gghlite_enc_extract_raw(rop, self, op);
   long logq = fmpz_sizeinbase(self->q,2) - 1;
   for(long i=0; i<fmpz_poly_length(rop); i++) {
     fmpz_tdiv_q_2exp(rop->coeffs+i,rop->coeffs+i, logq-self->ell+1);
   }
 }
 
-int gghlite_is_zero(const gghlite_pk_t self, const fmpz_mod_poly_t op) {
+int gghlite_enc_is_zero(const gghlite_params_t self, const fmpz_mod_poly_t op) {
   gghlite_clr_t t;
   gghlite_clr_init(t);
-  _gghlite_extract_raw(t, self, op);
+  _gghlite_enc_extract_raw(t, self, op);
 
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self));
@@ -160,7 +149,7 @@ int gghlite_is_zero(const gghlite_pk_t self, const fmpz_mod_poly_t op) {
 }
 
 
-void gghlite_print_params(const gghlite_pk_t self) {
+void gghlite_params_print(const gghlite_params_t self) {
   assert(self->lambda);
   assert(self->kappa);
   assert(self->n);
@@ -169,10 +158,10 @@ void gghlite_print_params(const gghlite_pk_t self) {
   const long lambda = self->lambda;
   const long kappa = self->kappa;
   const long n = self->n;
-  printf("symmetric: %9d\n", gghlite_pk_is_symmetric(self));
+  printf("symmetric: %9d\n", gghlite_params_is_symmetric(self));
   printf("        λ: %9ld,          k: %9ld\n",lambda, kappa);
-  printf("        n: %9ld,        δ_0: %9.6f\n",n, gghlite_pk_get_delta_0(self));
-  printf("log(t_en): %9.2f,  log(t_sv): %9.2f\n", gghlite_pk_cost_bkz_enum(self), gghlite_pk_cost_bkz_sieve(self));
+  printf("        n: %9ld,        δ_0: %9.6f\n",n, gghlite_params_get_delta_0(self));
+  printf("log(t_en): %9.2f,  log(t_sv): %9.2f\n", gghlite_params_cost_bkz_enum(self), gghlite_params_cost_bkz_sieve(self));
   printf("   log(q): %9ld,          ξ: %9.4f\n", fmpz_sizeinbase(self->q, 2), mpfr_get_d(self->xi, MPFR_RNDN));
   printf("   log(σ): %9.2f,   log(ℓ_g): %9.2f\n", log2(mpfr_get_d(self->sigma,   MPFR_RNDN)), log2(mpfr_get_d(self->ell_g,   MPFR_RNDN)));
   printf("  log(σ'): %9.2f,   log(ℓ_b): %9.2f\n", log2(mpfr_get_d(self->sigma_p, MPFR_RNDN)), log2(mpfr_get_d(self->ell_b,   MPFR_RNDN)));
@@ -182,7 +171,7 @@ void gghlite_print_params(const gghlite_pk_t self) {
   mpfr_t enc;
   mpfr_init2(enc, _gghlite_prec(self));
 
-  _gghlite_get_q_mpfr(enc, self, MPFR_RNDN);
+  _gghlite_params_get_q_mpfr(enc, self, MPFR_RNDN);
   mpfr_log2(enc, enc, MPFR_RNDN);
   mpfr_mul_ui(enc, enc, n, MPFR_RNDN);
 
@@ -203,10 +192,10 @@ void gghlite_print_params(const gghlite_pk_t self) {
 
   int count = 0;
   for(size_t k=0; k<self->kappa; k++)
-    if (gghlite_pk_have_rerand(self, k))
+    if (gghlite_params_have_rerand(self, k))
       count++;
 
-  if (gghlite_pk_is_symmetric(self))
+  if (gghlite_params_is_symmetric(self))
     mpfr_mul_ui(par, par, count*2 + 1 + 1, MPFR_RNDN);
   else
     mpfr_mul_ui(par, par, count*3 + 1 + 1, MPFR_RNDN);

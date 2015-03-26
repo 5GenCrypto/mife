@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   uint64_t t = ggh_walltime(0);
   uint64_t t_total = ggh_walltime(0);
 
-  gghlite_t self;
+  gghlite_sk_t self;
 
   long mlm_lambda;
   if (cmdline_params->flags & GGHLITE_FLAGS_GDDH_HARD)
@@ -40,15 +40,15 @@ int main(int argc, char *argv[]) {
   else
     mlm_lambda = 2*cmdline_params->lambda+1;
 
-  gghlite_pk_init_params(self->pk, mlm_lambda, cmdline_params->N-1, 1<<0,
+  gghlite_params_init(self->params, mlm_lambda, cmdline_params->N-1, 1<<0,
                          cmdline_params->flags);
-  gghlite_print_params(self->pk);
+  gghlite_params_print(self->params);
   printf("\n---\n");
-  gghlite_init_instance(self, randstate);
+  gghlite_sk_init(self, randstate);
 
-  gghlite_pk_t params;
-  gghlite_pk_ref(params, self);
-  gghlite_clear(self, 0);
+  gghlite_params_t params;
+  gghlite_params_ref(params, self);
+  gghlite_sk_clear(self, 0);
 
   printf("\n");
   printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
     if (verbose)
       printf("%8s samples e_%d, ",agents[i],i);
     gghlite_enc_init(e[i], params);
-    gghlite_sample(e[i], params, 0, 0, randstate);
+    gghlite_enc_sample(e[i], params, 0, 0, randstate);
 
     if (verbose)
       printf("computes u_%d and publishes it\n", i);
     gghlite_enc_init(u[i], params);
-    gghlite_elevate(u[i], params, e[i], 1, 0, 0, 1, randstate);
+    gghlite_enc_raise0(u[i], params, e[i], 1, randstate);
   }
 
   if (verbose)
@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
 
   for(int i=0; i<2; i++) {
     gghlite_enc_init(b[i], params);
-    gghlite_enc_set_ui(b[i], 1, params);
-    gghlite_mul(b[i], params, b[i], e[i]);
+    gghlite_enc_set_ui0(b[i], 1, params);
+    gghlite_enc_mul(b[i], params, b[i], e[i]);
   }
 
   if(verbose)
@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
   gghlite_enc_init(tmp, params);
   for(int j=2; j<cmdline_params->N; j++) {
     uint64_t t_s = ggh_walltime(0);
-    gghlite_sample(tmp, params, 0, 0, randstate);
-    gghlite_elevate(tmp, params, tmp, 1, 0, 0, 1, randstate);
+    gghlite_enc_sample(tmp, params, 0, 0, randstate);
+    gghlite_enc_raise0(tmp, params, tmp, 1, randstate);
     t_s = ggh_walltime(t_s);
     t_sample += t_s;
 
@@ -114,16 +114,16 @@ int main(int argc, char *argv[]) {
       printf("·u_%d", j);
 
     for(int i=0; i<2; i++)
-      gghlite_mul(b[i], params, b[i], tmp);
+      gghlite_enc_mul(b[i], params, b[i], tmp);
   }
   gghlite_enc_clear(tmp);
 
-  gghlite_mul(b[0], params, b[0], e[1]);
-  gghlite_mul(b[1], params, b[1], e[0]);
+  gghlite_enc_mul(b[0], params, b[0], e[1]);
+  gghlite_enc_mul(b[1], params, b[1], e[0]);
 
   for(int i=0; i<2; i++) {
     gghlite_clr_init(s[i]);
-    gghlite_extract(s[i], params, b[i]);
+    gghlite_enc_extract(s[i], params, b[i]);
     gghlite_enc_clear(b[i]);
   }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   free(u);
   free(s);
   free(b);
-  gghlite_pk_clear(params);
+  gghlite_params_clear(params);
 
   flint_randclear(randstate);
   mpfr_free_cache();

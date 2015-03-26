@@ -13,10 +13,10 @@
 #include "oz/oz.h"
 
 /**
-   Check if @f$|g^{-1}| ≤ ℓ_g@f$
+   @brief Check if $|g^{-1}| ≤ ℓ_g@
 */
 
-static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_inv) {
+static inline int _gghlite_g_inv_check(const gghlite_params_t self, fmpq_poly_t g_inv) {
   mpfr_t g_inv_norm;
   mpfr_init2(g_inv_norm, mpfr_get_prec(self->ell_g));
   fmpq_poly_eucl_norm_mpfr(g_inv_norm, g_inv, MPFR_RNDN);
@@ -26,10 +26,10 @@ static inline int _gghlite_g_inv_check(const gghlite_pk_t self, fmpq_poly_t g_in
 }
 
 /**
-   Return precision used for floating point computations
+   @brief Return precision used for floating point computations.
 */
 
-static inline mpfr_prec_t _gghlite_prec(const gghlite_pk_t self) {
+static inline mpfr_prec_t _gghlite_prec(const gghlite_params_t self) {
   const mpfr_prec_t prec = 2*self->lambda;
   if (prec < 53)
     return 53;
@@ -40,7 +40,7 @@ static inline mpfr_prec_t _gghlite_prec(const gghlite_pk_t self) {
 #ifndef GGHLITE_HEURISTICS
 
 /**
-   Compute @f$σ@f$ in double precision.
+   Compute $σ$ in double precision.
 */
 
 static inline double _gghlite_sigma(double n) {
@@ -51,18 +51,18 @@ static inline double _gghlite_sigma(double n) {
 }
 
 /**
-   Compute @f$σ@f$.
+   Compute $σ$.
 
    CONSTRAINTS:
 
    - @f$σ = 4·π·n·\sqrt{e·\log(8n)/π}/p_g@f$, cf. [LSS14]_ p.16.
 */
 
-void _gghlite_pk_set_sigma(gghlite_pk_t self);
+void _gghlite_params_set_sigma(gghlite_params_t self);
 
 
 /**
-  Compute @f$ℓ_g@f$ in double precision.
+  Compute $ℓ_g$ in double precision.
 */
 
 static inline double _gghlite_ell_g(double n) {
@@ -92,7 +92,7 @@ static inline double _gghlite_sigma(double n) {
   return sigma;
 }
 
-void _gghlite_pk_set_sigma(gghlite_pk_t self);
+void _gghlite_params_set_sigma(gghlite_params_t self);
 
 
 /**
@@ -111,7 +111,7 @@ static inline double _gghlite_ell_g(double n) {
    Number of small primes to test in sloppy variant
 */
 
-static inline int _gghlite_nsmall_primes(const gghlite_pk_t self) {
+static inline int _gghlite_nsmall_primes(const gghlite_params_t self) {
   /* we try about 1% small primes first, where 1% relates to the total number of primes needed for
      multi-modular result */
   const long n = self->n;
@@ -131,7 +131,7 @@ static inline int _gghlite_nsmall_primes(const gghlite_pk_t self) {
   @note We assume @f$p_b = 1@f$
 */
 
-void _gghlite_pk_set_ell_g(gghlite_pk_t self);
+void _gghlite_params_set_ell_g(gghlite_params_t self);
 
 /**
    Compute @f$σ'@f$ in double precision.
@@ -159,12 +159,12 @@ static inline double _gghlite_sigma_p(double n) {
    - @f$σ' ≥ 7n^{2.5}·ln(n)^{1.5}·σ@f$, cf. [LSS14]_, p.17
 */
 
-void _gghlite_pk_set_sigma_p(gghlite_pk_t self);
+void _gghlite_params_set_sigma_p(gghlite_params_t self);
 
-void _gghlite_pk_set_D_sigma_p(gghlite_pk_t self);
+void _gghlite_params_set_D_sigma_p(gghlite_params_t self);
 
 /**
-   Compute @f$ℓ_b@f$ in double precision.
+   Compute $ℓ_b$ in double precision.
 */
 
 static inline double _gghlite_ell_b(double n) {
@@ -176,16 +176,16 @@ static inline double _gghlite_ell_b(double n) {
 }
 
 /**
-   Compute @f$ℓ_b@f$.
+   Compute $ℓ_b$.
 
    CONSTRAINTS
 
    - @f$ℓ_b = p_b/(2\sqrt{π·e·n})·σ'@f$, cf. [LSS14]_, p.17
 
-   @note We assume @f$p_b = 1@f$
+   @note We assume $p_b = 1$
 */
 
-void _gghlite_pk_set_ell_b(gghlite_pk_t self);
+void _gghlite_params_set_ell_b(gghlite_params_t self);
 
 static inline double _gghlite_sigma_s(double n, double lambda, double kappa, const uint64_t rerand_mask) {
   if(rerand_mask == 0)
@@ -206,7 +206,7 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa, con
 }
 
 /**
-   Compute @f$σ^*@f$.
+   @brief Compute $σ^*$.
 
    CONSTRAINTS:
 
@@ -215,17 +215,17 @@ static inline double _gghlite_sigma_s(double n, double lambda, double kappa, con
    @f$εₑ^{-1} = O(\log λ/κ)@f$.
 */
 
-void _gghlite_pk_set_sigma_s(gghlite_pk_t self);
+void _gghlite_params_set_sigma_s(gghlite_params_t self);
 
 /**
-   Init @f$D_{σ^*}@f$.
+   @brief Init $D_{σ^*}$.
 */
 
-void _gghlite_pk_set_D_sigma_s(gghlite_pk_t self);
+void _gghlite_params_set_D_sigma_s(gghlite_params_t self);
 
-void _gghlite_pk_set_q(gghlite_pk_t self);
+void _gghlite_params_set_q(gghlite_params_t self);
 
-static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_rnd_t rnd) {
+static inline void _gghlite_params_get_q_mpfr(mpfr_t q, const gghlite_params_t self, mpfr_rnd_t rnd) {
   assert(!fmpz_is_zero(self->q));
   mpz_t qz;
   mpz_init(qz);
@@ -234,63 +234,56 @@ static inline void _gghlite_get_q_mpfr(mpfr_t q, const gghlite_pk_t self, mpfr_r
   mpz_clear(qz);
 }
 
-void _gghlite_pk_set_ell(gghlite_pk_t self);
+void _gghlite_params_set_ell(gghlite_params_t self);
 
-void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate);
 
 /**
    Sample $z_i$ and $z_i^{-1}$.
 
  */
 
-void _gghlite_sample_z(gghlite_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate);
 
-void _gghlite_sample_h(gghlite_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_h(gghlite_sk_t self, flint_rand_t randstate);
 
-void _gghlite_sample_b(gghlite_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate);
 
-void _gghlite_sample_a(gghlite_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate);
 
-void _gghlite_set_pzt(gghlite_t self);
+void _gghlite_sk_set_pzt(gghlite_sk_t self);
 
 /**
-   Set $c = (c⋅g)/z$ for some small $c$.
-
-   If ``GGHLITE_FLAGS_ASYMMETRIC == 0``, produce encodings of zero for all levels specified in
-   the rerandomisation mask.
-
-   If ``GGHLITE_FLAGS_ASYMMETRIC == 1``, produce encodings of zero for all source groups specified in
-   the rerandomisation mask.
+   @brief Set $c = (c⋅g)/z$ for some small $c$.
  */
 
 
-void _gghlite_set_x(gghlite_t self);
+void _gghlite_sk_set_x(gghlite_sk_t self);
 
 /**
    Set $y = (1 + c⋅g)/z$ for some small $c$ for each source group in rerand_mask.
  */
 
-void _gghlite_set_y(gghlite_t self);
+void _gghlite_sk_set_y(gghlite_sk_t self);
 
-void gghlite_print_norms(const gghlite_t self);
+void gghlite_sk_print_norms(const gghlite_sk_t self);
 
-void gghlite_print_times(const gghlite_t self);
+void gghlite_sk_print_times(const gghlite_sk_t self);
 
-#define S_TO_SIGMA 0.398942280401433 /* 1/sqrt(2*pi) */
+#define S_TO_SIGMA 0.398942280401433 //<! 1/sqrt(2*pi)
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t c, dgsl_alg_t algorithm, const oz_flag_t flags);
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma, const oz_flag_t flags);
-
 
 #define MAX_K 1024 //<! maximum block size for BKZ estimation
 
 extern double delta_from_k[MAX_K];
 
 /**
-   Return suitable k for given δ_0.
+   @brief Return suitable $k$ for given $δ_0$.
 
-   @param delta_0 root-Hermite factor δ_0
+   @param delta_0 root-Hermite factor $δ_0$
 */
 
 static inline long _gghlite_k_from_delta(const double delta_0) {
@@ -319,7 +312,7 @@ static inline double _gghlite_repeat_from_n_k(const long n, const long k) {
 }
 
 /**
-   Return expected cost of BKZ with SVP oracle implemented by enumeration.
+   @brief Return expected cost of BKZ with SVP oracle implemented by enumeration.
 
    @param self GGHLite public key
 
@@ -327,10 +320,10 @@ static inline double _gghlite_repeat_from_n_k(const long n, const long k) {
    Sam Scott, Cryptology ePrint Archive, Report 2015/046
 */
 
-double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self);
+double gghlite_params_cost_bkz_enum(const gghlite_params_t self);
 
 /**
-   Return expected cost of BKZ with SVP oracle implemented by sieving.
+   @brief Return expected cost of BKZ with SVP oracle implemented by sieving.
 
    @param self GGHLite public key
 
@@ -338,24 +331,36 @@ double gghlite_pk_cost_bkz_enum(const gghlite_pk_t self);
    Sam Scott, Cryptology ePrint Archive, Report 2015/046
 */
 
-double gghlite_pk_cost_bkz_sieve(const gghlite_pk_t self);
+double gghlite_params_cost_bkz_sieve(const gghlite_params_t self);
 
 /**
-   Return true if self represents a symmetric graded encoding scheme.
+   @brief Return true if self represents a symmetric graded encoding scheme.
 */
 
-static inline int gghlite_is_symmetric(const gghlite_t self) {
-  return !(self->pk->flags & GGHLITE_FLAGS_ASYMMETRIC);
+static inline int gghlite_sk_is_symmetric(const gghlite_sk_t self) {
+  return !(self->params->flags & GGHLITE_FLAGS_ASYMMETRIC);
 }
 
 /**
-   Return log2() of the Eucledian norm of `op` numerator of ``op``.
+   Return log2() of the Euclidean norm of the numerator of ``op``.
 
    @param self      initialised GGHLite public key
    @param op        initialised
 */
 
-double gghlite_log2_eucl_norm(const gghlite_t self, const gghlite_enc_t op,
+double gghlite_log2_eucl_norm(const gghlite_sk_t self, const gghlite_enc_t op,
                               const size_t level, const size_t group);
+
+/**
+   @brief Multiply $f$ by zero-testing parameter $p_{zt}$.
+
+   @param rop       initialised encoding, return value
+   @param self      initialised GGHLite `params`
+   @param f         valid encoding at level-$k$
+
+   @ingroup internal-encodings
+*/
+
+void _gghlite_enc_extract_raw(gghlite_clr_t rop, const gghlite_params_t self, const gghlite_enc_t f);
 
 #endif /* _GGHLITE_INTERNALS_H_ */

@@ -11,24 +11,24 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
   flint_randinit_seed(randstate, params->seed, 1);
 
-  gghlite_t self;
-  gghlite_pk_init_params(self->pk, params->lambda, params->kappa, params->rerand, params->flags);
-  gghlite_print_params(self->pk);
+  gghlite_sk_t self;
+  gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);
+  gghlite_params_print(self->params);
 
   printf("\n---\n");
 
-  gghlite_init_instance(self, randstate);
+  gghlite_sk_init(self, randstate);
 
-  const int nsp = _gghlite_nsmall_primes(self->pk);
-  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->pk->n, nsp);
+  const int nsp = _gghlite_nsmall_primes(self->params);
+  mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->params->n, nsp);
 
   printf("number of small primes: %4d\n",nsp);
 
   fmpz_poly_t b0;
-  fmpz_poly_init2(b0, self->pk->n);
+  fmpz_poly_init2(b0, self->params->n);
 
   fmpz_poly_t b1;
-  fmpz_poly_init2(b1, self->pk->n);
+  fmpz_poly_init2(b1, self->params->n);
 
   uint64_t t0, t1, T0, T1;
   int r0, r1;
@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
     fmpz_poly_sample_D(b1, self->D_g, randstate);
 
     t0 = ggh_walltime(0);
-    r0 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 1, primes);
+    r0 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->params->n, 1, primes);
     t0 = ggh_walltime(t0);
 
     t1 = ggh_walltime(0);
-    r1 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->pk->n, 0, primes);
+    r1 = fmpz_poly_oz_ideal_span(self->g, b0, b1, self->params->n, 0, primes);
     t1 = ggh_walltime(t1);
 
     T0 += t0;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_clear(b0);
   fmpz_poly_clear(b1);
 
-  gghlite_clear(self, 1);
+  gghlite_sk_clear(self, 1);
 
   flint_randclear(randstate);
   flint_cleanup();
