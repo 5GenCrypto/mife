@@ -400,6 +400,11 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
   assert(self->params->lambda);
   assert(self->params->kappa);
 
+  self->t_coprime = 0;
+  self->t_is_prime = 0;
+  self->t_is_subideal = 0;
+  self->t_sample = 0;
+
   fmpz_mod_poly_oz_ntt_precomp_init(self->params->ntt, self->params->n, self->params->q);
 
   _gghlite_sk_sample_g(self, randstate);
