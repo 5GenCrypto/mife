@@ -49,10 +49,10 @@ typedef enum {
 #define KAPPA (sizeof(uint64_t)<<3)
 
 /**
-   @brief GGHLite Public key Struct
+   @brief GGHLite Public Key Struct
 
    This struct represents a GGHLite public key or `params`. We emphasise computation speed over
-   memory size and hence include various caches to speed up computations.
+   memory size and include various caches to speed up computations.
 */
 
 struct _gghlite_pk_struct {
@@ -88,7 +88,7 @@ struct _gghlite_pk_struct {
 };
 
 /**
-   @brief GGHLite Public key
+   @brief GGHLite Public Key
 
    @see _gghlite_pk_struct
 */
@@ -96,18 +96,23 @@ struct _gghlite_pk_struct {
 typedef struct _gghlite_pk_struct gghlite_pk_t[1];
 
 /**
-   @brief GGHLite Secret Key.
+   @brief GGHLite "Secret Key".
 */
 
 struct _gghlite_struct {
   gghlite_pk_t pk;             //!< the GGHLite public key
-  gghlite_clr_t g;             //!< an ideal generator $\ideal{g}$
+
+  gghlite_clr_t g;             //!< an ideal generator $\\ideal{g}$
+  fmpq_poly_t g_inv;           //!< approximate inverse of $g \\in \\Q[x]/(x^n+1)$
+  dgsl_rot_mp_t *D_g;          //!< discrete Gaussian distribution $D_{\\ideal{g},σ'}$
+
   gghlite_enc_t z[KAPPA];      //!< masking elements $z_i$
   gghlite_enc_t z_inv[KAPPA];  //!< inverse of masking element $z_i$
   gghlite_clr_t h;             //!< masking element $h$
+
   gghlite_clr_t a[KAPPA];      //!< an element $a \\bmod \\ideal{g} = 1$ (for each source group)
   gghlite_clr_t b[KAPPA][2];   //!< an element $b \\bmod \\ideal{g} = 0$
-  dgsl_rot_mp_t *D_g;          //!< discrete Gaussian distribution $D_{R,σ'}$ with $R = \\ZZ[x]/(x^n+1)$
+
   uint64_t t_is_prime;         //!< time spent on checking for small prime factors of g in μs
   uint64_t t_is_subideal;      //!< time spent on verifying that $\\ideal{b_0,b_1} = \\ideal{g}$ in μs
   uint64_t t_sample;           //!< time spent on sampling  in μs

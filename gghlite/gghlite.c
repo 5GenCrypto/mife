@@ -187,6 +187,7 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   assert(self->pk->n);
 
   fmpz_poly_init(self->g);
+  fmpq_poly_init(self->g_inv);
 
   mpfr_t g_inv_norm;
   mpfr_init2(g_inv_norm, fmpz_sizeinbase(self->pk->q,2));
@@ -208,8 +209,6 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   fmpq_poly_t g_q;
   fmpq_poly_init(g_q);
 
-  fmpq_poly_t g_inv;
-  fmpq_poly_init(g_inv);
 
   const int check_prime = self->pk->flags & GGHLITE_FLAGS_PRIME_G;
 
@@ -260,8 +259,8 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
 
     /* 2. check norm of inverse */
     fmpq_poly_set_fmpz_poly(g_q, self->g);
-    _fmpq_poly_oz_invert_approx(g_inv, g_q, self->pk->n, 2*self->pk->lambda);
-    if (!_gghlite_g_inv_check(self->pk, g_inv)) {
+    _fmpq_poly_oz_invert_approx(self->g_inv, g_q, self->pk->n, 2*self->pk->lambda);
+    if (!_gghlite_g_inv_check(self->pk, self->g_inv)) {
       fail[2]++;
       continue;
     }
@@ -274,6 +273,10 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
 
     break;
   }
+
+  /** we compute the inverse in high precision for enc0 **/
+  _fmpq_poly_oz_invert_approx(self->g_inv, g_q, self->pk->n, fmpz_sizeinbase(N, 2));
+
   fmpz_clear(N);
   free(primes_p);
   if (!check_prime)
@@ -287,7 +290,6 @@ void _gghlite_sample_g(gghlite_t self, flint_rand_t randstate) {
   mpfr_clear(sqrtn_sigma);
   mpfr_clear(g_inv_norm);
   fmpq_poly_clear(g_q);
-  fmpq_poly_clear(g_inv);
   dgsl_rot_mp_clear(D);
 }
 
@@ -439,6 +441,7 @@ void gghlite_clear(gghlite_t self, int clear_pk) {
   }
 
   fmpz_poly_clear(self->g);
+  fmpq_poly_clear(self->g_inv);
   dgsl_rot_mp_clear(self->D_g);
 
   if (clear_pk)
@@ -547,4 +550,30 @@ dgsl_rot_mp_t *_gghlite_dgsl_from_n(const long n, mpfr_t sigma, const oz_flag_t 
   fmpz_poly_clear(I);
   mpfr_clear(sigma_);
   return D;
+}
+
+
+double gghlite_log2_eucl_norm(const gghlite_t self, const gghlite_enc_t op,
+                              const size_t level, const size_t group) {
+
+  fmpz_mod_poly_t t; fmpz_mod_poly_init2(t, fmpz_mod_poly_modulus(op), self->pk->n);
+  fmpz_mod_poly_set(t, op);
+
+  for(size_t i=0; i<level; i++)
+    fmpz_mod_poly_oz_ntt_mul(t, self->z[group], t, self->pk->n);
+
+  fmpz_mod_poly_oz_ntt_dec(t, t, self->pk->ntt);
+
+  fmpz_poly_t z; fmpz_poly_init(z);
+  fmpz_poly_set_fmpz_mod_poly(z, t);
+
+  mpfr_t norm; mpfr_init2(norm, _gghlite_prec(self->pk));
+  fmpz_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
+  mpfr_log2(norm, norm, MPFR_RNDN);
+  double r = mpfr_get_d(norm, MPFR_RNDN);
+  mpfr_clear(norm);
+  fmpz_poly_clear(z);
+  fmpz_mod_poly_clear(t);
+
+  return r;
 }

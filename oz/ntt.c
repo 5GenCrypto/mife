@@ -244,13 +244,17 @@ void fmpz_mod_poly_oz_ntt_enc_fmpz_poly(fmpz_mod_poly_t rop, const fmpz_poly_t o
   const fmpz *q = fmpz_mod_poly_modulus(precomp->phi);
   fmpz_mod_poly_realloc(rop, precomp->n);
 
+  fmpz_poly_t t; fmpz_poly_init2(t, precomp->n);
+  fmpz_poly_set(t, op);
+
 #pragma omp parallel for
   for(size_t i=0; i<precomp->n; i++) {
-    fmpz_mul(rop->coeffs+i, precomp->phi->coeffs+i, op->coeffs+i);
+    fmpz_mul(rop->coeffs+i, precomp->phi->coeffs+i, t->coeffs+i);
     fmpz_mod(rop->coeffs+i, rop->coeffs+i, q);
   }
   rop->length = precomp->n;
   _fmpz_mod_poly_oz_ntt(rop, rop, precomp->w, precomp->n);
+  fmpz_poly_clear(t);
 }
 
 void fmpz_mod_poly_oz_ntt_enc(fmpz_mod_poly_t rop, const fmpz_mod_poly_t op, const fmpz_mod_poly_oz_ntt_precomp_t precomp) {

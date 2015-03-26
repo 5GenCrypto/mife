@@ -348,4 +348,14 @@ static inline int gghlite_is_symmetric(const gghlite_t self) {
   return !(self->pk->flags & GGHLITE_FLAGS_ASYMMETRIC);
 }
 
+/**
+   Return log2() of the Eucledian norm of `op` numerator of ``op``.
+
+   @param self      initialised GGHLite public key
+   @param op        initialised
+*/
+
+double gghlite_log2_eucl_norm(const gghlite_t self, const gghlite_enc_t op,
+                              const size_t level, const size_t group);
+
 #endif /* _GGHLITE_INTERNALS_H_ */

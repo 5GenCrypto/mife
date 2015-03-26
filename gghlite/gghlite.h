@@ -120,7 +120,7 @@ static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const g
    Computes @f$f = f + ρ_0·b_{k,0} + ρ_1·b_{k,1}@f$ where @f$ρ_i ← D_{R,σ^*}@f$.
 
    @param f         initialised encoding at level `k`
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param k         level `1 ≤ k ≤ κ`
    @param i         source group index (must be zero in the symmetric case)
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
@@ -136,7 +136,7 @@ void gghlite_rerand(gghlite_enc_t rop, const gghlite_pk_t self, const gghlite_en
    Elevate an encoding at levek $k'$ to level $k$ and re-randomise if requested.
 
    @param rop       initialised encoding at level `k'`
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param k         targer level `1 ≤ k ≤ κ`
    @param kprime    current level of ``rop`` satisfying `0 ≤ k' ≤ k`
    @param i         source group index (must be zero in the symmetric case)
@@ -155,7 +155,7 @@ void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, siz
    Sample a new random encoding at levek $k$ in group $i$.
 
    @param rop       initialised encoding, return value
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param k         targer level `0 ≤ k ≤ κ`
    @param i         source group index (must be zero in the symmetric case)
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
@@ -168,28 +168,22 @@ void gghlite_elevate(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, siz
 void gghlite_sample(gghlite_enc_t rop, gghlite_pk_t self, size_t k, size_t i, flint_rand_t randstate);
 
 /**
-   Encode level-0 encoding ``op`` at level $k$.
+   Encode $f$ at level-$0$.
 
    @param rop       initialised encoding, return value
-   @param self      initialise GGHLite public key
-   @param op        valid level-0 encoding
-   @param k         targer level $0 ≤ k ≤ κ$
-   @param i         source group index (must be zero in the symmetric case)
-   @param rerand    rerandomise.
+   @param self      initialised GGHLite private key
+   @param f         an element in $\\ZZ[x]/(x^n+1)$
    @param randstate entropy source, assumes ``flint_randinit(randstate)`` and
                     ``_flint_rand_init_gmp(randstate)`` was called
-
 */
 
-static inline void gghlite_enc(gghlite_enc_t rop, gghlite_pk_t self, gghlite_enc_t op, size_t k, size_t i, int rerand, flint_rand_t randstate) {
-  gghlite_elevate(rop, self, op, k, 0, i, rerand, randstate);
-}
+void gghlite_enc0(gghlite_enc_t rop, const gghlite_t self, const gghlite_clr_t op, flint_rand_t randstate);
 
 /**
    Compute @f$h = f·g@f$.
 
    @param h         initialised encoding, return value
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param f         valid encoding
    @param g         valid encoding
 */
@@ -198,15 +192,37 @@ static inline void gghlite_mul(gghlite_enc_t h, const gghlite_pk_t self, const g
   fmpz_mod_poly_oz_ntt_mul(h, f, g, self->n);
 }
 
+/**
+   Compute @f$h = f+g@f$.
+
+   @param h         initialised encoding, return value
+   @param self      initialised GGHLite public key
+   @param f         valid encoding
+   @param g         valid encoding
+*/
+
 static inline void gghlite_add(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
   fmpz_mod_poly_add(h, f, g);
+}
+
+/**
+   Compute @f$h = f-g@f$.
+
+   @param h         initialised encoding, return value
+   @param self      initialised GGHLite public key
+   @param f         valid encoding
+   @param g         valid encoding
+*/
+
+static inline void gghlite_sub(gghlite_enc_t h, const gghlite_pk_t self, const gghlite_enc_t f, const gghlite_enc_t g) {
+  fmpz_mod_poly_sub(h, f, g);
 }
 
 /**
    Multiply @f$op@f$ by @f$p_{zt}@f$.
 
    @param rop       initialised encoding, return value
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param op        valid encoding at level-$k$
 */
 
@@ -216,7 +232,7 @@ void _gghlite_extract_raw(gghlite_clr_t rop, const gghlite_pk_t self, const gghl
    Extract canonical string from @f$`op`@f$
 
    @param rop       initialised encoding, return value
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param op        valid encoding at level-$k$
 */
 
@@ -225,7 +241,7 @@ void gghlite_extract(fmpz_poly_t rop, const gghlite_pk_t self, const gghlite_enc
 /**
    Return 1 if op is an encoding of zero at level κ
 
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
    @param op        valid encoding at level-$k$
 */
 
@@ -234,7 +250,7 @@ int gghlite_is_zero(const gghlite_pk_t self, const gghlite_enc_t op);
 /**
    Return root-Hermite factor @f$δ_0@f$ required to break the scheme
 
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
 
 */
 
@@ -244,7 +260,7 @@ double gghlite_pk_get_delta_0(const gghlite_pk_t self);
 /**
    Check if security constraints are satisfied.
 
-   @param self      initialise GGHLite public key
+   @param self      initialised GGHLite public key
 
 */
 
@@ -253,6 +269,8 @@ int gghlite_pk_check_sec(const gghlite_pk_t self);
 
 /**
    Return true if public key is for a symmetric graded encoding scheme.
+
+   @param self      initialised GGHLite public key
 */
 
 static inline int gghlite_pk_is_symmetric(const gghlite_pk_t self) {
@@ -262,11 +280,13 @@ static inline int gghlite_pk_is_symmetric(const gghlite_pk_t self) {
 /**
    Return true if rerandomisation elements are available for $i+1$ level (symmetric case) or $i$-th
    source group (asymmetric case)
+
+   @param self      initialised GGHLite public key
+
 */
 
 static inline int gghlite_pk_have_rerand(const gghlite_pk_t self, const size_t i) {
   return (self->rerand_mask & (1ULL)<<i);
 }
-
 
 #endif //_GGHLITE_H_
