@@ -278,8 +278,10 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
     break;
   }
 
-  /** we compute the inverse in high precision for gghlite_enc_set_gghlite_clr **/
-  _fmpq_poly_oz_invert_approx(self->g_inv, g_q, self->params->n, fmpz_sizeinbase(N, 2));
+  if (self->params->flags & GGHLITE_FLAGS_GOOD_G_INV) {
+    /** we compute the inverse in high precision for gghlite_enc_set_gghlite_clr **/
+    _fmpq_poly_oz_invert_approx(self->g_inv, g_q, self->params->n, fmpz_sizeinbase(N, 2));
+  }
 
   fmpz_clear(N);
   free(primes_p);

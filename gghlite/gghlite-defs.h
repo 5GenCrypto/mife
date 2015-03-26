@@ -38,6 +38,8 @@ typedef enum {
   GGHLITE_FLAGS_GDDH_HARD  = 0x04, //!< pick @f$σ_1^*@f$ so that GDDH is hard
   GGHLITE_FLAGS_ASYMMETRIC = 0x08, //!< implement asymmetric graded encoding scheme
   GGHLITE_FLAGS_QUIET      = 0x10, //!< suppress printing
+  GGHLITE_FLAGS_GOOD_G_INV = 0x20, /*!< produce an inverse of $g$ with high-precision,
+                                        set this if you plan to call gghlite_enc_set_gghlite_clr */
 } gghlite_flag_t;
 
 /**
@@ -71,7 +73,7 @@ struct _gghlite_params_struct {
   mpfr_t xi;                          //!< fraction $ξ$ of $q$ used for zero-testing
   gghlite_enc_t pzt;                  //!< zero-testing parameter $p_{zt}$
   gghlite_enc_t x[KAPPA][KAPPA][2];   /*!< @brief level-$k$ encodings of zero $x_{i,k,j}$ for each source
-                                                  group $G_i$, level $k$ specified by rerand mask */
+                                           group $G_i$, level $k$ specified by rerand mask */
   gghlite_enc_t y[KAPPA];             //!< one level-1 encodings of 1 (for each source group $G_i$)
   dgsl_rot_mp_t *D_sigma_p;           //!< discrete Gaussian distribution $D_{\\ZZ,σ'}$
   dgsl_rot_mp_t *D_sigma_s;           //!< discrete Gaussian distribution $D_{\\ZZ,σ^*}$

@@ -6,7 +6,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int rerand, int symmetr
   printf("λ: %4zu, κ: %2zu, rerand: %d, symmetric: %d …", lambda, kappa, rerand, symmetric);
 
   gghlite_sk_t self;
-  gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET;
+  gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
   if (!symmetric)
     flags |= GGHLITE_FLAGS_ASYMMETRIC;
 
