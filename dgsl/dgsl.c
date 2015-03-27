@@ -437,7 +437,20 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   return 0;
 }
 
-int dgsl_rot_mp_call_with_c(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, const fmpq_poly_t c) {
+int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, gmp_randstate_t state) {
+  fmpz_poly_t t;  fmpz_poly_init(t);
+  fmpz_poly_set(t, c);
+  fmpq_poly_t tq; fmpq_poly_init(tq); // == 0
+  fmpq_poly_set_fmpz_poly(tq, t);
+  fmpq_poly_neg(tq, tq);
+  dgsl_rot_mp_call_recenter_fmpq_poly(rop, self, tq, state);
+  fmpz_poly_add(rop, rop, t);
+  fmpq_poly_clear(tq);
+  fmpz_poly_clear(t);
+  return 0;
+}
+
+int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, gmp_randstate_t state) {
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, self->n, self->prec, state);
