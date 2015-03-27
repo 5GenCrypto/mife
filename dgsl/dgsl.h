@@ -67,13 +67,47 @@ dgsl_mp_t *dgsl_mp_init(const fmpz_mat_t B, mpfr_t sigma, mpfr_t *c, const dgsl_
 
 dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma, fmpq_poly_t c, const dgsl_alg_t algorithm, const oz_flag_t flags);
 
+/**
+   @brief Sample a fresh element from $D_{L,σ}$.
+*/
+
 int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
+
+/**
+   @brief Sample a fresh element from $D_{L,σ}$ using the GPV sampler.
+*/
+
 int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
 
-int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+/**
+   @brief Sample $r$ such that $r⋅B$ is  an element following $D_{L,σ}$.
+*/
+
+int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t r,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+
+/**
+   @brief Sample a fresh element from $D_{L,σ}$.
+*/
+
 int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+
+/**
+   @brief Sample a fresh element from $D_{L+1,σ}$.
+*/
+
 int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state);
-int dgsl_rot_mp_call_with_c(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state, const fmpq_poly_t c);
+
+/**
+   @brief Sample a fresh element from $D_{L+c,σ}$.
+*/
+
+int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, gmp_randstate_t state);
+
+/**
+   @brief Sample a fresh element from $D_{L,σ,c}$.
+*/
+
+int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, gmp_randstate_t state);
 
 /**
    Return a fresh sample when B is the identity
