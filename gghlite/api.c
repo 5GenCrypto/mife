@@ -87,10 +87,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
   // add some multiple of g
   if (rerand) {
-    fmpz_poly_t cg; fmpz_poly_init2(cg, self->params->n);
-    fmpz_poly_sample_D(cg, self->D_g, randstate);
-    fmpz_poly_add(t, t, cg);
-    fmpz_poly_clear(cg);
+    dgsl_rot_mp_call_plus_fmpz_poly(t, self->D_g, t, randstate->gmp_state);
   }
 
   // encode at level zero
