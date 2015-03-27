@@ -366,7 +366,7 @@ int test_dist_rot_plus2(long ncols, double sigma, double sigma_p, size_t ntrials
 
   fmpz_poly_t c; fmpz_poly_init2(c, ncols);
   for(long i=0; i<ncols; i++)
-    fmpz_poly_set_coeff_si(c, i, 2);
+    fmpz_poly_set_coeff_si(c, i, i);
 
   double *norms = dist_rot_norms(D, ntrials, c, state);
   double min; double max;
