@@ -6,11 +6,11 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int rerand, int symmetr
   printf("λ: %4zu, κ: %2zu, rerand: %d, symmetric: %d …", lambda, kappa, rerand, symmetric);
 
   gghlite_sk_t self;
-  gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
-  if (!symmetric)
-    flags |= GGHLITE_FLAGS_ASYMMETRIC;
-
-  gghlite_init(self, lambda, kappa, rerand, flags, randstate);
+  gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET;
+  if (symmetric)
+    gghlite_init(self, lambda, kappa, rerand, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
+  else
+    gghlite_jigsaw_init(self, lambda, kappa, flags, randstate);
 
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);
