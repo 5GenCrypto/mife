@@ -47,9 +47,28 @@
 void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags);
 
 /**
+   @brief Generate parameters for GGHLite jigsaw puzzle instance requiring no randomness.
+
+   This light wrapper sets `GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV` and disables
+   rerandomisation.
+
+   @param self        GGHLite `params`, all fields are overwritten
+   @param lambda      security parameter $λ > 0$
+   @param kappa       multi-linearity parameter $κ > 0$
+   @param flags       flags controlling verbosity etc.
+
+   @ingroup params
+*/
+
+
+static inline void gghlite_jigsaw_params_init(gghlite_params_t self, size_t lambda, size_t kappa, gghlite_flag_t flags) {
+  gghlite_params_init(self, lambda, kappa, 0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV);
+}
+
+/**
    @brief Generate fields requiring randomness.
 
-   @param self       initialised GGHLite instance
+   @param self       GGHLite secret key, all fields but `params` are overwritten
    @param randstate  entropy source, assumes `flint_randinit(randstate)` and
                      `_flint_rand_init_gmp(randstate)` was called
 
@@ -61,7 +80,7 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate);
 /**
    @brief Initialise a new GGHLite instance.
 
-   @param self        GGHLite `params`, all fields are overwritten
+   @param self        GGHLite secret key, all fields are overwritten
    @param lambda      security parameter $λ > 0$
    @param kappa       multi-linearity parameter $κ > 0$
    @param rerand_mask generate re-randomisation elements for level $i$ if ``1<<(i-1) & rerand_mask``
@@ -74,6 +93,27 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate);
 
 void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
                   const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate);
+
+
+/**
+   @brief Initialise a new GGHLite jigsaw puzzle instance.
+
+   @param self        GGHLite secret key, all fields are overwritten
+   @param lambda      security parameter $λ > 0$
+   @param kappa       multi-linearity parameter $κ > 0$
+   @param flags       flags controlling the behaviour of the algorithms such as verbosity etc.
+   @param randstate   entropy source, assumes `flint_randinit(randstate) and
+                      `_flint_rand_init_gmp(randstate)` was called
+
+   @ingroup params
+*/
+
+static inline void gghlite_jigsaw_init(gghlite_sk_t self, size_t lambda, size_t kappa,
+                                       gghlite_flag_t flags, flint_rand_t randstate) {
+  gghlite_init(self, lambda, kappa, 0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV,
+               randstate);
+}
+
 
 /**
    @brief Get a shallow copy of `params` of `op`.
