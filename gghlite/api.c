@@ -49,8 +49,8 @@ void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const ggh
     fmpz_mod_poly_clear(yk);
   }
 
-  if(rerand && k>0) {
-    gghlite_enc_rerand(rop, self, rop, k, i, randstate);
+  if(rerand && l>0) {
+    gghlite_enc_rerand(rop, self, rop, l, i, randstate);
   }
 }
 

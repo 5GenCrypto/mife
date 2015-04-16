@@ -350,6 +350,14 @@ static inline void gghlite_enc_set_ui0(gghlite_enc_t op, unsigned long c, const 
 }
 
 /**
+   @brief Copy encoding
+
+   @ingroup encodings
+*/
+
+#define gghlite_enc_set fmpz_mod_poly_set
+
+/**
    @brief Sample a new random encoding at levek $k$ in group $i$.
 
    @param rop       initialised encoding, return value
