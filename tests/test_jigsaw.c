@@ -1,14 +1,14 @@
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-internals.h>
 
-int test_jigsaw(const size_t lambda, const size_t kappa, int rerand, int symmetric, flint_rand_t randstate) {
+int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_rand_t randstate) {
 
-  printf("λ: %4zu, κ: %2zu, rerand: %d, symmetric: %d …", lambda, kappa, rerand, symmetric);
+  printf("λ: %4zu, κ: %2zu, symmetric: %d …", lambda, kappa, symmetric);
 
   gghlite_sk_t self;
   gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET;
   if (symmetric)
-    gghlite_init(self, lambda, kappa, rerand, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
+    gghlite_init(self, lambda, kappa, 0x1, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
   else
     gghlite_jigsaw_init(self, lambda, kappa, flags, randstate);
 
@@ -42,7 +42,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int rerand, int symmetr
   for(size_t k=0; k<kappa; k++) {
     fmpz_poly_set_coeff_fmpz(e[k], 0, a[k]);
     const int i = (gghlite_sk_is_symmetric(self)) ? 0 : k;
-    gghlite_enc_set_gghlite_clr(u[k], self, e[k], 1, i, rerand, randstate);
+    gghlite_enc_set_gghlite_clr(u[k], self, e[k], 1, i, 1, randstate);
     gghlite_enc_mul(left, self->params, left, u[k]);
   }
 
@@ -56,7 +56,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int rerand, int symmetr
 
   for(size_t k=0; k<kappa; k++) {
     const int i = (gghlite_sk_is_symmetric(self)) ? 0 : k;
-    gghlite_enc_set_ui(u[k], 1, self->params, 1, i, rerand, randstate);
+    gghlite_enc_set_ui(u[k], 1, self->params, 1, i, 1, randstate);
     gghlite_enc_mul(rght, self->params, rght, u[k]);
   }
 
@@ -90,19 +90,13 @@ int main(int argc, char *argv[]) {
 
   int status = 0;
 
-  status += test_jigsaw(20, 2, 0, 1, randstate);
-  status += test_jigsaw(20, 3, 0, 1, randstate);
-  status += test_jigsaw(20, 4, 0, 1, randstate);
-  status += test_jigsaw(20, 2, 1, 1, randstate);
-  status += test_jigsaw(20, 3, 1, 1, randstate);
-  status += test_jigsaw(20, 4, 1, 1, randstate);
+  status += test_jigsaw(20, 2, 1, randstate);
+  status += test_jigsaw(20, 3, 1, randstate);
+  status += test_jigsaw(20, 4, 1, randstate);
 
-  status += test_jigsaw(20, 2, 0, 0, randstate);
-  status += test_jigsaw(20, 3, 0, 0, randstate);
-  status += test_jigsaw(20, 4, 0, 0, randstate);
-  status += test_jigsaw(20, 2, 1, 0, randstate);
-  status += test_jigsaw(20, 3, 1, 0, randstate);
-  status += test_jigsaw(20, 4, 1, 0, randstate);
+  status += test_jigsaw(20, 2, 0, randstate);
+  status += test_jigsaw(20, 3, 0, randstate);
+  status += test_jigsaw(20, 4, 0, randstate);
 
   flint_randclear(randstate);
   flint_cleanup();

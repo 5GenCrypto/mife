@@ -107,6 +107,7 @@ void gghlite_enc_extract(gghlite_clr_t rop, const gghlite_params_t self, const g
   for(long i=0; i<fmpz_poly_length(rop); i++) {
     fmpz_tdiv_q_2exp(rop->coeffs+i,rop->coeffs+i, logq-self->ell+1);
   }
+  _fmpz_poly_normalise(rop);
 }
 
 int gghlite_enc_is_zero(const gghlite_params_t self, const fmpz_mod_poly_t op) {
