@@ -49,8 +49,8 @@ void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uin
 /**
    @brief Generate parameters for GGHLite jigsaw puzzle instance requiring no randomness.
 
-   This light wrapper sets `GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV` and disables
-   rerandomisation.
+   This light wrapper sets `GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV` and sets rerand
+   mask to 0x1.
 
    @param self        GGHLite `params`, all fields are overwritten
    @param lambda      security parameter $λ > 0$
@@ -62,7 +62,7 @@ void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uin
 
 
 static inline void gghlite_jigsaw_params_init(gghlite_params_t self, size_t lambda, size_t kappa, gghlite_flag_t flags) {
-  gghlite_params_init(self, lambda, kappa, 0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV);
+  gghlite_params_init(self, lambda, kappa, 1, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV);
 }
 
 /**
@@ -110,7 +110,7 @@ void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
 
 static inline void gghlite_jigsaw_init(gghlite_sk_t self, size_t lambda, size_t kappa,
                                        gghlite_flag_t flags, flint_rand_t randstate) {
-  gghlite_init(self, lambda, kappa, 0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV,
+  gghlite_init(self, lambda, kappa, 1, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV,
                randstate);
 }
 
