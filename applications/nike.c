@@ -165,7 +165,6 @@ int main(int argc, char *argv[]) {
 
   if (!gghlite_clr_equal(s[1], s[0])) {
     ret = -1;
-    printf("\nBUG: s_0 != s_1\n");
   }
 
   if(ret == 0) {
