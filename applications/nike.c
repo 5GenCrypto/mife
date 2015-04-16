@@ -94,8 +94,7 @@ int main(int argc, char *argv[]) {
 
   for(int i=0; i<2; i++) {
     gghlite_enc_init(b[i], params);
-    gghlite_enc_set_ui0(b[i], 1, params);
-    gghlite_enc_mul(b[i], params, b[i], e[i]);
+    gghlite_enc_set(b[i], u[i]);
   }
 
   if(verbose)
@@ -124,7 +123,6 @@ int main(int argc, char *argv[]) {
   for(int i=0; i<2; i++) {
     gghlite_clr_init(s[i]);
     gghlite_enc_extract(s[i], params, b[i]);
-    gghlite_enc_clear(b[i]);
   }
 
   if (verbose)
@@ -165,6 +163,7 @@ int main(int argc, char *argv[]) {
     gghlite_enc_clear(e[i]);
     gghlite_enc_clear(u[i]);
     gghlite_clr_clear(s[i]);
+    gghlite_enc_clear(b[i]);
   }
   free(e);
   free(u);
