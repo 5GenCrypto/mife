@@ -318,7 +318,7 @@ void _gghlite_params_set_sigma_s(gghlite_params_t self) {
     /* if there is no re-randomisation there is not σ^* */
     mpfr_set_d(self->sigma_s, 1.0, MPFR_RNDN);
     return;
-  } else if (gghlite_params_is_symmetric(self) && self->rerand_mask != 1) {
+  } else if (self->rerand_mask != 1) {
     ggh_die("Re-randomisation at higher levels is not implemented yet.");
   }
 
