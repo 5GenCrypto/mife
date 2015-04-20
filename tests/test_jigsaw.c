@@ -6,9 +6,9 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
   printf("λ: %4zu, κ: %2zu, symmetric: %d …", lambda, kappa, symmetric);
 
   gghlite_sk_t self;
-  gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET;
+  gghlite_flag_t flags = GGHLITE_FLAGS_QUIET;
   if (symmetric)
-    gghlite_init(self, lambda, kappa, 0x1, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
+    gghlite_init(self, lambda, kappa, 0x0, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
   else
     gghlite_jigsaw_init(self, lambda, kappa, flags, randstate);
 
@@ -56,7 +56,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
 
   for(size_t k=0; k<kappa; k++) {
     const int i = (gghlite_sk_is_symmetric(self)) ? 0 : k;
-    gghlite_enc_set_ui(u[k], 1, self->params, 1, i, 1, randstate);
+    gghlite_enc_set_ui(u[k], 1, self->params, 1, i, 0, randstate);
     gghlite_enc_mul(rght, self->params, rght, u[k]);
   }
 

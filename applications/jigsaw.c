@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   gghlite_enc_set_gghlite_clr0(rght, self, tmp, randstate);
 
   for(long k=0; k<cmdline_params->kappa; k++) {
-    gghlite_enc_set_ui(u[k], 1, self->params, 1, k, 1, randstate);
+    gghlite_enc_set_ui(u[k], 1, self->params, 1, k, 0, randstate);
     gghlite_enc_mul(rght, self->params, rght, u[k]);
   }
 
