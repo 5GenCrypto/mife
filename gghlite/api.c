@@ -85,10 +85,8 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
   mpfr_clear(norm_f);
   mpfr_clear(norm_t);
 
-  // add some multiple of g
-  if (rerand) {
+  if (rerand)
     dgsl_rot_mp_call_plus_fmpz_poly(t, self->D_g, t, randstate->gmp_state);
-  }
 
   // encode at level zero
   fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t, self->params->ntt);
@@ -96,8 +94,13 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
   fmpz_poly_clear(t);
 
   // encode at level k
-  if(k > 0)
-    gghlite_enc_raise(rop, self->params, rop, k, 0, i, rerand, randstate);
+  if(k > 0) {
+    if(!gghlite_sk_is_symmetric(self) && (k>1))
+      ggh_die("Raising to higher levels than 1 not supported. Instead, multiply by the right combination of y_i.");
+
+    for(size_t j=0; j<k; j++) // divide by z_i^k
+      fmpz_mod_poly_oz_ntt_mul(rop, rop, self->z_inv[i], self->params->n);
+  }
 }
 
 
