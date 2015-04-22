@@ -480,7 +480,7 @@ double gghlite_params_cost_bkz_enum(const gghlite_params_t self) {
     return 3*log2(self->n);
   const int k = _gghlite_k_from_delta(delta_0);
   const double r = _gghlite_repeat_from_n_k(self->n, k);
-  return 0.002898*k*k - 0.122662*k + 23.8311 + r;
+  return 0.270188776350190*k*log(k) - 1.0192050451318417*k + 16.10253135200765 + r;
 }
 
 double gghlite_params_cost_bkz_sieve(const gghlite_params_t self) {
