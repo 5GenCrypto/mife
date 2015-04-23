@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     gghlite_enc_clear(u[i]);
   }
 
+  fmpz_clear(acc);
   gghlite_enc_clear(left);
   gghlite_enc_clear(rght);
   gghlite_clr_clear(tmp);
