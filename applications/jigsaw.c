@@ -66,7 +66,8 @@ int main(int argc, char *argv[]) {
     gghlite_enc_set_gghlite_clr(u[k], self, e[k], 1, k, 1, randstate);
   }
 
-  printf("3. Encoding generation wall time:         %8.2f s\n", ggh_walltime(t)/1000000.0);
+  t = ggh_walltime(t);
+  printf("3. Encoding generation wall time:         %8.2f s (per elem: %8.2f)\n", t/1000000.0, t/1000000.0/cmdline_params->kappa);
   t = ggh_walltime(0);
 
   for(long k=0; k<cmdline_params->kappa; k++) {
@@ -94,8 +95,8 @@ int main(int argc, char *argv[]) {
   gghlite_enc_sub(rght, self->params, rght, left);
   int status = 1 - gghlite_enc_is_zero(self->params, rght);
 
-  printf("6. Checking identity wall time:           %8.2f s\n", ggh_walltime(t)/1000000.0);
-  printf("   Is identity:                           %8s\n\n", (status == 0) ? "TRUE" : "FALSE");
+  printf("6. Checking correctness wall time:        %8.2f s\n", ggh_walltime(t)/1000000.0);
+  printf("   Correct:                               %8s\n\n", (status == 0) ? "TRUE" : "FALSE");
 
   for(long i=0; i<cmdline_params->kappa; i++) {
     fmpz_clear(a[i]);
