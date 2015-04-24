@@ -75,9 +75,42 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
   mpfr_t norm_i; mpfr_init2(norm_i, _gghlite_prec(self->params));
   mpfr_t norm_o; mpfr_init2(norm_o, _gghlite_prec(self->params));
 
+  fmpz_poly_set(t_i, f);
+
+  /* if f is a constant, use scalar multiplication for the first step */
+  if (fmpz_poly_degree(f) == 0) {
+    fmpz_t fs; fmpz_init(fs);
+    fmpz_sqrt(fs, t_i->coeffs);
+
+    fmpq_poly_t fq; fmpq_poly_init(fq);
+    fmpq_poly_scalar_mul_fmpz(fq, self->g_inv, fs);
+
+    fmpz_t t; fmpz_init(t);
+    for(int i=0; i<fmpq_poly_length(fq); i++) {
+      fmpz_fdiv_q(t, fq->coeffs + i, fq->den);
+      fmpz_poly_set_coeff_fmpz(t_o, i, t);
+    }
+    fmpz_clear(t);
+
+    fmpz_poly_oz_mul(t_o, t_o, self->g, self->params->n);
+    fmpz_poly_scalar_mul_fmpz(t_o, t_o, fs);
+    fmpz_poly_sub(t_o, t_i, t_o);
+
+    fmpq_poly_clear(fq);
+    fmpz_clear(fs);
+  } else {
+    fmpz_poly_set(t_o, t_i);
+  }
+
+  if(self->params->flags & GGHLITE_FLAGS_VERBOSE)
+    printf("|f|: %8.2f, |g|: %8.2f, |f%%g|: %8.2f\n",
+           fmpz_poly_eucl_norm_log2(t_i),
+           fmpz_poly_eucl_norm_log2(self->g),
+           fmpz_poly_eucl_norm_log2(t_o));
+
   /* the precision of g_inv might not be sufficient to do this in one step, hence, we repeat until
      the result does not improve any more*/
-  fmpz_poly_set(t_o, f);
+
   do {
     fmpz_poly_set(t_i, t_o);
     fmpz_poly_eucl_norm_mpfr(norm_i, t_i, MPFR_RNDN);
