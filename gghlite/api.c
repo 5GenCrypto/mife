@@ -70,28 +70,40 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
                                  const size_t k, const size_t i, const int rerand,
                                  flint_rand_t randstate) {
 
-  fmpz_poly_t t;  fmpz_poly_init(t);
-  _fmpz_poly_oz_rem_small(t, f, self->g, self->params->n, self->g_inv);
+  fmpz_poly_t t_i;  fmpz_poly_init(t_i);
+  fmpz_poly_t t_o;  fmpz_poly_init(t_o);
+  mpfr_t norm_i; mpfr_init2(norm_i, _gghlite_prec(self->params));
+  mpfr_t norm_o; mpfr_init2(norm_o, _gghlite_prec(self->params));
 
-  mpfr_t norm_f; mpfr_init2(norm_f, _gghlite_prec(self->params));
-  mpfr_t norm_t; mpfr_init2(norm_t, _gghlite_prec(self->params));
-  fmpz_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
-  fmpz_poly_eucl_norm_mpfr(norm_t, t, MPFR_RNDN);
+  /* the precision of g_inv might not be sufficient to do this in one step, hence, we repeat until
+     the result does not improve any more*/
+  fmpz_poly_set(t_o, f);
+  do {
+    fmpz_poly_set(t_i, t_o);
+    fmpz_poly_eucl_norm_mpfr(norm_i, t_i, MPFR_RNDN);
+    _fmpz_poly_oz_rem_small(t_o, t_i, self->g, self->params->n, self->g_inv);
+    fmpz_poly_eucl_norm_mpfr(norm_o, t_o, MPFR_RNDN);
 
-  // if the new representative got bigger, use original
-  if (mpfr_cmp(norm_f, norm_t) <= 0)
-    fmpz_poly_set(t, f);
+    if(self->params->flags & GGHLITE_FLAGS_VERBOSE)
+      printf("|f|: %8.2f, |g|: %8.2f, |f%%g|: %8.2f\n",
+             fmpz_poly_eucl_norm_log2(t_i),
+             fmpz_poly_eucl_norm_log2(self->g),
+             fmpz_poly_eucl_norm_log2(t_o));
 
-  mpfr_clear(norm_f);
-  mpfr_clear(norm_t);
+  } while (mpfr_cmp(norm_o, norm_i) < 0);
+  fmpz_poly_set(t_o, t_i);
+
+  mpfr_clear(norm_i);
+  mpfr_clear(norm_o);
 
   if (rerand)
-    dgsl_rot_mp_call_plus_fmpz_poly(t, self->D_g, t, randstate->gmp_state);
+    dgsl_rot_mp_call_plus_fmpz_poly(t_o, self->D_g, t_o, randstate->gmp_state);
 
   // encode at level zero
-  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t, self->params->ntt);
+  fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t_o, self->params->ntt);
 
-  fmpz_poly_clear(t);
+  fmpz_poly_clear(t_i);
+  fmpz_poly_clear(t_o);
 
   // encode at level k
   if(k > 0) {
