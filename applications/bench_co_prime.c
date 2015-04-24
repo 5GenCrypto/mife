@@ -3,16 +3,6 @@
 #include <oz/oz.h>
 #include "common.h"
 
-double fmpz_poly_eucl_norm_log2(fmpz_poly_t f) {
-  mpfr_t norm;
-  mpfr_init(norm);
-  fmpz_poly_eucl_norm_mpfr(norm, f, MPFR_RNDN);
-  mpfr_log2(norm, norm, MPFR_RNDN);
-  double d = mpfr_get_d(norm, MPFR_RNDN);
-  mpfr_clear(norm);
-  return d;
-}
-
 int main(int argc, char *argv[]) {
   cmdline_params_t params;
   parse_cmdline(params, argc, argv, "Bench co-primality test", NULL);

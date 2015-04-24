@@ -83,6 +83,17 @@ static inline void fmpz_poly_eucl_norm_mpfr(mpfr_t rop, const fmpz_poly_t poly, 
   _fmpz_vec_eucl_norm_mpfr(rop, poly->coeffs, poly->length, rnd);
 }
 
+static inline double fmpz_poly_eucl_norm_log2(const fmpz_poly_t poly) {
+  mpfr_t tmp;
+  mpfr_init2(tmp, labs(fmpz_poly_max_bits(poly)));
+  _fmpz_vec_eucl_norm_mpfr(tmp, poly->coeffs, poly->length, MPFR_RNDN);
+  mpfr_log2(tmp, tmp, MPFR_RNDN);
+  double r = mpfr_get_d(tmp, MPFR_RNDN);
+  mpfr_clear(tmp);
+  return r;
+}
+
+
 static inline void fmpz_mod_poly_eucl_norm_mpfr(mpfr_t rop, const fmpz_mod_poly_t poly, const mpfr_rnd_t rnd) {
   _fmpz_vec_eucl_norm_mpfr(rop, poly->coeffs, poly->length, rnd);
 }
