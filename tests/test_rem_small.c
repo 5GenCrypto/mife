@@ -8,6 +8,8 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
   /** make it **/
   mpfr_t sigma;
+  printf("n: %4ld, bits: %4ld:", n, bits);
+
   mpfr_init(sigma);
 
   fmpz_poly_t g; fmpz_poly_init(g);
@@ -20,6 +22,11 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
   fmpz_poly_t small; fmpz_poly_init(small);
   fmpz_poly_oz_rem_small(small, h, g, n);
+
+  printf("|h|: %8.2f, |g|: %8.2f, |h%%g|: %8.2f, ",
+         fmpz_poly_eucl_norm_log2(h),
+         fmpz_poly_eucl_norm_log2(g),
+         fmpz_poly_eucl_norm_log2(small));
 
   /** check it **/
   fmpz_poly_t t; fmpz_poly_init(t);
@@ -38,7 +45,6 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
   int r = (fmpz_is_one(tq->den)) ? 0 : 1;
 
-  printf("n: %4ld, bits: %4ld:", n, bits);
   if (r == 0)
     printf("PASS\n");
   else
