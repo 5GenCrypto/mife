@@ -160,9 +160,11 @@ void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_po
    @param g             an element $g$ in $\\R$
    @param n             degree of cyclotomic polynomial, must be power of two
    @param ginv          pre-computed approximate inverse of $g$ in $\\R$.
+   @param bound         log_2 of bound on $|rem|_∞$ (set to zero to disable)
  */
 
-void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t g_inv);
+void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n,
+                                  const fmpq_poly_t g_inv, const mp_bitcnt_t bound);
 
 /**
    @brief Return a small representative of $f \\mod \\ideal{g}$ with $f \\in \\Z$.
