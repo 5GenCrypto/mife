@@ -270,7 +270,8 @@ void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_po
 }
 
 
-void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t g_inv) {
+void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n,
+                                  const fmpq_poly_t g_inv, const mp_bitcnt_t bound) {
   if (fmpz_is_zero(f)) {
     fmpz_poly_set_ui(rem, 0);
     return;
@@ -286,10 +287,35 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
   }
   fmpz_clear(t);
 
-  fmpz_poly_oz_mul(rem, rem, g, n);
-  fmpz_poly_neg(rem, rem);
-  if(fmpz_poly_degree(rem)>-1)
-    fmpz_add(rem->coeffs, fc, rem->coeffs);
+  if (bound) {
+    /* we know the result is small, so compute modulo the bound on the size */
+    fmpz_t q; fmpz_init(q);
+    fmpz_setbit(q, bound);
+
+    fmpz_mod_poly_t rem_q;
+    fmpz_mod_poly_init(rem_q, q);
+    fmpz_mod_poly_set_fmpz_poly(rem_q, rem);
+
+    fmpz_mod_poly_t g_q;
+    fmpz_mod_poly_init(g_q, q);
+    fmpz_mod_poly_set_fmpz_poly(g_q, g);
+
+    fmpz_mod_poly_oz_mul(rem_q, rem_q, g_q, n);
+    fmpz_mod_poly_neg(rem_q, rem_q);
+    if(fmpz_mod_poly_degree(rem_q)>-1) {
+      fmpz_add(rem_q->coeffs, fc, rem_q->coeffs);
+      fmpz_mod(rem_q->coeffs, rem_q->coeffs, q);
+    }
+    fmpz_poly_set_fmpz_mod_poly(rem, rem_q);
+    fmpz_mod_poly_clear(rem_q);
+    fmpz_mod_poly_clear(g_q);
+    fmpz_clear(q);
+  } else {
+    fmpz_poly_oz_mul(rem, rem, g, n);
+    fmpz_poly_neg(rem, rem);
+    if(fmpz_poly_degree(rem)>-1)
+      fmpz_add(rem->coeffs, fc, rem->coeffs);
+  }
   fmpq_poly_clear(fq);
   fmpz_clear(fc);
 }
@@ -316,11 +342,12 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   }
 
   const mp_bitcnt_t B = num_threads*b;
+  const mp_bitcnt_t rem_bound = labs(fmpz_poly_max_bits(g)) + log2(n);
 
   fmpz_poly_t powb; fmpz_poly_init(powb);
   fmpz_poly_set_coeff_ui(powb, 0, 2); // powb ~= 2^b
   fmpz_pow_ui(powb->coeffs, powb->coeffs, b);
-  _fmpz_poly_oz_rem_small_fmpz(powb, powb->coeffs, g, n, g_inv);
+  _fmpz_poly_oz_rem_small_fmpz(powb, powb->coeffs, g, n, g_inv, rem_bound);
 
   fmpz_poly_t powB; fmpz_poly_init(powB);
   fmpz_poly_set_ui(powB, 1);
@@ -338,13 +365,13 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
     for(size_t j=1; j<num_threads; j++)
       fmpz_poly_oz_mul(t_[j], t_[j-1], powb, n);
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for(size_t j=0; j<num_threads; j++) {
       fmpz_set(H_[j], H);
       fmpz_fdiv_q_2exp(H_[j], H_[j], j*b);
       fmpz_fdiv_r_2exp(H_[j], H_[j], b); // H_j = (H >> j*b) % 2^b
 
-      _fmpz_poly_oz_rem_small_fmpz(f_[j], H_[j], g, n, g_inv); // f_j ~= H_j
+      _fmpz_poly_oz_rem_small_fmpz(f_[j], H_[j], g, n, g_inv, rem_bound); // f_j ~= H_j
       fmpz_poly_oz_mul(f_[j], t_[j], f_[j], n); // f_j ~= 2^(b*j) * H_j
       flint_cleanup();
     }
