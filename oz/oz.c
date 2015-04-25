@@ -284,7 +284,7 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
 
   fmpz_t t; fmpz_init(t);
   for(int i=0; i<fmpq_poly_length(g_inv); i++) {
-    fmpz_fdiv_q(t, fq->coeffs + i, g_inv->den);
+    fmpz_tdiv_q(t, fq->coeffs + i, g_inv->den);
     fmpz_poly_set_coeff_fmpz(rem, i, t);
   }
   fmpz_clear(t);
