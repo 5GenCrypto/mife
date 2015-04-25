@@ -51,7 +51,9 @@ void _gghlite_sk_set_D_g(gghlite_sk_t self) {
   assert(mpfr_cmp_d(self->params->sigma_p,0)>0);
 
   const oz_flag_t flags = (self->params->flags & GGHLITE_FLAGS_QUIET) ? 0 : OZ_VERBOSE;
+  self->t_D_g = ggh_walltime(0);
   self->D_g = _gghlite_dgsl_from_poly(self->g, self->params->sigma_p, NULL, DGSL_INLATTICE, flags);
+  self->t_D_g = ggh_walltime(self->t_D_g);
 }
 
 void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
@@ -521,6 +523,7 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
 void gghlite_sk_print_times(const gghlite_sk_t self) {
   printf("           sampling: %7.1fs\n", self->t_sample/1000000.0);
   printf("     primality test: %7.1fs\n", self->t_is_prime/1000000.0);
+  printf("                D_g: %7.1fs\n", self->t_D_g/1000000.0);
   printf("gcd(N(g),N(h)) == 1: %7.1fs\n", self->t_coprime/1000000.0);
   printf("   <b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
 }
