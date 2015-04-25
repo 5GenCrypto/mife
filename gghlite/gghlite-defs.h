@@ -110,6 +110,7 @@ struct _gghlite_sk_struct {
   uint64_t t_is_subideal;           //!< time spent on verifying that $\\ideal{b_0,b_1} = \\ideal{g}$ in μs
   uint64_t t_sample;                //!< time spent on sampling  in μs
   uint64_t t_coprime;               //!< time spent on checking if g and h are co-prime in μs
+  uint64_t t_D_g;                   //!< time spent setting up D_g (dominated by sqrt)
 };
 
 /**
