@@ -77,42 +77,10 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
   fmpz_poly_set(t_i, f);
 
-  /* if f is a constant, we write it as f == fh * 2^n + fl */
   if (fmpz_poly_degree(f) == 0) {
-    fmpz_t ft; fmpz_init(ft);
-    fmpz_set(ft, f->coeffs);
-
-    fmpz_t fl; fmpz_init(fl);
-    fmpz_t fb; fmpz_init(fb);
-    fmpz_set_si(fb, 2);
-    fmpz_pow_ui(fb, fb, self->params->lambda * self->params->kappa * self->params->lambda * self->params->kappa);
-
-    fmpz_poly_t tl; fmpz_poly_init(tl);
-    fmpz_poly_t tb; fmpz_poly_init(tb);
-    _fmpz_poly_oz_rem_small_fmpz(tb, fb, self->g, self->params->n, self->g_inv);
-    fmpz_poly_t tm; fmpz_poly_init(tm);
-    fmpz_poly_set_coeff_ui(tm, 0, 1);
-
-    while(!fmpz_is_zero(ft)) {
-      fmpz_set(fl, ft);
-      fmpz_mod(fl, fl, fb);
-      fmpz_sub(ft, ft, fl);
-      fmpz_divexact(ft, ft, fb);
-
-      _fmpz_poly_oz_rem_small_fmpz(tl, fl, self->g, self->params->n, self->g_inv);
-      fmpz_poly_oz_mul(tl, tm, tl, self->params->n);
-      fmpz_poly_add(t_o, t_o, tl);
-
-      fmpz_poly_oz_mul(tm, tm, tb, self->params->n);
-      _fmpz_poly_oz_rem_small(tl, tm, self->g, self->params->n, self->g_inv);
-      fmpz_poly_set(tm, tl);
-    }
-    fmpz_clear(fl);
-    fmpz_clear(fb);
-    fmpz_clear(ft);
-    fmpz_poly_clear(tl);
-    fmpz_poly_clear(tb);
-    fmpz_poly_clear(tm);
+    /* if f is a constant, we write it as f == ∑ 2^(i⋅b) f_i and deal with each chunk individually */
+    const mp_bitcnt_t b = self->params->lambda * self->params->kappa * self->params->lambda * self->params->kappa;
+    _fmpz_poly_oz_rem_small_fmpz_split(t_o, f->coeffs, self->g, self->params->n, self->g_inv, b);
   } else {
     fmpz_poly_set(t_o, t_i);
   }
