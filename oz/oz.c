@@ -296,40 +296,84 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
 
 void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g,
                                         const long n, const fmpq_poly_t g_inv, const mp_bitcnt_t b) {
+
+  const size_t num_threads = omp_get_max_threads();
+
   fmpz_t F; fmpz_init_set(F, f);
-  fmpz_t Fi; fmpz_init(Fi);
-  fmpz_poly_t fi; fmpz_poly_init(fi);
+  fmpz_t H; fmpz_init(H);
+  fmpz_poly_t t; fmpz_poly_init(t);
+  fmpz_poly_set_ui(t, 1);
   fmpz_poly_t acc; fmpz_poly_init(acc);
-  fmpz_poly_t mul; fmpz_poly_init(mul);
+
+  fmpz_t H_[num_threads];
+  fmpz_poly_t f_[num_threads];
+  fmpz_poly_t t_[num_threads];
+
+  for(size_t j=0; j<num_threads; j++) {
+    fmpz_init(H_[j]);
+    fmpz_poly_init(f_[j]);
+    fmpz_poly_init(t_[j]);
+  }
+
+  const mp_bitcnt_t B = num_threads*b;
+
   fmpz_poly_t powb; fmpz_poly_init(powb);
-
-  fmpz_poly_set_ui(mul, 1);
-  fmpz_poly_set_ui(acc, 0);
-
-  fmpz_poly_set_coeff_ui(powb, 0, 2); // pown ~= 2^b
+  fmpz_poly_set_coeff_ui(powb, 0, 2); // powb ~= 2^b
   fmpz_pow_ui(powb->coeffs, powb->coeffs, b);
   _fmpz_poly_oz_rem_small_fmpz(powb, powb->coeffs, g, n, g_inv);
 
-  const size_t parts = (fmpz_sizeinbase(f, 2)/b) + ((fmpz_sizeinbase(f, 2)%b) ? 1 : 0);
-  for(size_t i=0; i<parts; i++) {
-    fmpz_set(Fi, F);
-    fmpz_fdiv_r_2exp(Fi, Fi, b); // F_i = F % 2^b
-    _fmpz_poly_oz_rem_small_fmpz(fi, Fi, g, n, g_inv); // f_i = F_i
-    fmpz_poly_oz_mul(fi, mul, fi, n); // f_i ~= 2^(b*i) * F_i
-    fmpz_poly_add(acc, acc, fi);   // acc ~= acc + 2^(b*i) * F_i
+  fmpz_poly_t powB; fmpz_poly_init(powB);
+  fmpz_poly_set_ui(powB, 1);
+  for(size_t j=0; j<num_threads; j++)
+    fmpz_poly_oz_mul(powB, powB, powb, n);
+  _fmpz_poly_oz_rem_small(powB, powB, g, n, g_inv);
 
-    fmpz_poly_oz_mul(mul, mul, powb, n); // mul = 2^b * mul
-    if (labs(fmpz_poly_max_bits(mul)) > (long)b/2)
-      _fmpz_poly_oz_rem_small(mul, mul, g, n, g_inv);
-    fmpz_fdiv_q_2exp(F, F, b); // fl >> b
+  const size_t nparts = (fmpz_sizeinbase(f, 2)/B) + ((fmpz_sizeinbase(f, 2)%B) ? 1 : 0);
+
+  for(size_t i=0; i<nparts; i++) {
+    fmpz_set(H, F);
+    fmpz_fdiv_r_2exp(H, H, B); // H = H % 2^B
+
+    fmpz_poly_set(t_[0], t);
+    for(size_t j=1; j<num_threads; j++)
+      fmpz_poly_oz_mul(t_[j], t_[j-1], powb, n);
+
+    #pragma omp parallel for
+    for(size_t j=0; j<num_threads; j++) {
+      fmpz_set(H_[j], H);
+      fmpz_fdiv_q_2exp(H_[j], H_[j], j*b);
+      fmpz_fdiv_r_2exp(H_[j], H_[j], b); // H_j = (H >> j*b) % 2^b
+
+      _fmpz_poly_oz_rem_small_fmpz(f_[j], H_[j], g, n, g_inv); // f_j ~= H_j
+      fmpz_poly_oz_mul(f_[j], t_[j], f_[j], n); // f_j ~= 2^(b*j) * H_j
+      flint_cleanup();
+    }
+
+    for(size_t j=0; j<num_threads; j++)
+      fmpz_poly_add(acc, acc, f_[j]);
+
+    fmpz_poly_oz_mul(t, t, powB, n);
+    if (labs(fmpz_poly_max_bits(t)) > (long)b/2)
+      _fmpz_poly_oz_rem_small(t, t, g, n, g_inv);
+
+    fmpz_fdiv_q_2exp(F, F, B); // F >> B
   }
+
   fmpz_poly_set(rem, acc);
+
   fmpz_clear(F);
-  fmpz_clear(Fi);
-  fmpz_poly_clear(fi);
+  fmpz_clear(H);
   fmpz_poly_clear(acc);
-  fmpz_poly_clear(mul);
+  fmpz_poly_clear(t);
   fmpz_poly_clear(powb);
+  fmpz_poly_clear(powB);
+
+  for(size_t j=0; j<num_threads; j++) {
+    fmpz_clear(H_[j]);
+    fmpz_poly_clear(f_[j]);
+    fmpz_poly_clear(t_[j]);
+  }
+
 }
 
 void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n) {
