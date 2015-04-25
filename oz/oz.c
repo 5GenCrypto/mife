@@ -289,6 +289,42 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
   fmpz_clear(fc);
 }
 
+void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g,
+                                        const long n, const fmpq_poly_t g_inv, const mp_bitcnt_t b) {
+  fmpz_t F; fmpz_init_set(F, f);
+  fmpz_t Fi; fmpz_init(Fi);
+  fmpz_poly_t fi; fmpz_poly_init(fi);
+  fmpz_poly_t acc; fmpz_poly_init(acc);
+  fmpz_poly_t mul; fmpz_poly_init(mul);
+  fmpz_poly_t powb; fmpz_poly_init(powb);
+
+  fmpz_poly_set_ui(mul, 1);
+  fmpz_poly_set_ui(acc, 0);
+
+  fmpz_poly_set_coeff_ui(powb, 0, 2); // pown ~= 2^b
+  fmpz_pow_ui(powb->coeffs, powb->coeffs, b);
+  _fmpz_poly_oz_rem_small_fmpz(powb, powb->coeffs, g, n, g_inv);
+
+  const size_t parts = (fmpz_sizeinbase(f, 2)/b) + ((fmpz_sizeinbase(f, 2)%b) ? 1 : 0);
+  for(size_t i=0; i<parts; i++) {
+    fmpz_set(Fi, F);
+    fmpz_fdiv_r_2exp(Fi, Fi, b); // F_i = F % 2^b
+    _fmpz_poly_oz_rem_small_fmpz(fi, Fi, g, n, g_inv); // f_i = F_i
+    fmpz_poly_oz_mul(fi, mul, fi, n); // f_i ~= 2^(b*i) * F_i
+    fmpz_poly_add(acc, acc, fi);   // acc ~= acc + 2^(b*i) * F_i
+
+    fmpz_poly_oz_mul(mul, mul, powb, n); // mul = 2^b * mul
+    if (labs(fmpz_poly_max_bits(mul)) > (long)b/2)
+      _fmpz_poly_oz_rem_small(mul, mul, g, n, g_inv);
+    fmpz_fdiv_q_2exp(F, F, b); // fl >> b
+  }
+  fmpz_poly_set(rem, acc);
+  fmpz_clear(F);
+  fmpz_clear(Fi);
+  fmpz_poly_clear(fi);
+  fmpz_poly_clear(acc);
+  fmpz_poly_clear(mul);
+  fmpz_poly_clear(powb);
 }
 
 void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n) {
