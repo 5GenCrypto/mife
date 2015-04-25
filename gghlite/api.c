@@ -115,6 +115,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
   mpfr_clear(norm_i);
   mpfr_clear(norm_o);
+  fmpq_poly_clear(g_inv);
 
   if (rerand)
     dgsl_rot_mp_call_plus_fmpz_poly(t_o, self->D_g, t_o, randstate->gmp_state);
