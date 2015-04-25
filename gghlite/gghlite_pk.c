@@ -510,7 +510,7 @@ void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uin
   self->rerand_mask = rerand_mask;
   self->flags = flags;
 
-  for(int log_n = 8; ; log_n++) {
+  for(int log_n = 7; ; log_n++) {
     self->n = ((long)1)<<log_n;
     _gghlite_params_set_sigma(self);
     _gghlite_params_set_ell_g(self);
