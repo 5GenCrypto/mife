@@ -248,6 +248,7 @@ int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmp
 }
 
 void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t g_inv) {
+  fmpz_poly_t fc; fmpz_poly_init(fc); fmpz_poly_set(fc, f);
   fmpq_poly_t fq; fmpq_poly_init(fq);
   fmpq_poly_set_fmpz_poly(fq, f);
   fmpq_poly_oz_rem(fq, fq, n);
@@ -262,27 +263,32 @@ void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_po
   fmpz_clear(t);
 
   fmpz_poly_oz_mul(rem, rem, g, n);
-  fmpz_poly_sub(rem, f, rem);
+  fmpz_poly_sub(rem, fc, rem);
 
+  fmpz_poly_clear(fc);
   fmpq_poly_clear(fq);
 }
 
 
 void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t g_inv) {
-    fmpq_poly_t fq; fmpq_poly_init(fq);
-    fmpq_poly_scalar_mul_fmpz(fq, g_inv, f);
+  fmpz_t fc; fmpz_init_set(fc, f);
+  fmpq_poly_t fq; fmpq_poly_init(fq);
+  fmpq_poly_scalar_mul_fmpz(fq, g_inv, f);
 
-    fmpz_t t; fmpz_init(t);
-    for(int i=0; i<fmpq_poly_length(fq); i++) {
-      fmpz_fdiv_q(t, fq->coeffs + i, fq->den);
-      fmpz_poly_set_coeff_fmpz(rem, i, t);
-    }
-    fmpz_clear(t);
+  fmpz_t t; fmpz_init(t);
+  for(int i=0; i<fmpq_poly_length(fq); i++) {
+    fmpz_fdiv_q(t, fq->coeffs + i, fq->den);
+    fmpz_poly_set_coeff_fmpz(rem, i, t);
+  }
+  fmpz_clear(t);
 
-    fmpz_poly_oz_mul(rem, rem, g, n);
-    fmpz_poly_neg(rem, rem);
-    fmpz_add(rem->coeffs, f, rem->coeffs);
-    fmpq_poly_clear(fq);
+  fmpz_poly_oz_mul(rem, rem, g, n);
+  fmpz_poly_neg(rem, rem);
+  fmpz_add(rem->coeffs, fc, rem->coeffs);
+  fmpq_poly_clear(fq);
+  fmpz_clear(fc);
+}
+
 }
 
 void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n) {
