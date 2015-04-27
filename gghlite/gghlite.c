@@ -105,11 +105,8 @@ void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
         continue;
 
       while(1) {
-        //TODO: write MACRO to simplify this kind of code
-        if (!(self->params->flags & GGHLITE_FLAGS_QUIET)) {
-          printf("\r Computing B^(%2ld):: !i: %4ld, !s: %4ld, !n: %4ld",k+1, fail[0], fail[1], fail[2]);
-          fflush(0);
-        }
+        ggh_printf(self->params, "\r Computing B^(%2ld):: !i: %4ld, !s: %4ld, !n: %4ld",
+                   k+1, fail[0], fail[1], fail[2]);
 
         uint64_t t = ggh_walltime(0);
         _dgsl_rot_mp_call_inlattice_multiplier(self->b[i][k][0], self->D_g, randstate->gmp_state);
@@ -148,8 +145,7 @@ void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
 
         break;
       }
-      if (!(self->params->flags & GGHLITE_FLAGS_QUIET))
-        printf("\n");
+      ggh_printf(self->params, "\n");
     }
   }
   free(primes);
@@ -232,10 +228,9 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
   fmpz_init(N);
 
   while(1) {
-    if (!(self->params->flags & GGHLITE_FLAGS_QUIET)) {
-      printf("\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld, !N: %4ld",fail[0], fail[1], fail[2], fail[3]);
-      fflush(0);
-    }
+    ggh_printf(self->params, "\r      Computing g:: !n: %4ld, !p: %4ld, !i: %4ld, !N: %4ld",
+               fail[0], fail[1], fail[2], fail[3]);
+
     uint64_t t = ggh_walltime(0);
     fmpz_poly_sample_D(self->g, D, randstate);
     self->t_sample += ggh_walltime(t);
@@ -290,10 +285,8 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
   if (!check_prime)
     free(primes_s);
 
-  if (!(self->params->flags & GGHLITE_FLAGS_QUIET)) {
-    printf("\n");
-    fflush(0);
-  }
+  ggh_printf(self->params, "\n");
+
   mpfr_clear(norm);
   mpfr_clear(sqrtn_sigma);
   mpfr_clear(g_inv_norm);

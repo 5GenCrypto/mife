@@ -27,6 +27,7 @@
 #include <flint/fmpz_mod_poly.h>
 
 #include <gghlite/gghlite-defs.h>
+#include <gghlite/misc.h>
 
 /**
    @defgroup params Instance Generation & Parameters

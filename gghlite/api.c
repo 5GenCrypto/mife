@@ -85,11 +85,10 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
     fmpz_poly_set(t_o, t_i);
   }
 
-  if(self->params->flags & GGHLITE_FLAGS_VERBOSE)
-    printf("|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
-           fmpz_poly_eucl_norm_log2(t_i),
-           fmpz_poly_eucl_norm_log2(self->g),
-           fmpz_poly_eucl_norm_log2(t_o));
+  ggh_printf_v(self->params, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
+               fmpz_poly_eucl_norm_log2(t_i),
+               fmpz_poly_eucl_norm_log2(self->g),
+               fmpz_poly_eucl_norm_log2(t_o));
 
   /* the precision of g_inv might not be sufficient to do this in one step, hence, we repeat until
      the result does not improve any more*/
@@ -104,12 +103,10 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
     _fmpz_poly_oz_rem_small(t_o, t_i, self->g, self->params->n, g_inv);
     fmpz_poly_eucl_norm_mpfr(norm_o, t_o, MPFR_RNDN);
 
-    if(self->params->flags & GGHLITE_FLAGS_VERBOSE)
-      printf("|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
-             fmpz_poly_eucl_norm_log2(t_i),
-             fmpz_poly_eucl_norm_log2(self->g),
-             fmpz_poly_eucl_norm_log2(t_o));
-
+    ggh_printf_v(self->params, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
+                 fmpz_poly_eucl_norm_log2(t_i),
+                 fmpz_poly_eucl_norm_log2(self->g),
+                 fmpz_poly_eucl_norm_log2(t_o));
   } while (mpfr_cmp(norm_o, norm_i) < 0);
   fmpz_poly_set(t_o, t_i);
 

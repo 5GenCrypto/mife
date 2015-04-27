@@ -7,7 +7,6 @@
 #define _DEFS_H_
 
 #include <gghlite/config.h>
-#include <gghlite/misc.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpz_mod_poly.h>
 #include <dgsl/dgsl.h>
