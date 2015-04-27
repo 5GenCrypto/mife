@@ -10,7 +10,8 @@
 
 #include <math.h>
 #include <gghlite/gghlite-defs.h>
-#include "oz/oz.h"
+#include <gghlite/misc.h>
+#include <oz/oz.h>
 
 /**
    @brief Check if $|g^{-1}| ≤ ℓ_g@

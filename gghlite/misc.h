@@ -1,3 +1,8 @@
+/**
+   @file misc.h
+   @brief Utility Functions
+*/
+
 #ifndef MISC__H
 #define MISC__H
 
@@ -25,5 +30,28 @@ static inline uint64_t ggh_walltime(uint64_t t0) {
     base_sec = tp.tv_sec;
   return ((uint64_t)(tp.tv_sec - base_sec)) * 1000000 + (uint64_t)tp.tv_usec - t0;
 }
+
+#include <gghlite/gghlite-defs.h>
+
+
+/**
+   @brief Print if GGHLITE_FLAGS_VERBOSE is set
+
+   @param self   GGHITE `params`
+   @param msg    format string for printf()
+   @param ...    arguments for format string `msg`
+*/
+
+void ggh_printf_v(const gghlite_params_t self, const char *msg, ...);
+
+/**
+   @brief Print if GGHLITE_FLAGS_QUIET is not set
+
+   @param self   GGHITE `params`
+   @param msg    format string for printf()
+   @param ...    arguments for format string `msg`
+*/
+
+void ggh_printf(const gghlite_params_t self, const char *msg, ...);
 
 #endif //MISC__H
