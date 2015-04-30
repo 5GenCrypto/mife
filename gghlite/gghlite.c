@@ -11,7 +11,14 @@ void _gghlite_zero(gghlite_sk_t self) {
 void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate) {
   assert(self->D_g);
 
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
+  size_t bound = 0;
+  if (gghlite_params_have_rerand(self->params, 0)) {
+    if(gghlite_sk_is_symmetric(self)) {
+      bound = 1;
+    } else {
+      bound = self->params->kappa;
+    }
+  }
 
   for (size_t i=0; i<bound; i++) {
     fmpz_poly_init(self->a[i]);
@@ -25,7 +32,14 @@ void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate) {
 void _gghlite_sk_set_y(gghlite_sk_t self) {
   assert(!fmpz_is_zero(self->params->q));
 
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
+  size_t bound = 0;
+  if (gghlite_params_have_rerand(self->params, 0)) {
+    if(gghlite_sk_is_symmetric(self)) {
+      bound = 1;
+    } else {
+      bound = self->params->kappa;
+    }
+  }
 
   fmpz_mod_poly_t tmp;
   fmpz_mod_poly_init(tmp, self->params->q);

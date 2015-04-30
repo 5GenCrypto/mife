@@ -56,8 +56,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
 
   for(size_t k=0; k<kappa; k++) {
     const int i = (gghlite_sk_is_symmetric(self)) ? 0 : k;
-    gghlite_enc_set_ui(u[k], 1, self->params, 1, i, 0, randstate);
-    gghlite_enc_mul(rght, self->params, rght, u[k]);
+    gghlite_enc_mul(rght, self->params, rght, self->z_inv[i]);
   }
 
   gghlite_enc_sub(rght, self->params, rght, left);

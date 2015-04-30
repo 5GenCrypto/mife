@@ -12,8 +12,13 @@ int test_instgen_symm(const size_t lambda, const size_t kappa, const uint64_t re
 
   /* The elements a & y should be zero if there is no rerandomisation, and non-zero otherwise.  */
 
-  if (fmpz_poly_is_zero(self->a[0]))              status++;
-  if (fmpz_mod_poly_is_zero(self->params->y[0]))  status++;
+  if (gghlite_params_have_rerand(self->params, 0)) {
+    if (fmpz_poly_is_zero(self->a[0]))              status++;
+    if (fmpz_mod_poly_is_zero(self->params->y[0]))  status++;
+  } else {
+    if (!fmpz_poly_is_zero(self->a[0]))              status++;
+    if (!fmpz_mod_poly_is_zero(self->params->y[0]))  status++;
+  }
 
   /* We want rerandomisers for any level where gghlite_pk_have_rerand(self->params, k) is true.  */
 
@@ -59,11 +64,17 @@ int test_instgen_asymm(const size_t lambda, const size_t kappa, const uint64_t r
   int status = 0;
 
   for(size_t i=0; i< kappa; i++) {
-    /* we want all z[i], z_inv[i], a[i] and y[i] to be != 0 */
-    if (fmpz_poly_is_zero(self->a[i]))             status++;
-    if (fmpz_mod_poly_is_zero(self->params->y[i])) status++;
+    /* we want all z[i], z_inv[i] to be != 0 */
     if (fmpz_mod_poly_is_zero(self->z[i]))         status++;
     if (fmpz_mod_poly_is_zero(self->z_inv[i]))     status++;
+
+    if (gghlite_params_have_rerand(self->params, 0)) {
+      if (fmpz_poly_is_zero(self->a[i]))             status++;
+      if (fmpz_mod_poly_is_zero(self->params->y[i])) status++;
+    } else {
+      if (!fmpz_poly_is_zero(self->a[i]))             status++;
+      if (!fmpz_mod_poly_is_zero(self->params->y[i])) status++;
+    }
 
     for(size_t k=0; k< kappa; k++) {
     /* We want rerandomisers for any source group where gghlite_pk_have_rerand(self->params, k) is true
