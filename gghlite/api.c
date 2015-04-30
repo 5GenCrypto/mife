@@ -79,7 +79,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
   if (fmpz_poly_degree(f) == 0) {
     /* if f is a constant, we write it as f == ∑ 2^(i⋅b) f_i and deal with each chunk individually */
-    const mp_bitcnt_t b = self->params->lambda * self->params->lambda * self->params->kappa;
+    const mp_bitcnt_t b = (self->params->n > 1024) ? (self->params->n/8) : 128;
     _fmpz_poly_oz_rem_small_fmpz_split(t_o, f->coeffs, self->g, self->params->n, self->g_inv, b);
   } else {
     fmpz_poly_set(t_o, t_i);
