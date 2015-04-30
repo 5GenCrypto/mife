@@ -417,31 +417,31 @@ double gghlite_params_get_delta_0(const gghlite_params_t self) {
   mpfr_t tmp;
   mpfr_init2(tmp, _gghlite_prec(self));
 
-  mpfr_mul_ui(target_norm, self->sigma_p, 3, MPFR_RNDN);
-  mpfr_mul(target_norm, target_norm, self->sigma_s, MPFR_RNDN);
-  mpfr_mul(tmp, self->sigma_p, self->sigma_p, MPFR_RNDN);
-  mpfr_add(target_norm, target_norm, tmp, MPFR_RNDN);
-  mpfr_pow_ui(target_norm, target_norm, self->kappa, MPFR_RNDN); // (σ'^2 +  m·σ'·σ^*)^κ
+  double delta_0_g = 0.0;
 
-  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
-  mpfr_pow_ui(tmp, tmp, 2*self->kappa, MPFR_RNDN);
-  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN);
-  mpfr_mul_ui(target_norm, target_norm, 2, MPFR_RNDN); // 2 · n^(2κ) · (σ'^2 +  m·σ'·σ^*)^κ
+  if(self->rerand_mask) {
+    mpfr_set(tmp, self->sigma_p, MPFR_RNDN);
+    mpfr_pow_ui(tmp, tmp, self->kappa, MPFR_RNDN);
+    mpfr_mul_ui(target_norm, tmp, 6, MPFR_RNDN); // 6⋅(σ')^κ
+    mpfr_mul(target_norm, target_norm, self->sigma_s, MPFR_RNDN); // 6 ⋅ (σ')^κ ⋅ σ^*
 
-  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
-  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
-  mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN); // 2 · n^(2κ+1/2) · (σ'^2 +  m·σ'·σ^*)^κ
+    mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+    mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+    mpfr_pow_ui(tmp, tmp, 2*self->kappa + 3, MPFR_RNDN);
+    mpfr_mul(target_norm, target_norm, tmp, MPFR_RNDN);
+    mpfr_mul_ui(target_norm, target_norm, 2, MPFR_RNDN); // 6 ⋅ (σ')^κ ⋅ σ^* ⋅ sqrt(n)^(2κ+3)
 
-  _gghlite_params_get_q_mpfr(tmp, self, MPFR_RNDN);
-  mpfr_sqrt(tmp, tmp, MPFR_RNDN);
+    _gghlite_params_get_q_mpfr(tmp, self, MPFR_RNDN);
+    mpfr_sqrt(tmp, tmp, MPFR_RNDN);
 
-  mpfr_div(target_norm, tmp, target_norm, MPFR_RNDN);
+    mpfr_div(target_norm, tmp, target_norm, MPFR_RNDN);
 
-  mpfr_set_ui(tmp, self->n, MPFR_RNDN);
-  mpfr_ui_div(tmp, 1, tmp, MPFR_RNDN);
+    mpfr_set_ui(tmp, self->n, MPFR_RNDN);
+    mpfr_ui_div(tmp, 1, tmp, MPFR_RNDN);
 
-  mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
-  double delta_0_g = mpfr_get_d(tmp, MPFR_RNDN);
+    mpfr_pow(tmp, target_norm, tmp, MPFR_RNDN);
+    delta_0_g = mpfr_get_d(tmp, MPFR_RNDN);
+  }
 
   /* finding (~b0,~b1) from (x0/x1) */
 
@@ -452,7 +452,9 @@ double gghlite_params_get_delta_0(const gghlite_params_t self) {
   mpfr_mul_ui(target_norm, target_norm, self->n, MPFR_RNDN);
   mpfr_sqrt(target_norm, target_norm, MPFR_RNDN); //< sqrt(2n)
   mpfr_mul(target_norm, target_norm, self->sigma_p, MPFR_RNDN); //< sqrt(2n) · σ'
-  mpfr_div(target_norm, target_norm, self->sigma, MPFR_RNDN); //< sqrt(2n) · σ'/σ
+
+  if (self->rerand_mask) // if there are no rerandomisers we target random encodings
+    mpfr_div(target_norm, target_norm, self->sigma, MPFR_RNDN); //< sqrt(2n) · σ'/σ
 
   mpfr_mul_d(target_norm, target_norm, 0.3, MPFR_RNDN); // TODO: Don't hardcode this
   mpfr_ui_div(target_norm, 1, target_norm, MPFR_RNDN); //< 1/(sqrt(2n) · σ'/σ · τ)
@@ -468,9 +470,12 @@ double gghlite_params_get_delta_0(const gghlite_params_t self) {
   mpfr_clear(target_norm);
   mpfr_clear(tmp);
 
-  if (delta_0_g > delta_0_ntru)
-    return delta_0_g;
-  else
+  if (self->rerand_mask) {
+    if (delta_0_g > delta_0_ntru)
+      return delta_0_g;
+    else
+      return delta_0_ntru;
+  } else
     return delta_0_ntru;
 }
 
