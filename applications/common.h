@@ -24,6 +24,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-v   be more verbose (default: False)\n");
   printf("-q   be less verbose (default: False)\n");
   printf("-f   skip some expensive checks (default: False)\n");
+  printf("-z   construct asymmetric map (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   if (extra)
     printf("%s\n", extra);
@@ -61,7 +62,7 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
   params->rerand =  DEFAULT_RERAND;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:s:vpr:dfq")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:s:vpr:dfqz")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -83,6 +84,9 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
       break;
     case 'p':
       params->flags |= GGHLITE_FLAGS_PRIME_G;
+      break;
+    case 'z':
+      params->flags |= GGHLITE_FLAGS_ASYMMETRIC;
       break;
     case 'r':
       params->rerand = (uint64_t)strtoul(optarg,NULL,10);
