@@ -229,7 +229,7 @@ void gghlite_params_print(const gghlite_params_t self) {
   if (gghlite_params_is_symmetric(self))
     mpfr_mul_ui(par, par, count*2 + 1 + 1, MPFR_RNDN);
   else
-    mpfr_mul_ui(par, par, count*3 + 1 + 1, MPFR_RNDN);
+    mpfr_mul_ui(par, par, count*3 + 1, MPFR_RNDN);
 
   mpfr_get_d(par, MPFR_RNDN);
   sd = mpfr_get_d(par, MPFR_RNDN)/8.0;
