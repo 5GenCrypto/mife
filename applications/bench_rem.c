@@ -17,7 +17,7 @@ void bench_rem(const fmpz_poly_t g, const fmpz_t a, const long n, const mp_bitcn
   fmpz_poly_set_coeff_fmpz(f, 0, a);
 
   uint64_t t = ggh_walltime(0);
-  _fmpz_poly_oz_rem_small_iter(r, f, g, n, g_inv, OZ_VERBOSE);
+  _fmpz_poly_oz_rem_small_iter(r, f, g, n, g_inv, prec, OZ_VERBOSE);
   printf("n: %6ld, log σ: %4zu, prec: %5ld, t: %10.4f\n", n, labs(fmpz_poly_max_bits(g)), prec, ggh_walltime(t)/1000000.0);
 
   fmpz_poly_clear(f);

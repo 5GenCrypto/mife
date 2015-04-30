@@ -75,6 +75,6 @@ void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_pol
 
 void _fmpz_poly_oz_rem_small_iter(fmpz_poly_t rem,
                                   const fmpz_poly_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t ginv,
-                                  const oz_flag_t flags);
+                                  const mp_bitcnt_t b, const oz_flag_t flags);
 
 #endif /* _REM_H */

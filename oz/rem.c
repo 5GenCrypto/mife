@@ -107,7 +107,7 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   for(size_t j=0; j<num_threads; j++)
     fmpz_poly_oz_mul(powB, powB, powb, n);
   /* invest a bit more here as it keeps everything below small */
-  _fmpz_poly_oz_rem_small_iter(powB, powB, g, n, g_inv, 0);
+  _fmpz_poly_oz_rem_small_iter(powB, powB, g, n, g_inv, 0, 0);
 
   const size_t nparts = (fmpz_sizeinbase(f, 2)/B) + ((fmpz_sizeinbase(f, 2)%B) ? 1 : 0);
 
@@ -193,11 +193,10 @@ void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_pol
 }
 
 
-void _fmpz_poly_oz_rem_small_iter(fmpz_poly_t rem,
-                                  const fmpz_poly_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t ginv, const oz_flag_t flags) {
+void _fmpz_poly_oz_rem_small_iter(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g,
+                                  const long n, const fmpq_poly_t ginv, const mp_bitcnt_t b, const oz_flag_t flags) {
 
-  mp_bitcnt_t prec = labs(_fmpz_vec_max_bits(ginv->coeffs, fmpq_poly_length(ginv)))/2;
-
+  mp_bitcnt_t prec = (b) ? b : labs(_fmpz_vec_max_bits(ginv->coeffs, fmpq_poly_length(ginv)))/2;
   fmpz_poly_t t_i;  fmpz_poly_init(t_i);
   fmpz_poly_t t_o;  fmpz_poly_init(t_o);
   mpfr_t norm_i; mpfr_init2(norm_i, prec);
