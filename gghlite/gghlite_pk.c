@@ -489,7 +489,7 @@ double gghlite_params_cost_bkz_sieve(const gghlite_params_t self) {
     return 3*log2(self->n);
   const int k = _gghlite_k_from_delta(delta_0);
   const double r = _gghlite_repeat_from_n_k(self->n, k);
-  return 0.3774*k + 20 + r;
+  return 0.3366*k + 12.31 + r;
 }
 
 
