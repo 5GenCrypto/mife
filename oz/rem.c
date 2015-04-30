@@ -106,7 +106,8 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   fmpz_poly_set_ui(powB, 1);
   for(size_t j=0; j<num_threads; j++)
     fmpz_poly_oz_mul(powB, powB, powb, n);
-  _fmpz_poly_oz_rem_small(powB, powB, g, n, g_inv);
+  /* invest a bit more here as it keeps everything below small */
+  _fmpz_poly_oz_rem_small_iter(powB, powB, g, n, g_inv, 0);
 
   const size_t nparts = (fmpz_sizeinbase(f, 2)/B) + ((fmpz_sizeinbase(f, 2)%B) ? 1 : 0);
 
