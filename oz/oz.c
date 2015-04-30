@@ -309,7 +309,11 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
       if(fmpz_mod_poly_degree(rem_q)>-1) {
         fmpz_add(rem_q->coeffs, fc, rem_q->coeffs);
         fmpz_mod(rem_q->coeffs, rem_q->coeffs, q);
+      } else {
+        fmpz_mod_poly_set_coeff_fmpz(rem_q, 0,fc);
+        fmpz_mod(rem_q->coeffs, rem_q->coeffs, q);
       }
+
       fmpz_poly_set_fmpz_mod_poly(tmp, rem_q);
       fmpz_mod_poly_clear(rem_q);
       fmpz_mod_poly_clear(g_q);
@@ -327,6 +331,8 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
     fmpz_poly_neg(rem, rem);
     if(fmpz_poly_degree(rem)>-1)
       fmpz_add(rem->coeffs, fc, rem->coeffs);
+    else
+      fmpz_poly_set_coeff_fmpz(rem, 0,fc);
   }
   fmpq_poly_clear(fq);
   fmpz_clear(fc);
