@@ -403,7 +403,7 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
 
     fmpz_fdiv_q_2exp(F, F, B); // F >> B
   }
-
+  assert(fmpz_is_zero(F));
   fmpz_poly_set(rem, acc);
 
   fmpz_clear(F);
