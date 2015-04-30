@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_oz_ideal_norm(p, g, n, 0);
 
   fmpz_t a;  fmpz_init(a);
-  fmpz_randtest_mod(a, randstate, p);
+  fmpz_randm(a, randstate, p);
 
   for(size_t i=9; i<=log2(n)+1; i++) {
     bench_rem(g, a, n,  1ULL<<i);
