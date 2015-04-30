@@ -95,8 +95,13 @@ int main(int argc, char *argv[]) {
   gghlite_enc_sub(rght, self->params, rght, left);
   int status = 1 - gghlite_enc_is_zero(self->params, rght);
 
+  gghlite_clr_t clr; gghlite_clr_init(clr);
+  gghlite_enc_extract(clr, self->params, rght);
+  double size = fmpz_poly_eucl_norm_log2(clr);
+  gghlite_clr_clear(clr);
+
   printf("6. Checking correctness wall time:        %8.2f s\n", ggh_walltime(t)/1000000.0);
-  printf("   Correct:                               %8s\n\n", (status == 0) ? "TRUE" : "FALSE");
+  printf("   Correct:                               %8s (%8.2f)\n\n", (status == 0) ? "TRUE" : "FALSE", size);
 
   for(long i=0; i<cmdline_params->kappa; i++) {
     fmpz_clear(a[i]);
