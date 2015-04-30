@@ -70,49 +70,9 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
                                  const size_t k, const size_t i, const int rerand,
                                  flint_rand_t randstate) {
 
-  fmpz_poly_t t_i;  fmpz_poly_init(t_i);
   fmpz_poly_t t_o;  fmpz_poly_init(t_o);
-  mpfr_t norm_i; mpfr_init2(norm_i, _gghlite_prec(self->params));
-  mpfr_t norm_o; mpfr_init2(norm_o, _gghlite_prec(self->params));
-
-  fmpz_poly_set(t_i, f);
-
-  if (fmpz_poly_degree(f) == 0) {
-    /* if f is a constant, we write it as f == ∑ 2^(i⋅b) f_i and deal with each chunk individually */
-    const mp_bitcnt_t b = (self->params->n > 1024) ? (self->params->n/8) : 128;
-    _fmpz_poly_oz_rem_small_fmpz_split(t_o, f->coeffs, self->g, self->params->n, self->g_inv, b);
-  } else {
-    fmpz_poly_set(t_o, t_i);
-  }
-
-  ggh_printf_v(self->params, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
-               fmpz_poly_eucl_norm_log2(t_i),
-               fmpz_poly_eucl_norm_log2(self->g),
-               fmpz_poly_eucl_norm_log2(t_o));
-
-  /* the precision of g_inv might not be sufficient to do this in one step, hence, we repeat until
-     the result does not improve any more*/
-
-  fmpq_poly_t g_inv; fmpq_poly_init(g_inv);
-  fmpq_poly_set(g_inv, self->g_inv);
-
-  do {
-    fmpz_poly_set(t_i, t_o);
-    fmpz_poly_eucl_norm_mpfr(norm_i, t_i, MPFR_RNDN);
-    fmpq_poly_truncate_prec(g_inv, fmpz_poly_eucl_norm_log2(t_i)/2);
-    _fmpz_poly_oz_rem_small(t_o, t_i, self->g, self->params->n, g_inv);
-    fmpz_poly_eucl_norm_mpfr(norm_o, t_o, MPFR_RNDN);
-
-    ggh_printf_v(self->params, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f\n",
-                 fmpz_poly_eucl_norm_log2(t_i),
-                 fmpz_poly_eucl_norm_log2(self->g),
-                 fmpz_poly_eucl_norm_log2(t_o));
-  } while (mpfr_cmp(norm_o, norm_i) < 0);
-  fmpz_poly_set(t_o, t_i);
-
-  mpfr_clear(norm_i);
-  mpfr_clear(norm_o);
-  fmpq_poly_clear(g_inv);
+  const oz_flag_t flags = (self->params->flags & GGHLITE_FLAGS_VERBOSE) ? OZ_VERBOSE : 0;
+  _fmpz_poly_oz_rem_small_iter(t_o, f, self->g, self->params->n, self->g_inv, flags);
 
   if (rerand)
     dgsl_rot_mp_call_plus_fmpz_poly(t_o, self->D_g, t_o, randstate->gmp_state);
@@ -120,7 +80,6 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
   // encode at level zero
   fmpz_mod_poly_oz_ntt_enc_fmpz_poly(rop, t_o, self->params->ntt);
 
-  fmpz_poly_clear(t_i);
   fmpz_poly_clear(t_o);
 
   // encode at level k

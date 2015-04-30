@@ -60,3 +60,4 @@ callgrind.*
 /tests/test_instgen
 /tests/test_jigsaw
 /applications/jigsaw
+/applications/bench_rem

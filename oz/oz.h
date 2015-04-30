@@ -2,6 +2,7 @@
     @file oz.h
     @brief Computing in $\\R$ and @f$\QQ[x]/\ideal{x^n+1}@f$.
 */
+
 #ifndef _OZ_H_
 #define _OZ_H_
 
@@ -12,13 +13,7 @@
 #include <flint/fmpq_poly.h>
 #include <flint/fmpz_mod_poly.h>
 
-/**
-   @brief Flags
-*/
-
-typedef enum {
-  OZ_VERBOSE    = 0x1, //!< print debug messages
-} oz_flag_t;
+#include <oz/flags.h>
 
 /**
    @brief Initialise $f$ to $x^n+1 \\in \\ZZ[x]$.
@@ -140,57 +135,6 @@ int fmpz_poly_oz_ideal_not_prime_factors(const fmpz_poly_t f, const long n, cons
 
 int fmpz_poly_oz_ideal_span(const fmpz_poly_t g, const fmpz_poly_t b0, const fmpz_poly_t b1, const long n,
                             const int sloppy, const mp_limb_t *primes);
-/**
-   @brief Return a small representative of $f \\mod \\ideal{g}$.
-
-   @param rem           return value, a small representative of $f \bmod \ideal{g}$.
-   @param f             an element $f$ in $\\R$
-   @param g             an element $g$ in $\\R$
-   @param n             degree of cyclotomic polynomial, must be power of two
-   @param ginv          pre-computed approximate inverse of $g$ in $\\R$.
- */
-
-void _fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n, const fmpq_poly_t ginv);
-
-/**
-   @brief Return a small representative of $f \\mod \\ideal{g}$ with $f \\in \\Z$.
-
-   @param rem           return value, a small representative of $f \bmod \ideal{g}$.
-   @param f             an element $f$ in $\\Z$
-   @param g             an element $g$ in $\\R$
-   @param n             degree of cyclotomic polynomial, must be power of two
-   @param ginv          pre-computed approximate inverse of $g$ in $\\R$.
-   @param bound         log_2 of bound on $|rem|_∞$ (set to zero to disable)
- */
-
-void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g, const long n,
-                                  const fmpq_poly_t g_inv, const mp_bitcnt_t bound);
-
-/**
-   @brief Return a small representative of $f \\mod \\ideal{g}$ with $f \\in \\Z$.
-
-   @param rem           return value, a small representative of $f \bmod \ideal{g}$.
-   @param f             an element $f$ in $\\Z$
-   @param g             an element $g$ in $\\R$
-   @param n             degree of cyclotomic polynomial, must be power of two
-   @param ginv          pre-computed approximate inverse of $g$ in $\\R$.
-   @param b             process $f$ in chunks of size $b$ bits.
- */
-
-void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const fmpz_poly_t g,
-                                        const long n, const fmpq_poly_t g_inv, const mp_bitcnt_t b);
-
-
-/**
-   @brief Return a small representative of $f \\mod \\ideal{g}$.
-
-   @param rem           return value, a small representative of $f \bmod \ideal{g}$.
-   @param f             an element $f$ in \\R$
-   @param g             an element $g$ in \\R$
-   @param n             degree of cyclotomic polynomial, must be power of two
- */
-
-void fmpz_poly_oz_rem_small(fmpz_poly_t rem, const fmpz_poly_t f, const fmpz_poly_t g, const long n);
 
 /**
    \brief Return true if @f$\ideal{b_0} + \ideal{b_1} = R@f$.
@@ -243,5 +187,6 @@ int fmpz_poly_oz_coprime_det(const fmpz_poly_t b0, const fmpz_t det_b1, const lo
 #include "invert.h"
 #include "sqrt.h"
 #include "norm.h"
+#include "rem.h"
 
 #endif /* _OZ_H_ */
