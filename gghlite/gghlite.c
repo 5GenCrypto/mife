@@ -274,7 +274,7 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
 
     break;
   }
-  const long prec = self->params->lambda * self->params->lambda * self->params->kappa;
+  const long prec = (self->params->n > 1024) ? (self->params->n/8) : 128;
   if (self->params->flags & GGHLITE_FLAGS_GOOD_G_INV) {
     /** we compute the inverse in high precision for gghlite_enc_set_gghlite_clr **/
     _fmpq_poly_oz_invert_approx(self->g_inv, g_q, self->params->n, prec);
