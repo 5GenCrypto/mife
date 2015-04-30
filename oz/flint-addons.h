@@ -84,6 +84,8 @@ static inline void fmpz_poly_eucl_norm_mpfr(mpfr_t rop, const fmpz_poly_t poly, 
 }
 
 static inline double fmpz_poly_eucl_norm_log2(const fmpz_poly_t poly) {
+  if (fmpz_poly_is_zero(poly))
+    return -1;
   mpfr_t tmp;
   mpfr_init2(tmp, labs(fmpz_poly_max_bits(poly)));
   _fmpz_vec_eucl_norm_mpfr(tmp, poly->coeffs, poly->length, MPFR_RNDN);
