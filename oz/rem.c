@@ -11,15 +11,11 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
     return;
   }
   fmpz_t fc; fmpz_init_set(fc, f);
-  fmpq_poly_t fq; fmpq_poly_init(fq);
-  /* fmpq_poly_scalar_mul_fmpz(fq, g_inv, f); but without all the gcd computations */
-  fmpq_poly_realloc(fq, fmpq_poly_length(g_inv));
-  _fmpz_vec_scalar_mul_fmpz(fq->coeffs, g_inv->coeffs, fmpq_poly_length(g_inv), f);
 
   mp_bitcnt_t den_log_approx = fmpz_sizeinbase(g_inv->den, 2)-1;
   fmpz_t t; fmpz_init(t);
   for(int i=0; i<fmpq_poly_length(g_inv); i++) {
-    fmpz_tdiv_q_2exp(t, fq->coeffs + i, den_log_approx);
+    fmpz_mul_tdiv_q_2exp(t, fc, g_inv->coeffs + i, den_log_approx);
     fmpz_poly_set_coeff_fmpz(rem, i, t);
   }
   fmpz_clear(t);
@@ -70,7 +66,6 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
     else
       fmpz_poly_set_coeff_fmpz(rem, 0,fc);
   }
-  fmpq_poly_clear(fq);
   fmpz_clear(fc);
 }
 
