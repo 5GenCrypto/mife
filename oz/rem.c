@@ -55,7 +55,7 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
       /* if there was no overflow, break*/
       if(labs(fmpz_poly_max_bits(tmp)) < (long)fmpz_sizeinbase(q, 2)-2)
         break;
-      fprintf(stderr, "overflow |t|: %10ld >= |q|: %10ld\n", labs(fmpz_poly_max_bits(tmp)), (long)fmpz_sizeinbase(q, 2)-2);
+      fprintf(stderr, "overflow |t|: %5ld >= |q|: %5ld\n", labs(fmpz_poly_max_bits(tmp)), (long)fmpz_sizeinbase(q, 2)-2);
       fmpz_mul_2exp(q, q, bound);
     }
     fmpz_poly_set(rem, tmp);
