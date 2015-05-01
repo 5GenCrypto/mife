@@ -95,7 +95,7 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   }
 
   const mp_bitcnt_t B = num_threads*b;
-  const mp_bitcnt_t rem_bound = 3*labs(fmpz_poly_max_bits(g));
+  const mp_bitcnt_t rem_bound = log2(n)/2*labs(fmpz_poly_max_bits(g));
 
   fmpz_poly_t powb; fmpz_poly_init(powb);
   fmpz_poly_set_coeff_ui(powb, 0, 2); // powb ~= 2^b
