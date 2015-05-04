@@ -29,25 +29,25 @@ int test_inv_approx(long n, long prec) {
   uint64_t t1 = ggh_walltime(0);
   _fmpq_poly_oz_invert_approx(f_inv1, f_q, n, prec);
   t1 = ggh_walltime(t1);
-  printf("prec %ld t: %7.1f\n", prec, t1/1000000.0);
+  printf("prec %ld t: %7.1f\n", prec, ggh_seconds(t1));
 
   fmpq_poly_t f_inv2; fmpq_poly_init(f_inv2);
   uint64_t t2 = ggh_walltime(0);
   fmpq_poly_oz_invert_approx(f_inv2, f_q, n, prec, OZ_VERBOSE);
   t2 = ggh_walltime(t2);
-  printf("iter prec %ld t: %7.1f\n", prec, t2/1000000.0);
+  printf("iter prec %ld t: %7.1f\n", prec, ggh_seconds(t2));
 
   fmpq_poly_t f_inv3; fmpq_poly_init(f_inv3);
   uint64_t t3 = ggh_walltime(0);
   _fmpq_poly_oz_invert_approx(f_inv3, f_q, n, 0);
   t3 = ggh_walltime(t3);
-  printf("CATALIN t: %7.1f\n", t3/1000000.0);
+  printf("CATALIN t: %7.1f\n", ggh_seconds(t3));
 
   fmpq_poly_t f_inv0; fmpq_poly_init(f_inv0);
   uint64_t t0 = ggh_walltime(0);
   fmpz_poly_invert_mod_fmpq(f_inv0, f, modulus_z);
   t0 = ggh_walltime(t0);
-  printf("  FLINT t: %7.1f\n", t0/1000000.0);
+  printf("  FLINT t: %7.1f\n", ggh_seconds(t0));
   return 0;
 }
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   printf("\n");
 
   t = ggh_walltime(t);
-  printf("t: %.6f\n",t/1000000.0/prec);
+  printf("t: %.6f\n",ggh_seconds(t)/prec);
 
   free(small_primes);
   mpfr_clear(sigma);

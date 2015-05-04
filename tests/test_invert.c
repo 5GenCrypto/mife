@@ -34,7 +34,7 @@ int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
   }
 
   printf("n: %4ld,    q: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f ", n, q_,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+         oz_seconds(t0), oz_seconds(t1), (double)t0/(double)t1);
   if (r)
     printf(" PASS\n");
   else
@@ -76,7 +76,7 @@ int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
   }
 
   printf("n: %4ld, bits: %4ld, xgcd: %7.2fs, oz: %7.2fs, xgcd/oz: %7.2f ", n, bits,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+         oz_seconds(t0), oz_seconds(t1), (double)t0/(double)t1);
   if (r)
     printf(" PASS\n");
   else

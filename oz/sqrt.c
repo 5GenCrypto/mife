@@ -91,7 +91,7 @@ int fmpq_poly_oz_sqrt_approx_babylonian(fmpq_poly_t f_sqrt, const fmpq_poly_t f,
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
       fprintf(stderr, " <? %4ld, ", -bound);
-      fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n", oz_seconds(oz_walltime(t)));
       fflush(0);
     }
 
@@ -177,7 +177,7 @@ int fmpq_poly_oz_sqrt_approx_db(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const l
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
       fprintf(stderr, " <? %4ld, ", -bound);
-      fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n", oz_seconds(oz_walltime(t)));
       fflush(0);
     }
 
@@ -317,7 +317,7 @@ int fmpq_poly_oz_sqrt_approx_pade(fmpq_poly_t f_sqrt, const fmpq_poly_t f, const
       mpfr_log2(log_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "Computing sqrt(Σ)::  k: %4d,  Δ=|sqrt(Σ)^2-Σ|: %7.2Rf", k, log_f);
       fprintf(stderr, " <? %4ld, ", -bound);
-      fprintf(stderr, "t: %8.2fs\n", oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n", oz_seconds(oz_walltime(t)));
       fflush(0);
     }
 

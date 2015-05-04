@@ -30,25 +30,25 @@ int main(int argc, char *argv[]) {
   uint64_t t = ggh_walltime(0);
   fmpq_poly_invert_mod(g_inv, gq, modulus);
   t = ggh_walltime(t);
-  printf("xgcd: %7.3f, ", t/1000000.0);
+  printf("xgcd: %7.3f, ", ggh_seconds(t));
   fflush(0);
 
   t = ggh_walltime(0);
   _fmpq_poly_oz_invert_approx(g_inv, gq, n, 160);
   t = ggh_walltime(t);
-  printf("%4ld: %7.3f, ", prec, t/1000000.0);
+  printf("%4ld: %7.3f, ", prec, ggh_seconds(t));
   fflush(0);
 
   t = ggh_walltime(0);
   fmpq_poly_oz_invert_approx(g_inv, gq, n, 160, 0);
   t = ggh_walltime(t);
-  printf("%4lditer: %7.3f, ", prec, t/1000000.0);
+  printf("%4lditer: %7.3f, ", prec, ggh_seconds(t));
   fflush(0);
 
   t = ggh_walltime(0);
   _fmpq_poly_oz_invert_approx(g_inv, gq, n, 0);
   t = ggh_walltime(t);
-  printf("∞: %7.3f.", t/1000000.0);
+  printf("∞: %7.3f.", ggh_seconds(t));
 
 
   printf("\n");

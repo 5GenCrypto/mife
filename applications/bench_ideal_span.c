@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     T1 += t1;
     c += (r0==r1);
     d += (r1!=0);
-    printf("\ri: %4d, eq: %4d, #1: %4d, t0: %6.2fms, t1: %6.2fs", i+1, c, d, T0/1000.0/(i+1), T1/1000000.0/(i+1));
+    printf("\ri: %4d, eq: %4d, #1: %4d, t0: %6.2fms, t1: %6.2fs", i+1, c, d, T0/1000.0/(i+1), ggh_seconds(T1)/(i+1));
     fflush(0);
   }
   printf("\n");

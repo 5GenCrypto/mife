@@ -53,7 +53,7 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
     fmpz_mod_poly_print_pretty(r1, "x"); printf("\n");
   }
   printf("n: %6ld, log(q): %6ld, flint: %7.2fs, oz: %7.2fs, flint/oz: %7.2f ", n, fmpz_sizeinbase(q,2),
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+         oz_seconds(t0), oz_seconds(t1), (double)t0/(double)t1);
   if (r)
     printf(" PASS\n");
   else
@@ -104,7 +104,7 @@ int test_fmpz_mod_poly_oz_mul(long n, long q_, flint_rand_t state) {
   }
 
   printf("n: %6ld,      q: %6ld, flint: %7.2fs, oz: %7.2fs, flint/oz: %7.2f ", n, q_,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+         oz_seconds(t0), oz_seconds(t1), (double)t0/(double)t1);
   if (r)
     printf(" PASS\n");
   else

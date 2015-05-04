@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   gghlite_sk_clear(self, 0);
 
   printf("\n");
-  printf("wall time: %.2f s\n\n", ggh_walltime(t)/1000000.0);
+  printf("wall time: %.2f s\n\n", ggh_seconds(ggh_walltime(t)));
 
   printf("-----------------------------------------------------\n");
   printf("Step 2: Publish");
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   else
     printf("  ");
   t = ggh_walltime(t);
-  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0/2);
+  printf("wall time: %.2f s, per party: %.2f s\n", ggh_seconds(t) , ggh_seconds(t)/2);
 
   printf("-----------------------------------------------------\n");
   printf("Step 3: KeyGen");
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   else
     printf("  ");
 
-  printf("wall time: %.2f s, per party: %.2f s\n", t/1000000.0,t/1000000.0);
+  printf("wall time: %.2f s, per party: %.2f s\n", ggh_seconds(t), ggh_seconds(t));
 
 
   printf("-----------------------------------------------------\n");
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 
   printf("λ: %3ld, N: %2ld, n: %6ld, seed: 0x%08lx, prime: %u, success: %d, time: %10.2fs\n",
          cmdline_params->lambda, cmdline_params->N, params->n, cmdline_params->seed, cmdline_params->flags & GGHLITE_FLAGS_PRIME_G,
-         ret==0, ggh_walltime(t_total)/1000000.0);
+         ret==0, ggh_seconds(ggh_walltime(t_total)));
 
   for(int i=0; i<2; i++) {
     gghlite_enc_clear(e[i]);

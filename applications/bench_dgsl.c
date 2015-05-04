@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_clear(f);
 
   printf("prec: %4ld, n: %4ld, log σ: %.1f, log σ': %.1f, sqrt time: %.2fs, sample time: %.2f ms, rate: %.2f\n", prec, n, log2(mpfr_get_d(sigma, MPFR_RNDN)),
-         log2(mpfr_get_d(sigma_p, MPFR_RNDN)), t_sqrt/1000000.0, t_sample/1000.0/m, (1000000.0*m)/t_sample);
+         log2(mpfr_get_d(sigma_p, MPFR_RNDN)), oz_seconds(t_sqrt), t_sample/1000.0/m, m/oz_seconds(t_sample));
 
   dgsl_rot_mp_clear(D);
   fmpz_poly_clear(g);

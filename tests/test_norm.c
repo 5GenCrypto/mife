@@ -28,7 +28,7 @@ int test_nmod_poly_oz_ideal_norm(slong n, flint_rand_t state) {
   int r = (r0 == r1);
 
   printf("n: %4ld, q: %4ld, flint: %7.2fs, fft: %7.2fs, flint/fft: %8.2f ", n, q,
-         t0/1000000.0, t1/1000000.0, (double)t0/(double)t1);
+         oz_seconds(t0), oz_seconds(t1), (double)t0/(double)t1);
   if (r)
     printf(" PASS\n");
   else
@@ -74,7 +74,7 @@ int test_fmpz_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) 
   }
 
   printf("n: %4ld, bits: %4ld, flint: %7.2fs, oz: %7.2fs, approx: %8.2fs, flint/bounded: %8.2f, oz/approx: %8.2f ", n, bits,
-         t0/1000000.0, t1/1000000.0, t2/1000000.0, (double)t0/(double)t1, (double)t0/(double)t2);
+         oz_seconds(t0), oz_seconds(t1), oz_seconds(t2), (double)t0/(double)t1, (double)t0/(double)t2);
   if (r)
     printf(" PASS\n");
   else
@@ -126,7 +126,7 @@ int test_fmpq_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) 
   int r = (fabs(ratio - 1.0) < 0.1);
 
   printf("n: %4ld, bits: %4ld, exact: %7.2fs, upper: %7.2fs, truncated: %8.2f, exact/upper: %8.2f, exact/approx: %8.2f ratio: %8.2f", n, bits,
-         t0/1000000.0, t1/1000000.0, t2/1000000.0, (double)t0/(double)t1, (double)t0/(double)t2, ratio);
+         oz_seconds(t0), oz_seconds(t1), oz_seconds(t2), (double)t0/(double)t1, (double)t0/(double)t2, ratio);
   if (r)
     printf(" PASS\n");
   else

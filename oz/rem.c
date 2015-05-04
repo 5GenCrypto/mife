@@ -210,7 +210,7 @@ void _fmpz_poly_oz_rem_small_iter(fmpz_poly_t rem, const fmpz_poly_t f, const fm
     if (flags & OZ_VERBOSE) {
       fprintf(stderr, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f, t: %10.6f\n",
              fmpz_poly_2norm_log2(t_i), fmpz_poly_2norm_log2(g), fmpz_poly_2norm_log2(t_o),
-             t/1000000.0);
+             oz_seconds(t));
       fflush(stderr);
     }
   } else {
@@ -232,7 +232,7 @@ void _fmpz_poly_oz_rem_small_iter(fmpz_poly_t rem, const fmpz_poly_t f, const fm
     if (flags & OZ_VERBOSE) {
       fprintf(stderr, "|f|: %10.1f, |g|: %10.1f, |f%%g|: %10.1f, t: %10.6f\n",
              fmpz_poly_2norm_log2(t_i), fmpz_poly_2norm_log2(g), fmpz_poly_2norm_log2(t_o),
-             t/1000000.0);
+             oz_seconds(t));
       fflush(stderr);
     }
   } while (mpfr_cmp(norm_o, norm_i) < 0);

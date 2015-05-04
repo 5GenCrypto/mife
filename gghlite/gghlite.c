@@ -529,11 +529,11 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
 }
 
 void gghlite_sk_print_times(const gghlite_sk_t self) {
-  printf("           sampling: %7.1fs\n", self->t_sample/1000000.0);
-  printf("     primality test: %7.1fs\n", self->t_is_prime/1000000.0);
-  printf("                D_g: %7.1fs\n", self->t_D_g/1000000.0);
-  printf("gcd(N(g),N(h)) == 1: %7.1fs\n", self->t_coprime/1000000.0);
-  printf("   <b_0,b_1> == <g>: %7.1fs\n", self->t_is_subideal/1000000.0);
+  printf("           sampling: %7.1fs\n", ggh_seconds(self->t_sample));
+  printf("     primality test: %7.1fs\n", ggh_seconds(self->t_is_prime));
+  printf("                D_g: %7.1fs\n", ggh_seconds(self->t_D_g));
+  printf("gcd(N(g),N(h)) == 1: %7.1fs\n", ggh_seconds(self->t_coprime));
+  printf("   <b_0,b_1> == <g>: %7.1fs\n", ggh_seconds(self->t_is_subideal));
 }
 
 dgsl_rot_mp_t *_gghlite_dgsl_from_poly(fmpz_poly_t g, mpfr_t sigma, fmpq_poly_t c,

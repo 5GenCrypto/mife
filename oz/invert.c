@@ -259,7 +259,7 @@ void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long
       mpfr_log2(tmp_f, norm, MPFR_RNDN);
       mpfr_fprintf(stderr, "   Computing f^-1::  b: %4d,     Δ=|f^-1·f-1|: %7.2Rf", b, tmp_f);
       fprintf(stderr, " <? %4ld, ", -prec);
-      fprintf(stderr, "t: %8.2fs\n",oz_walltime(t)/1000000.0);
+      fprintf(stderr, "t: %8.2fs\n", oz_seconds(oz_walltime(t)));
       fflush(0);
     }
 

@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     fmpz_poly_oz_rem_small(h_mod, self->h, self->g, self->params->n);
     fmpz_poly_oz_coprime(self->g, h_mod, self->params->n, 0, primes);
     t1 = ggh_walltime(t1);
-    printf("gcd(N(g), N(h%%g)): %.2fs (%.1f, %.1f), ", t1/1000000.0,
+    printf("gcd(N(g), N(h%%g)): %.2fs (%.1f, %.1f), ", ggh_seconds(t1),
            fmpz_poly_2norm_log2(self->g),
            fmpz_poly_2norm_log2(h_mod));
     fmpz_poly_clear(h_mod);
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     uint64_t t0 = ggh_walltime(0);
     fmpz_poly_oz_coprime(self->g, self->h, self->params->n, 0, primes);
     t0 = ggh_walltime(t0);
-    printf("gcd(N(g), N(h)): %.2fs (%.1f, %.1f), ", t0/1000000.0,
+    printf("gcd(N(g), N(h)): %.2fs (%.1f, %.1f), ", ggh_seconds(t0),
            fmpz_poly_2norm_log2(self->g),
            fmpz_poly_2norm_log2(self->h));
     fflush(0);

@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
       gghlite_enc_clear(u[i]);
   gghlite_enc_clear(tmp);
   t = ggh_walltime(t);
-  printf(" PASS, wall time: %8.2fs, per sample: %8.2fms\n", t/1000000.0, t/1000.0/m);
+  printf(" PASS, wall time: %8.2fs, per sample: %8.2fms\n", ggh_seconds(t), t/1000.0/m);
   free(u);
   gghlite_sk_clear(self, 1);
   flint_cleanup();

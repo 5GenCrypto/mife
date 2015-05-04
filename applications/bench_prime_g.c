@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     t += ggh_walltime(t0);
     printf("\rm: %6ld, #prime: %d,",i+1, r); fflush(0);
   }
-  printf(" n: %4ld, log σ: %7.2f, t: %.6f\n",n, log2(_gghlite_sigma(n)), t/1000000.0/m);
+  printf(" n: %4ld, log σ: %7.2f, t: %.6f\n",n, log2(_gghlite_sigma(n)), ggh_seconds(t)/m);
 
   free(primes);
   mpfr_clear(sigma);
