@@ -8,11 +8,11 @@ int _fmpq_poly_oz_sqrt_approx_break(mpfr_t norm, const fmpq_poly_t f_sqrt, const
   fmpq_poly_init(f_approx);
   fmpq_poly_oz_mul(f_approx, f_sqrt, f_sqrt, n);
   fmpq_poly_sub(f_approx, f_approx, f);
-  fmpq_poly_eucl_norm_mpfr(norm, f_approx, MPFR_RNDN);
+  fmpq_poly_2norm_mpfr(norm, f_approx, MPFR_RNDN);
 
   mpfr_t f_norm;
   mpfr_init2(f_norm, prec);
-  fmpq_poly_eucl_norm_mpfr(f_norm, f, MPFR_RNDN);
+  fmpq_poly_2norm_mpfr(f_norm, f, MPFR_RNDN);
   mpfr_div(norm, norm, f_norm, MPFR_RNDN);
 
   int r = 0;

@@ -79,11 +79,11 @@ static inline void _fmpz_vec_set_mpfr_vec(fmpz *rop, mpfr_t *op, const long len)
 
 void _fmpz_vec_eucl_norm_mpfr(mpfr_t rop, const fmpz *vec, const long len, const mpfr_rnd_t rnd);
 
-static inline void fmpz_poly_eucl_norm_mpfr(mpfr_t rop, const fmpz_poly_t poly, const mpfr_rnd_t rnd) {
+static inline void fmpz_poly_2norm_mpfr(mpfr_t rop, const fmpz_poly_t poly, const mpfr_rnd_t rnd) {
   _fmpz_vec_eucl_norm_mpfr(rop, poly->coeffs, poly->length, rnd);
 }
 
-static inline double fmpz_poly_eucl_norm_log2(const fmpz_poly_t poly) {
+static inline double fmpz_poly_2norm_log2(const fmpz_poly_t poly) {
   if (fmpz_poly_is_zero(poly))
     return -1;
   mpfr_t tmp;
@@ -102,7 +102,7 @@ static inline void fmpz_mod_poly_eucl_norm_mpfr(mpfr_t rop, const fmpz_mod_poly_
 
 void _fmpq_vec_eucl_norm_mpfr(mpfr_t rop, const fmpz *num, const fmpz_t den, const long len, const mpfr_rnd_t rnd);
 
-static inline void fmpq_poly_eucl_norm_mpfr(mpfr_t rop, const fmpq_poly_t poly, const mpfr_rnd_t rnd) {
+static inline void fmpq_poly_2norm_mpfr(mpfr_t rop, const fmpq_poly_t poly, const mpfr_rnd_t rnd) {
   _fmpq_vec_eucl_norm_mpfr(rop, poly->coeffs, poly->den, poly->length, rnd);
 }
 

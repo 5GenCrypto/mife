@@ -222,7 +222,7 @@ void fmpq_poly_oz_ideal_norm(fmpq_t norm, const fmpq_poly_t f, const long n, con
 
     mpfr_t norm_f;
     mpfr_init2(norm_f, -prec);
-    fmpq_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
+    fmpq_poly_2norm_mpfr(norm_f, f, MPFR_RNDN);
     mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
     fmpq_set_mpfr(norm, norm_f, MPFR_RNDN);
     mpfr_clear(norm_f);
@@ -249,7 +249,7 @@ void fmpz_poly_oz_ideal_norm(fmpz_t norm, const fmpz_poly_t f, const long n, con
   } else {
     mpfr_t norm_f;
     mpfr_init2(norm_f, prec);
-    fmpz_poly_eucl_norm_mpfr(norm_f, f, MPFR_RNDN);
+    fmpz_poly_2norm_mpfr(norm_f, f, MPFR_RNDN);
     mpfr_pow_ui(norm_f, norm_f, n, MPFR_RNDN);
     mpz_t norm_z;
     mpz_init(norm_z);

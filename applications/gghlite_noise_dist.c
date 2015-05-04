@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
       gghlite_enc_mul(tmp, self->params, tmp, u[k]);
     }
     _gghlite_enc_extract_raw(out, self->params, tmp);
-    fmpz_poly_eucl_norm_mpfr(norm, out, MPFR_RNDN);
+    fmpz_poly_2norm_mpfr(norm, out, MPFR_RNDN);
     mpfr_add(acc, acc, norm, MPFR_RNDN);
     if (mpfr_cmp(norm, max)>0)
       mpfr_set(max, norm, MPFR_RNDN);

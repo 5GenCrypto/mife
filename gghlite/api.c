@@ -110,7 +110,7 @@ int gghlite_enc_is_zero(const gghlite_params_t self, const fmpz_mod_poly_t op) {
 
   mpfr_t norm;
   mpfr_init2(norm, _gghlite_prec(self));
-  fmpz_poly_eucl_norm_mpfr(norm, t, MPFR_RNDN);
+  fmpz_poly_2norm_mpfr(norm, t, MPFR_RNDN);
 
   mpfr_t bound;
   mpfr_init2(bound, _gghlite_prec(self));

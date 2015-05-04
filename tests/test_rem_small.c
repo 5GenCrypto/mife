@@ -24,9 +24,9 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
   fmpz_poly_oz_rem_small(small, h, g, n);
 
   printf("|h|: %8.2f, |g|: %8.2f, |h%%g|: %8.2f, ",
-         fmpz_poly_eucl_norm_log2(h),
-         fmpz_poly_eucl_norm_log2(g),
-         fmpz_poly_eucl_norm_log2(small));
+         fmpz_poly_2norm_log2(h),
+         fmpz_poly_2norm_log2(g),
+         fmpz_poly_2norm_log2(small));
 
   /** check it **/
   fmpz_poly_t t; fmpz_poly_init(t);

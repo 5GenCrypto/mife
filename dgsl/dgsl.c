@@ -632,7 +632,7 @@ void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_
 
   mpfr_t norm;
   mpfr_init2(norm, prec);
-  fmpz_poly_eucl_norm_mpfr(norm, g, MPFR_RNDN);
+  fmpz_poly_2norm_mpfr(norm, g, MPFR_RNDN);
   double p = mpfr_get_d(norm, MPFR_RNDN);
 
   /**

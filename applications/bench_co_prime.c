@@ -32,8 +32,8 @@ int main(int argc, char *argv[]) {
     fmpz_poly_oz_coprime(self->g, h_mod, self->params->n, 0, primes);
     t1 = ggh_walltime(t1);
     printf("gcd(N(g), N(h%%g)): %.2fs (%.1f, %.1f), ", t1/1000000.0,
-           fmpz_poly_eucl_norm_log2(self->g),
-           fmpz_poly_eucl_norm_log2(h_mod));
+           fmpz_poly_2norm_log2(self->g),
+           fmpz_poly_2norm_log2(h_mod));
     fmpz_poly_clear(h_mod);
     fflush(0);
   }
@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
     fmpz_poly_oz_coprime(self->g, self->h, self->params->n, 0, primes);
     t0 = ggh_walltime(t0);
     printf("gcd(N(g), N(h)): %.2fs (%.1f, %.1f), ", t0/1000000.0,
-           fmpz_poly_eucl_norm_log2(self->g),
-           fmpz_poly_eucl_norm_log2(self->h));
+           fmpz_poly_2norm_log2(self->g),
+           fmpz_poly_2norm_log2(self->h));
     fflush(0);
   }
 

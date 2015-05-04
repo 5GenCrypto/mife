@@ -253,7 +253,7 @@ void fmpq_poly_oz_invert_approx(fmpq_poly_t rop, const fmpq_poly_t f, const long
     fmpq_sub_si(c, c, 1);
     fmpq_poly_set_coeff_fmpq(tmp, 0, c);
 
-    fmpq_poly_eucl_norm_mpfr(norm, tmp, MPFR_RNDN);
+    fmpq_poly_2norm_mpfr(norm, tmp, MPFR_RNDN);
 
     if (flags & OZ_VERBOSE) {
       mpfr_log2(tmp_f, norm, MPFR_RNDN);

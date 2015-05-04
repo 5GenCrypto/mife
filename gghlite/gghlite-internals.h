@@ -20,7 +20,7 @@
 static inline int _gghlite_g_inv_check(const gghlite_params_t self, fmpq_poly_t g_inv) {
   mpfr_t g_inv_norm;
   mpfr_init2(g_inv_norm, mpfr_get_prec(self->ell_g));
-  fmpq_poly_eucl_norm_mpfr(g_inv_norm, g_inv, MPFR_RNDN);
+  fmpq_poly_2norm_mpfr(g_inv_norm, g_inv, MPFR_RNDN);
   int r = (mpfr_cmp(g_inv_norm, self->ell_g) <= 0);
   mpfr_clear(g_inv_norm);
   return r;

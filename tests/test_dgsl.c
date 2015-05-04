@@ -177,7 +177,7 @@ double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, const fmpz_poly_t c, fl
     else
       dgsl_rot_mp_call_plus_fmpz_poly(v, D, c, state->gmp_state);
 
-    fmpz_poly_eucl_norm_mpfr(tmp, v, MPFR_RNDN);
+    fmpz_poly_2norm_mpfr(tmp, v, MPFR_RNDN);
     norms[0] += mpfr_get_d(tmp, MPFR_RNDN);
     for (size_t j=0; j<n; j++) {
       fmpz_set(tmp_z, v->coeffs + j);

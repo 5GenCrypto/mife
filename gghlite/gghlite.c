@@ -151,7 +151,7 @@ void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
         }
 #endif
 
-        fmpz_poly_eucl_norm_mpfr(norm, B, MPFR_RNDN);
+        fmpz_poly_2norm_mpfr(norm, B, MPFR_RNDN);
         if (mpfr_cmp(norm, sqrtn_sigma_p) > 0) {
           fail[2]++;
           continue;
@@ -249,7 +249,7 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
     fmpz_poly_sample_D(self->g, D, randstate);
     self->t_sample += ggh_walltime(t);
 
-    fmpz_poly_eucl_norm_mpfr(norm, self->g, MPFR_RNDN);
+    fmpz_poly_2norm_mpfr(norm, self->g, MPFR_RNDN);
     if(mpfr_cmp(norm, sqrtn_sigma)>0) {
       fail[0]++;
       continue;
@@ -485,7 +485,7 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
   mpfr_sqrt(sqrt_n, sqrt_n, MPFR_RNDN);
   mpfr_log2(sqrt_n, sqrt_n, MPFR_RNDN);
 
-  fmpz_poly_eucl_norm_mpfr(norm, self->g, MPFR_RNDN);
+  fmpz_poly_2norm_mpfr(norm, self->g, MPFR_RNDN);
   mpfr_log2(norm, norm, MPFR_RNDN);
 
   mpfr_set(bound, self->params->sigma, MPFR_RNDN);
@@ -501,7 +501,7 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
       mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
 
       for(int i=0; i<2; i++) {
-        fmpz_poly_eucl_norm_mpfr(norm, self->b[0][k][i], MPFR_RNDN);
+        fmpz_poly_2norm_mpfr(norm, self->b[0][k][i], MPFR_RNDN);
         mpfr_log2(norm, norm, MPFR_RNDN);
         printf("log(|b_%d|): %6.1f ?< %6.1f\n", i, mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
       }
@@ -513,7 +513,7 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
   mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
 
   if (gghlite_params_have_rerand(self->params, 0)) {
-    fmpz_poly_eucl_norm_mpfr(norm, self->a[0], MPFR_RNDN);
+    fmpz_poly_2norm_mpfr(norm, self->a[0], MPFR_RNDN);
     mpfr_log2(norm, norm, MPFR_RNDN);
     printf("  log(|a|): %6.1f ?< %6.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
   }
@@ -523,7 +523,7 @@ void gghlite_sk_print_norms(const gghlite_sk_t self) {
   mpfr_log2(bound, bound, MPFR_RNDN);
   mpfr_add(bound, bound, sqrt_n, MPFR_RNDN);
 
-  fmpz_poly_eucl_norm_mpfr(norm, self->h, MPFR_RNDN);
+  fmpz_poly_2norm_mpfr(norm, self->h, MPFR_RNDN);
   mpfr_log2(norm, norm, MPFR_RNDN);
   printf("  log(|h|): %6.1f ?< %6.1f\n", mpfr_get_d(norm, MPFR_RNDN), mpfr_get_d(bound, MPFR_RNDN));
 }
@@ -598,7 +598,7 @@ double gghlite_enc_size_symm(const gghlite_sk_t self, const gghlite_enc_t op, co
   fmpz_poly_set_fmpz_mod_poly(z, t);
 
   mpfr_t norm; mpfr_init2(norm, _gghlite_prec(self->params));
-  fmpz_poly_eucl_norm_mpfr(norm, z, MPFR_RNDN);
+  fmpz_poly_2norm_mpfr(norm, z, MPFR_RNDN);
   mpfr_log2(norm, norm, MPFR_RNDN);
   double r = mpfr_get_d(norm, MPFR_RNDN);
   mpfr_clear(norm);
