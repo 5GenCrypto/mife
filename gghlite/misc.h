@@ -31,6 +31,10 @@ static inline uint64_t ggh_walltime(uint64_t t0) {
   return ((uint64_t)(tp.tv_sec - base_sec)) * 1000000 + (uint64_t)tp.tv_usec - t0;
 }
 
+static inline double ggh_seconds(uint64_t t) {
+  return t/1000000.0;
+}
+
 #include <gghlite/gghlite-defs.h>
 
 
