@@ -15,6 +15,10 @@ int main(int argc, char *argv[]) {
   uint64_t t = ggh_walltime(0);
   uint64_t t_total = ggh_walltime(0);
 
+  uint64_t t_gen = 0;
+  uint64_t t_enc = 0;
+  uint64_t t_mul = 0;
+
   gghlite_sk_t self;
 
 
@@ -28,7 +32,8 @@ int main(int argc, char *argv[]) {
   gghlite_params_print(self->params);
   printf("\n---\n\n");
 
-  printf("1. GGHLite instance generation wall time: %8.2f s\n", ggh_walltime(t)/1000000.0);
+  t_gen = ggh_walltime(t);
+  printf("1. GGHLite instance generation wall time: %8.2f s\n", ggh_seconds(t_gen));
 
   t = ggh_walltime(0);
 
@@ -46,7 +51,7 @@ int main(int argc, char *argv[]) {
     fmpz_mod(acc, acc, p);
   }
 
-  printf("2. Element generation wall time:          %8.2f s\n", ggh_walltime(t)/1000000.0);
+  printf("2. Element generation wall time:          %8.2f s\n", ggh_seconds(ggh_walltime(t)));
   t = ggh_walltime(0);
 
   gghlite_clr_t e[cmdline_params->kappa];
@@ -67,13 +72,15 @@ int main(int argc, char *argv[]) {
   }
 
   t = ggh_walltime(t);
-  printf("3. Encoding generation wall time:         %8.2f s (per elem: %8.2f)\n", t/1000000.0, t/1000000.0/cmdline_params->kappa);
+  t_enc = t;
+  printf("3. Encoding generation wall time:         %8.2f s (per elem: %8.2f)\n", ggh_seconds(t_enc), ggh_seconds(t_enc)/cmdline_params->kappa);
   t = ggh_walltime(0);
 
   for(long k=0; k<cmdline_params->kappa; k++) {
       gghlite_enc_mul(left, self->params, left, u[k]);
   }
-  printf("4. Multiplication wall time:              %8.2f s\n", ggh_walltime(t)/1000000.0);
+  t_mul = ggh_walltime(t);
+  printf("4. Multiplication wall time:              %8.2f s\n", ggh_seconds(t_mul));
   t = ggh_walltime(0);
 
   gghlite_enc_t rght;
@@ -88,7 +95,7 @@ int main(int argc, char *argv[]) {
     gghlite_enc_mul(rght, self->params, rght, self->z_inv[k]);
   }
 
-  printf("5. RHS generation wall time:              %8.2f s\n", ggh_walltime(t)/1000000.0);
+  printf("5. RHS generation wall time:              %8.2f s\n", ggh_seconds(ggh_walltime(t)));
   t = ggh_walltime(0);
 
   gghlite_enc_sub(rght, self->params, rght, left);
@@ -96,10 +103,10 @@ int main(int argc, char *argv[]) {
 
   gghlite_clr_t clr; gghlite_clr_init(clr);
   gghlite_enc_extract(clr, self->params, rght);
-  double size = fmpz_poly_eucl_norm_log2(clr);
+  double size = fmpz_poly_2norm_log2(clr);
   gghlite_clr_clear(clr);
 
-  printf("6. Checking correctness wall time:        %8.2f s\n", ggh_walltime(t)/1000000.0);
+  printf("6. Checking correctness wall time:        %8.2f s\n", ggh_seconds(ggh_walltime(t)));
   printf("   Correct:                               %8s (%8.2f)\n\n", (status == 0) ? "TRUE" : "FALSE", size);
 
   for(long i=0; i<cmdline_params->kappa; i++) {
@@ -115,9 +122,11 @@ int main(int argc, char *argv[]) {
   fmpz_clear(p);
   gghlite_sk_clear(self, 1);
 
-  printf("λ: %3ld, κ: %2ld, n: %6ld, seed: 0x%08lx, success: %d, time: %10.2fs\n",
+  t_total = ggh_walltime(t_total);
+  printf("λ: %3ld, κ: %2ld, n: %6ld, seed: 0x%08lx, success: %d, gen: %10.2fs, enc: %8.2fs, mul: %8.4fs, time: %10.2fs\n",
          cmdline_params->lambda, cmdline_params->kappa, self->params->n, cmdline_params->seed,
-         status==0, ggh_walltime(t_total)/1000000.0);
+         status==0,
+         ggh_seconds(t_gen), ggh_seconds(t_enc)/cmdline_params->kappa, ggh_seconds(t_mul), ggh_seconds(t_total));
 
   flint_randclear(randstate);
   mpfr_free_cache();
