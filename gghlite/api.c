@@ -71,7 +71,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
                                  flint_rand_t randstate) {
 
   fmpz_poly_t t_o;  fmpz_poly_init(t_o);
-  const mp_bitcnt_t prec = (self->params->n > 8192) ? 8192 : self->params->n;
+  const mp_bitcnt_t prec = (self->params->n/4 < 8192) ? 8192 : self->params->n/4;
   const oz_flag_t flags = (self->params->flags & GGHLITE_FLAGS_VERBOSE) ? OZ_VERBOSE : 0;
   _fmpz_poly_oz_rem_small_iter(t_o, f, self->g, self->params->n, self->g_inv, prec, flags);
 
