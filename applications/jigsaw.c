@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   printf("λ: %3ld, κ: %2ld, n: %6ld, seed: 0x%08lx, success: %d, gen: %10.2fs, enc: %8.2fs, mul: %8.4fs, time: %10.2fs\n",
          cmdline_params->lambda, cmdline_params->kappa, self->params->n, cmdline_params->seed,
          status==0,
-         ggh_seconds(t_gen), ggh_seconds(t_enc)/cmdline_params->kappa, ggh_seconds(t_mul), ggh_seconds(t_total));
+         ggh_seconds(t_gen), ggh_seconds(t_enc)/2, ggh_seconds(t_mul), ggh_seconds(t_total));
 
   flint_randclear(randstate);
   mpfr_free_cache();
