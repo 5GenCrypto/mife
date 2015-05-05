@@ -50,9 +50,9 @@ void _fmpz_poly_oz_rem_small_fmpz(fmpz_poly_t rem, const fmpz_t f, const fmpz_po
       fmpz_mod_poly_clear(g_q);
 
       /* if there was no overflow, break*/
-      if(labs(fmpz_poly_max_bits(tmp)) < (long)fmpz_sizeinbase(q, 2)-2)
+      if(labs(fmpz_poly_max_bits(tmp)) < (long)fmpz_sizeinbase(q, 2)-128)
         break;
-      fprintf(stderr, "overflow |t|: %5ld >= |q|: %5ld\n", labs(fmpz_poly_max_bits(tmp)), (long)fmpz_sizeinbase(q, 2)-2);
+      fprintf(stderr, "overflow |t|: %5ld >= |q|: %5ld\n", labs(fmpz_poly_max_bits(tmp)), (long)fmpz_sizeinbase(q, 2)-128);
       fmpz_mul_2exp(q, q, bound);
     }
     fmpz_poly_set(rem, tmp);
@@ -91,7 +91,7 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   }
 
   const mp_bitcnt_t B = num_threads*b;
-  const mp_bitcnt_t rem_bound = log2(n)/2*labs(fmpz_poly_max_bits(g));
+  const mp_bitcnt_t rem_bound = log2(n) * labs(fmpz_poly_max_bits(g)) + 128;
 
   fmpz_poly_t powb; fmpz_poly_init(powb);
   fmpz_poly_set_coeff_ui(powb, 0, 2); // powb ~= 2^b
