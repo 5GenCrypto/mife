@@ -93,17 +93,20 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   const mp_bitcnt_t B = num_threads*b;
   const mp_bitcnt_t rem_bound = log2(n) * labs(fmpz_poly_max_bits(g)) + 128;
 
-  fmpz_poly_t powb; fmpz_poly_init(powb);
-  fmpz_poly_set_coeff_ui(powb, 0, 2); // powb ~= 2^b
-  fmpz_pow_ui(powb->coeffs, powb->coeffs, b);
-  _fmpz_poly_oz_rem_small_fmpz(powb, powb->coeffs, g, n, g_inv, rem_bound);
+  // powb[i] ~= 2^((i+1)b)
+  fmpz_poly_t powb[num_threads];
 
-  fmpz_poly_t powB; fmpz_poly_init(powB);
-  fmpz_poly_set_ui(powB, 1);
-  for(size_t j=0; j<num_threads; j++)
-    fmpz_poly_oz_mul(powB, powB, powb, n);
-  /* invest a bit more here as it keeps everything below small */
-  _fmpz_poly_oz_rem_small_iter(powB, powB, g, n, g_inv, 0, 0);
+  for(size_t j=0; j<num_threads; j++) {
+    fmpz_poly_init(powb[j]);
+  }
+  fmpz_poly_set_coeff_ui(powb[0], 0, 2); // powb ~= 2^b
+  fmpz_pow_ui(powb[0]->coeffs, powb[0]->coeffs, b);
+  _fmpz_poly_oz_rem_small_fmpz(powb[0], powb[0]->coeffs, g, n, g_inv, rem_bound);
+
+  for(size_t j=1; j<num_threads; j++) {
+    fmpz_poly_oz_mul(powb[j], powb[j-1], powb[0], n);
+    _fmpz_poly_oz_rem_small_iter(powb[j], powb[j], g, n, g_inv, 0, 0);
+  }
 
   const size_t nparts = (fmpz_sizeinbase(f, 2)/B) + ((fmpz_sizeinbase(f, 2)%B) ? 1 : 0);
 
@@ -111,9 +114,12 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
     fmpz_set(H, F);
     fmpz_fdiv_r_2exp(H, H, B); // H = H % 2^B
 
-    fmpz_poly_set(t_[0], t);
+    for(size_t j=0; j<num_threads; j++)
+      fmpz_poly_set(t_[j], t);
+
+#pragma omp parallel for
     for(size_t j=1; j<num_threads; j++)
-      fmpz_poly_oz_mul(t_[j], t_[j-1], powb, n);
+      fmpz_poly_oz_mul(t_[j], t_[j], powb[j-1], n);
 
 #pragma omp parallel for
     for(size_t j=0; j<num_threads; j++) {
@@ -129,7 +135,7 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
     for(size_t j=0; j<num_threads; j++)
       fmpz_poly_add(acc, acc, f_[j]);
 
-    fmpz_poly_oz_mul(t, t, powB, n);
+    fmpz_poly_oz_mul(t, t, powb[num_threads-1], n);
     if (labs(fmpz_poly_max_bits(t)) > (long)b/2)
       _fmpz_poly_oz_rem_small(t, t, g, n, g_inv);
 
@@ -142,13 +148,12 @@ void _fmpz_poly_oz_rem_small_fmpz_split(fmpz_poly_t rem, const fmpz_t f, const f
   fmpz_clear(H);
   fmpz_poly_clear(acc);
   fmpz_poly_clear(t);
-  fmpz_poly_clear(powb);
-  fmpz_poly_clear(powB);
 
   for(size_t j=0; j<num_threads; j++) {
     fmpz_clear(H_[j]);
     fmpz_poly_clear(f_[j]);
     fmpz_poly_clear(t_[j]);
+    fmpz_poly_clear(powb[j]);
   }
 
 }
