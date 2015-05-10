@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   fmpz_t a;  fmpz_init(a);
   fmpz_randm(a, randstate, p);
 
-  for(size_t i=9; i<=log2(n)+1; i++) {
+  for(size_t i=11; i<=log2(n)+1; i++) {
     bench_rem(g, a, n,  1ULL<<i);
   }
 
