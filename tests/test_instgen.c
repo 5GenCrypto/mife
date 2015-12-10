@@ -6,7 +6,7 @@ int test_instgen_symm(const size_t lambda, const size_t kappa, const uint64_t re
 
   gghlite_sk_t self;
   gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET;
-  gghlite_init(self, lambda, kappa, rerand, flags, randstate);
+  gghlite_init(self, lambda, kappa, 1 /* gamma */, rerand, flags, randstate);
 
   int status = 0;
 
@@ -59,7 +59,7 @@ int test_instgen_asymm(const size_t lambda, const size_t kappa, const uint64_t r
 
   gghlite_sk_t self;
   const gghlite_flag_t flags = GGHLITE_FLAGS_GDDH_HARD | GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_ASYMMETRIC;
-  gghlite_init(self, lambda, kappa, rerand, flags, randstate);
+  gghlite_init(self, lambda, kappa, kappa /* gamma */, rerand, flags, randstate);
 
   int status = 0;
 

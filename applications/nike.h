@@ -16,7 +16,7 @@ struct _cmdline_params_struct{
 typedef struct _cmdline_params_struct cmdline_params_t[1];
 
 #define DEFAULT_N       3
-#define DEFAULT_LAMBDA 20
+#define DEFAULT_LAMBDA 5
 #define DEFAULT_SEED    0
 
 static inline void print_help_and_exit(const char *name, const char *extra) {

@@ -3,11 +3,12 @@
 #include "gghlite-internals.h"
 #include "gghlite.h"
 
-void _gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa) {
+void _gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma) {
   memset(self, 0, sizeof(struct _gghlite_params_struct));
 
   self->lambda = lambda;
   self->kappa = kappa;
+	self->gamma = gamma;
 
   mpfr_init2(self->sigma, _gghlite_prec(self));
   mpfr_init2(self->ell_g, _gghlite_prec(self));
@@ -323,6 +324,7 @@ void _gghlite_params_set_sigma_s(gghlite_params_t self) {
   }
 
   assert(self->kappa > 0);
+	assert(self->gamma > 0);
   assert(self->lambda > 0);
   assert(self->n > 0);
   assert(mpfr_cmp_ui(self->sigma_p, 0)>0);
@@ -506,11 +508,13 @@ int gghlite_params_check_sec(const gghlite_params_t self) {
 }
 
 
-void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uint64_t rerand_mask, gghlite_flag_t flags) {
+void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma, uint64_t rerand_mask, gghlite_flag_t flags) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
+  assert((gamma > 0) && (gamma <= GAMMA));
 
-  _gghlite_params_initzero(self, lambda, kappa);
+
+  _gghlite_params_initzero(self, lambda, kappa, gamma);
 
   self->rerand_mask = rerand_mask;
   self->flags = flags;
@@ -533,7 +537,7 @@ void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, uin
 void gghlite_params_clear(gghlite_params_t self) {
   fmpz_mod_poly_clear(self->pzt);
 
-  const size_t bound = (gghlite_params_is_symmetric(self)) ? 1 : self->kappa;
+  const size_t bound = (gghlite_params_is_symmetric(self)) ? 1 : self->gamma;
 
   for(size_t i=0; i<bound; i++) {
     for(size_t k=0; k<self->kappa; k++) {

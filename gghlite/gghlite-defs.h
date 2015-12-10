@@ -48,6 +48,13 @@ typedef enum {
 #define KAPPA (sizeof(uint64_t)<<3)
 
 /**
+   Maximum supported index universe size.
+*/
+
+#define GAMMA (100)
+
+
+/**
    @brief GGHLite `params`
 
    This struct represents a GGHLite `params`, which we can think of as a public key.
@@ -57,7 +64,8 @@ typedef enum {
 */
 
 struct _gghlite_params_struct {
-  size_t lambda;                      //!< security parameter $λ$
+  size_t lambda;                      //!< security parameter $λ
+	size_t gamma;												//!< index universe size
   size_t kappa;                       //!< multi-linearity parameter $κ ≤$ `KAPPA`
   uint64_t rerand_mask;               //!< mask where $i$-th bit toggles generation of re-randomisers for level-$i$
   gghlite_flag_t flags;               //!< see @ref gghlite_flags_t
@@ -71,9 +79,9 @@ struct _gghlite_params_struct {
   mpfr_t ell_g;                       //!< bound $ℓ_g$ on $|g^-1|$
   mpfr_t xi;                          //!< fraction $ξ$ of $q$ used for zero-testing
   gghlite_enc_t pzt;                  //!< zero-testing parameter $p_{zt}$
-  gghlite_enc_t x[KAPPA][KAPPA][2];   /*!< @brief level-$k$ encodings of zero $x_{i,k,j}$ for each source
+  gghlite_enc_t x[GAMMA][KAPPA][2];   /*!< @brief level-$k$ encodings of zero $x_{i,k,j}$ for each source
                                            group $G_i$, level $k$ specified by rerand mask */
-  gghlite_enc_t y[KAPPA];             //!< one level-1 encodings of 1 (for each source group $G_i$)
+  gghlite_enc_t y[GAMMA];             //!< one level-1 encodings of 1 (for each source group $G_i$)
   dgsl_rot_mp_t *D_sigma_p;           //!< discrete Gaussian distribution $D_{\\ZZ,σ'}$
   dgsl_rot_mp_t *D_sigma_s;           //!< discrete Gaussian distribution $D_{\\ZZ,σ^*}$
   fmpz_mod_poly_oz_ntt_precomp_t ntt; //!< pre-computation data for computing in the NTT domain
@@ -98,12 +106,12 @@ struct _gghlite_sk_struct {
   fmpq_poly_t g_inv;                //!< approximate inverse of $g \\in \\Q[x]/(x^n+1)$
   dgsl_rot_mp_t *D_g;               //!< discrete Gaussian distribution $D_{\\ideal{g},σ'}$
 
-  gghlite_enc_t z[KAPPA];           //!< masking elements $z_i$
-  gghlite_enc_t z_inv[KAPPA];       //!< inverse of masking element $z_i$
+  gghlite_enc_t z[GAMMA];           //!< masking elements $z_i$
+  gghlite_enc_t z_inv[GAMMA];       //!< inverse of masking element $z_i$
   gghlite_clr_t h;                  //!< masking element $h$
 
-  gghlite_clr_t a[KAPPA];           //!< an element $a \\bmod \\ideal{g} = 1$ (for each $G_i$)
-  gghlite_clr_t b[KAPPA][KAPPA][2]; //!< an element $b \\bmod \\ideal{g} = 0$
+  gghlite_clr_t a[GAMMA];           //!< an element $a \\bmod \\ideal{g} = 1$ (for each $G_i$)
+  gghlite_clr_t b[GAMMA][KAPPA][2]; //!< an element $b \\bmod \\ideal{g} = 0$
 
   uint64_t t_is_prime;              //!< time spent on checking for small prime factors of g in μs
   uint64_t t_is_subideal;           //!< time spent on verifying that $\\ideal{b_0,b_1} = \\ideal{g}$ in μs

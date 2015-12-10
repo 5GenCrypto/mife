@@ -16,7 +16,7 @@ void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate) {
     if(gghlite_sk_is_symmetric(self)) {
       bound = 1;
     } else {
-      bound = self->params->kappa;
+      bound = self->params->gamma;
     }
   }
 
@@ -37,7 +37,7 @@ void _gghlite_sk_set_y(gghlite_sk_t self) {
     if(gghlite_sk_is_symmetric(self)) {
       bound = 1;
     } else {
-      bound = self->params->kappa;
+      bound = self->params->gamma;
     }
   }
 
@@ -108,7 +108,7 @@ void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
   const int nsp = _gghlite_nsmall_primes(self->params);
   mp_limb_t *primes = _fmpz_poly_oz_ideal_probable_prime_factors(self->params->n, nsp);
 
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
+  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
 
   for(size_t i=0; i<bound; i++) {
     for(size_t k=0; k<self->params->kappa; k++) {
@@ -176,7 +176,7 @@ void _gghlite_sk_set_x(gghlite_sk_t self) {
   fmpz_mod_poly_t acc;
   fmpz_mod_poly_init(acc, self->params->q);
 
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
+  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
 
   for(size_t i=0; i<bound; i++) {
     for(size_t k=0; k<self->params->kappa; k++) {
@@ -327,7 +327,7 @@ void _gghlite_sk_set_pzt(gghlite_sk_t self) {
   } else {
 
     fmpz_mod_poly_oz_ntt_set_ui(z_kappa, 1, self->params->n);
-    for(size_t i=0; i<self->params->kappa; i++) {
+    for(size_t i=0; i<self->params->gamma; i++) {
       assert(!fmpz_mod_poly_is_zero(self->z[i]));
       fmpz_mod_poly_oz_ntt_mul(z_kappa, z_kappa, self->z[i], self->params->n);
     }
@@ -394,8 +394,7 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate) {
   assert(self->params->n);
   assert(fmpz_cmp_ui(self->params->q, 0)>0);
 
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
-
+  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
   uint64_t t = ggh_walltime(0);
   for(size_t i=0; i<bound; i++) {
     fmpz_mod_poly_init(self->z[i], self->params->q);
@@ -412,6 +411,7 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate) {
 void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
   assert(self->params->lambda);
   assert(self->params->kappa);
+	assert(self->params->gamma);
 
   self->t_coprime = 0;
   self->t_is_prime = 0;
@@ -438,14 +438,15 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
 }
 
 void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
+		const size_t gamma,
                   const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate) {
   _gghlite_zero(self);
-  gghlite_params_init(self->params, lambda, kappa, rerand_mask, flags);
+  gghlite_params_init(self->params, lambda, kappa, gamma, rerand_mask, flags);
   gghlite_sk_init(self, randstate);
 }
 
 void gghlite_sk_clear(gghlite_sk_t self, int clear_params) {
-  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->kappa;
+  const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
 
   for(size_t i=0; i<bound; i++) {
     for(size_t k=0; k<self->params->kappa; k++) {

@@ -8,6 +8,7 @@
 #include <gghlite/gghlite-defs.h>
 
 #define DEFAULT_KAPPA    2
+#define DEFAULT_GAMMA    DEFAULT_KAPPA
 #define DEFAULT_LAMBDA  24
 #define DEFAULT_SEED     0
 #define DEFAULT_RERAND 0x1UL
@@ -18,6 +19,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("####################################################################\n");
   printf("-l   security parameter λ > 0 (default: %d)\n", DEFAULT_LAMBDA);
   printf("-k   multi-linearity parameter k > 1 (default: %d)\n", DEFAULT_KAPPA);
+	printf("-g   index universe size gamma > 1 (default: %d)\n", DEFAULT_GAMMA);
   printf("-p   enforce prime g (default: False)\n");
   printf("-r   re-randomisation mask (default: 0x%016lx for level-1 re-randomisation\n", DEFAULT_RERAND);
   printf("-d   pick parameters to make GDDH hard (default: False)\n");
@@ -34,6 +36,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
 struct _cmdline_params_struct{
   long lambda;
   long kappa;
+	long gamma;
   gghlite_flag_t flags;
   uint64_t rerand;
   mp_limb_t seed;
@@ -50,24 +53,28 @@ static inline void print_header(const char *name, cmdline_params_t params) {
 
   printf("####################################################################\n");
   printf("%s\n", name);
-  printf(" λ: %3ld, κ: %2ld, heutistics: %d               seed: 0x%016lx\n",params->lambda, params->kappa, heuristics,  params->seed);
+  printf(" λ: %3ld, � %2ld, g: %2ld, heuristics: %d               seed: 0x%016lx\n",params->lambda, params->kappa, params->gamma, heuristics,  params->seed);
   printf("#############################################all logs are base two##\n\n");
 }
 
 static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[], const char *name, const char *extra) {
   params->kappa  =  DEFAULT_KAPPA;
+	params->gamma  =  DEFAULT_GAMMA;
   params->lambda =  DEFAULT_LAMBDA;
   params->seed   =  DEFAULT_SEED;
   params->flags  =  GGHLITE_FLAGS_DEFAULT;
   params->rerand =  DEFAULT_RERAND;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:s:vpr:dfqz")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:g:s:vpr:dfqz")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
       break;
-    case 'k':
+    case 'g':
+      params->gamma = (long)atol(optarg);
+      break;
+		case 'k':
       params->kappa = (long)atol(optarg);
       break;
     case 's':

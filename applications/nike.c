@@ -41,14 +41,14 @@ int main(int argc, char *argv[]) {
   else
     mlm_lambda = 2*cmdline_params->lambda+1;
 
-  gghlite_params_init(self->params, mlm_lambda, cmdline_params->N-1, 1<<0,
-                         cmdline_params->flags);
+  gghlite_params_init(self->params, mlm_lambda, cmdline_params->N-1,
+			1 /* gamma */, 1<<0, cmdline_params->flags);
   gghlite_params_print(self->params);
   printf("\n---\n");
   gghlite_sk_init(self, randstate);
 
   gghlite_params_t params;
-  gghlite_params_ref(params, self);
+	gghlite_params_ref(params, self);
   gghlite_sk_clear(self, 0);
 
   printf("\n");
@@ -70,7 +70,10 @@ int main(int argc, char *argv[]) {
     if (verbose)
       printf("%8s samples e_%d, ",agents[i],i);
     gghlite_enc_init(e[i], params);
-    gghlite_enc_sample(e[i], params, 0, 0, randstate);
+		int group0[GAMMA];
+		memset(group0, 0, GAMMA * sizeof(int));
+		group0[0] = 1;
+    gghlite_enc_sample(e[i], params, 0, group0, randstate);
 
     if (verbose)
       printf("computes u_%d and publishes it\n", i);
@@ -109,7 +112,10 @@ int main(int argc, char *argv[]) {
   gghlite_enc_set_ui0(acc, 1, params);
   for(int j=2; j<cmdline_params->N; j++) {
     uint64_t t_s = ggh_walltime(0);
-    gghlite_enc_sample(u_i, params, 0, 0, randstate);
+		int group0[GAMMA];
+		memset(group0, 0, GAMMA * sizeof(int));
+		group0[0] = 1;
+    gghlite_enc_sample(u_i, params, 0, group0, randstate);
     gghlite_enc_raise0(u_i, params, u_i, 1, randstate);
     t_s = ggh_walltime(t_s);
     t_sample += t_s;

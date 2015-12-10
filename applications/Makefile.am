@@ -17,6 +17,7 @@ bin_PROGRAMS = gghlite_params \
                gghlite_noise_dist \
                nike \
                jigsaw \
+							 ore \
                gghlite_false_friends \
                bench_dgsl \
                bench_prime_g \
