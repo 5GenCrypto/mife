@@ -4,6 +4,10 @@
 #define MAXN 30 // the maximum length bitstring
 #define MAXW 20 // maximum matrix dimension
 
+void print_double_matrix(double **inv, int n);
+void matrix_inverse(double **inv, double **a, int n);
+double **calloc_matrix(int n);
+
 
 // Function defines for tests
 static void test_dary_conversion();
@@ -56,6 +60,18 @@ static void fmpz_mmult(fmpz_t ret[MAXW][MAXW], fmpz_t m1[MAXW][MAXW], fmpz_t m2[
 				fmpz_mul(mul, m1[i][k], m2[k][j]);
 				fmpz_add(ret[i][j], ret[i][j], mul);
 				fmpz_clear(mul);
+			}
+		}
+	}
+}
+
+
+// multiply two square dimension d matrices of doubles 
+static void double_mmult(double **ret, double **m1, double **m2, int d) {
+	for (int i = 0; i < d; i++) {
+		for (int j = 0; j < d; j++) {
+			for (int k = 0; k < d; k++) {
+				ret[i][j] += m1[i][k] * m2[k][j];
 			}
 		}
 	}
@@ -187,15 +203,37 @@ int main(int argc, char *argv[]) {
 	int d = 2;
 	int dim = d+3;
 
-	fmpz_t a;
-	fmpz_init(a);
-	fmpz_randm(a, randstate, p);
-	fmpz_print(p);
-	exit(0);
-
 	ore_sk_t sk;
 	ore_sk_init(sk, n, dim, randstate, p);
 
+
+	n = 4;
+	double samp[4][4] = {
+		{1,2,3,4},
+		{5,6,7,8},
+		{3,6,4,2},
+		{2,1,1,8}};
+
+	double **a = malloc(n * sizeof(double *));
+	for(int i = 0; i < n; i++) {
+		a[i] = calloc(n, sizeof(double *));
+		for(int j = 0; j < n; j++) {
+			a[i][j] = samp[i][j];
+		}
+	}
+
+	double **inv = calloc_matrix(n);
+	double **prod = calloc_matrix(n);
+
+
+
+	matrix_inverse(inv, a, n);
+	double_mmult(prod, a, inv, n);
+
+	print_double_matrix(inv, n);
+	print_double_matrix(prod, n);
+
+/*
 	matrix_encodings_t met;
 	set_matrices(met, 10, d, n);
 
@@ -209,6 +247,7 @@ int main(int argc, char *argv[]) {
 	fmpz_mat_init(C, dim, dim);
 	fmpz_mat_mul(C, met->x_clr[0], sk->kilian[1]);
 	fmpz_mat_print_pretty(C);
+*/
 
 /*
 	fmpz_t result[MAXW][MAXW];
@@ -276,4 +315,142 @@ static void test_dary_conversion() {
 static void test_clr_matrix_gen() {
 	printf("\nTesting clr_matrix_gen function...                          ");
 
+}
+
+double **calloc_matrix(int n) {
+	double **inv = malloc(4 * sizeof(double *));
+	for(int i = 0; i < 4; i++) {
+		inv[i] = calloc(4, sizeof(double *));
+	}
+	return inv;
+}
+
+void print_double_matrix(double **inv, int n) {
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			printf("%lf ", inv[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+
+
+
+
+/**
+ * Code to find the inverse of a matrix, adapted from:
+ * https://www.cs.rochester.edu/~brown/Crypto/assts/projects/adj.html
+ */
+
+/*
+   Recursive definition of determinate using expansion by minors.
+*/
+double Determinant(double **a,int n)
+{
+   int i,j,j1,j2;
+   double det = 0;
+   double **m = NULL;
+
+   if (n < 1) { /* Error */
+
+   } else if (n == 1) { /* Shouldn't get used */
+      det = a[0][0];
+   } else if (n == 2) {
+      det = a[0][0] * a[1][1] - a[1][0] * a[0][1];
+   } else {
+      det = 0;
+      for (j1=0;j1<n;j1++) {
+         m = malloc((n-1)*sizeof(double *));
+         for (i=0;i<n-1;i++)
+            m[i] = malloc((n-1)*sizeof(double));
+         for (i=1;i<n;i++) {
+            j2 = 0;
+            for (j=0;j<n;j++) {
+               if (j == j1)
+                  continue;
+               m[i-1][j2] = a[i][j];
+               j2++;
+            }
+         }
+         det += pow(-1.0,j1+2.0) * a[0][j1] * Determinant(m,n-1);
+         for (i=0;i<n-1;i++)
+            free(m[i]);
+         free(m);
+      }
+   }
+   return(det);
+}
+
+/*
+   Find the cofactor matrix of a square matrix
+*/
+void CoFactor(double **b,int n,double **a)
+{
+   int i,j,ii,jj,i1,j1;
+   double det;
+   double **c;
+
+   c = malloc((n-1)*sizeof(double *));
+   for (i=0;i<n-1;i++)
+     c[i] = malloc((n-1)*sizeof(double));
+
+   for (j=0;j<n;j++) {
+      for (i=0;i<n;i++) {
+
+         /* Form the adjoint a_ij */
+         i1 = 0;
+         for (ii=0;ii<n;ii++) {
+            if (ii == i)
+               continue;
+            j1 = 0;
+            for (jj=0;jj<n;jj++) {
+               if (jj == j)
+                  continue;
+               c[i1][j1] = a[ii][jj];
+               j1++;
+            }
+            i1++;
+         }
+
+         /* Calculate the determinate */
+         det = Determinant(c,n-1);
+
+         /* Fill in the elements of the cofactor */
+         b[i][j] = pow(-1.0,i+j+2.0) * det;
+      }
+   }
+   for (i=0;i<n-1;i++)
+      free(c[i]);
+   free(c);
+}
+
+/*
+   Transpose of a square matrix, do it in place
+*/
+void Transpose(double **a,int n)
+{
+   int i,j;
+   double tmp;
+
+   for (i=1;i<n;i++) {
+      for (j=0;j<i;j++) {
+         tmp = a[i][j];
+         a[i][j] = a[j][i];
+         a[j][i] = tmp;
+      }
+   }
+}
+
+void matrix_inverse(double **inv, double **a, int n) {
+	double det = Determinant(a, n);
+	double **cofactor = calloc_matrix(n);
+	CoFactor(cofactor, n, a);
+	Transpose(cofactor, n);
+
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			inv[i][j] = cofactor[i][j] / det;
+		}
+	}
 }
