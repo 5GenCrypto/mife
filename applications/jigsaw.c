@@ -23,7 +23,6 @@ int main(int argc, char *argv[]) {
   gghlite_jigsaw_init(self,
                       cmdline_params->lambda,
                       cmdline_params->kappa,
-											cmdline_params->gamma,
                       cmdline_params->flags,
                       randstate);
 
@@ -61,7 +60,7 @@ int main(int argc, char *argv[]) {
   fmpz_set(a[3], a[0]);
   fmpz_set(a[4], a[1]);
 
-  for(long k=2; k<cmdline_params->gamma; k++) {
+  for(long k=2; k<cmdline_params->kappa; k++) {
     fmpz_mul(a[2], a[0], a[1]);
     fmpz_add_ui(a[2], a[2], k);
     fmpz_mod(a[2], a[2], p);
@@ -89,8 +88,8 @@ int main(int argc, char *argv[]) {
 
   uint64_t t_enc = ggh_walltime(0);
 	int group0[GAMMA];
-	group0[0] = 1;
 	memset(group0, 0, GAMMA * sizeof(int));
+	group0[0] = 1;
   gghlite_enc_set_gghlite_clr(u_k, self, e[0], 1, group0, 1, randstate);
   t_enc = ggh_walltime(t_enc);
 
@@ -108,7 +107,6 @@ int main(int argc, char *argv[]) {
 	group1[1] = 1;
   gghlite_enc_set_gghlite_clr(u_k, self, e[1], 1, group1, 1, randstate);
   t = ggh_walltime(0);
-
   gghlite_enc_mul(left, self->params, left, u_k);
   t_mul += ggh_walltime(t);
 
@@ -117,7 +115,7 @@ int main(int argc, char *argv[]) {
   _fmpz_poly_oz_rem_small_iter(e[0], e[0], self->g, self->params->n, self->g_inv, prec, flags);
   _fmpz_poly_oz_rem_small_iter(e[1], e[1], self->g, self->params->n, self->g_inv, prec, flags);
 
-  for(long k=2; k<cmdline_params->gamma; k++) {
+  for(long k=2; k<cmdline_params->kappa; k++) {
     fmpz_poly_oz_mul(e[2], e[0], e[1], self->params->n);
     assert(fmpz_poly_degree(e[2])>=0);
     fmpz_add_ui(e[2]->coeffs, e[2]->coeffs, k);
@@ -125,14 +123,9 @@ int main(int argc, char *argv[]) {
 		int groupk[GAMMA];
 		memset(groupk, 0, GAMMA * sizeof(int));
 		groupk[k] = 1;
-		printf("BP 1\n");
-    gghlite_enc_set_gghlite_clr(u_k, self, e[2], 1, groupk, 1, randstate);
-		printf("BP 2\n");
-
+		gghlite_enc_set_gghlite_clr(u_k, self, e[2], 1, groupk, 1, randstate);
     t = ggh_walltime(0);
     gghlite_enc_mul(left, self->params, left, u_k);
-		printf("BP 3\n");
-
     t_mul += ggh_walltime(t);
     fmpz_poly_set(e[1], e[0]);
     fmpz_poly_set(e[0], e[2]);
@@ -150,7 +143,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_set_coeff_fmpz(tmp, 0, acc);
   gghlite_enc_set_gghlite_clr0(rght, self, tmp, randstate);
 
-  for(long k=0; k<cmdline_params->gamma; k++) {
+  for(long k=0; k<cmdline_params->kappa; k++) {
     gghlite_enc_mul(rght, self->params, rght, self->z_inv[k]);
   }
 

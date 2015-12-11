@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   flint_randinit_seed(randstate, params->seed, 1);
 
   gghlite_sk_t self;
-  gghlite_params_init(self->params, params->lambda, params->kappa, params->gamma, params->rerand, params->flags);
+  gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);
   gghlite_params_print(self->params);
 
   printf("\n---\n");

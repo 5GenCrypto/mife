@@ -10,7 +10,7 @@ int test_jigsaw_indices(const size_t lambda, const size_t kappa, const size_t ga
 
   gghlite_sk_t self;
   gghlite_flag_t flags = GGHLITE_FLAGS_QUIET;
-  gghlite_jigsaw_init(self, lambda, kappa, gamma, flags, randstate);
+  gghlite_jigsaw_init_gamma(self, lambda, kappa, gamma, flags, randstate);
 
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);
@@ -100,9 +100,9 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
   gghlite_sk_t self;
   gghlite_flag_t flags = GGHLITE_FLAGS_QUIET;
   if (symmetric)
-    gghlite_init(self, lambda, kappa, kappa /* gamma */, 0x0, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
+    gghlite_init(self, lambda, kappa, kappa, 0x0, flags | GGHLITE_FLAGS_GOOD_G_INV, randstate);
   else
-    gghlite_jigsaw_init(self, lambda, kappa, kappa /* gamma */, flags, randstate);
+    gghlite_jigsaw_init(self, lambda, kappa, flags, randstate);
 
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);

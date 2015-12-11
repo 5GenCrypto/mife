@@ -441,7 +441,7 @@ void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
 		const size_t gamma,
                   const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate) {
   _gghlite_zero(self);
-  gghlite_params_init(self->params, lambda, kappa, gamma, rerand_mask, flags);
+  gghlite_params_init_gamma(self->params, lambda, kappa, gamma, rerand_mask, flags);
   gghlite_sk_init(self, randstate);
 }
 

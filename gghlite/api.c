@@ -9,7 +9,7 @@ void gghlite_enc_init(gghlite_enc_t op, const gghlite_params_t self) {
 }
 
 void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
-                        size_t k, int group[GAMMA], flint_rand_t randstate) {
+                        size_t k, size_t i, flint_rand_t randstate) {
   assert(self->D_sigma_s);
 
   if (k!=1)
@@ -19,19 +19,12 @@ void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gg
   gghlite_enc_init(tmp, self);
   fmpz_mod_poly_set(rop, op);
 
-	for (int r = 0; r < GAMMA; r++) {
-		if (group[r])
-  		assert(!fmpz_mod_poly_is_zero(self->x[r][k-1][0]) && !fmpz_mod_poly_is_zero(self->x[r][k-1][1]));
-	}
+  assert(!fmpz_mod_poly_is_zero(self->x[i][k-1][0]) && !fmpz_mod_poly_is_zero(self->x[i][k-1][1]));
 
   for(long j=0; j<2; j++) {
     fmpz_mod_poly_sample_D(tmp, self->D_sigma_s, randstate);
     fmpz_mod_poly_oz_ntt_enc(tmp, tmp, self->ntt);
-		for (int r = 0; r < GAMMA; r++) {
-			if (group[r]) {
-    		fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[r][k-1][j], self->n);
-			}
-		}
+    fmpz_mod_poly_oz_ntt_mul(tmp, tmp, self->x[i][k-1][j], self->n);
     fmpz_mod_poly_oz_ntt_add(rop, rop, tmp);
   }
 
@@ -39,39 +32,30 @@ void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gg
 }
 
 void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
-                       size_t l, size_t k, int group[GAMMA], int rerand, flint_rand_t randstate) {
+                       size_t l, size_t k, size_t i, int rerand, flint_rand_t randstate) {
   assert(k <= l);
   assert(l <= self->kappa);
 
   if(!gghlite_params_is_symmetric(self) && (l>1))
     ggh_die("Raising to higher levels than 1 not supported. Instead, multiply by the right combination of y_i.");
 
-	for (int r = 0; r < GAMMA; r++) {
-		if (group[r])
-  		assert(!fmpz_mod_poly_is_zero(self->y[r]));
-	}
+  assert(!fmpz_mod_poly_is_zero(self->y[i]));
 
   if (l>k) {
     gghlite_enc_t yk;
     gghlite_enc_init(yk, self);
-		for (int r = 0; r < GAMMA; r++) {
-			if (group[r]) {
-				for (int z = 0; z < l-k; z++) {
-    			fmpz_mod_poly_oz_ntt_mul(yk, yk, self->y[r], self->n);
-				}
-			}
-		}
+    fmpz_mod_poly_oz_ntt_pow_ui(yk, self->y[i], l-k, self->n);
     fmpz_mod_poly_oz_ntt_mul(rop, op, yk, self->n);
     fmpz_mod_poly_clear(yk);
   }
 
   if(rerand && l>0) {
-    gghlite_enc_rerand(rop, self, rop, l, group, randstate);
+    gghlite_enc_rerand(rop, self, rop, l, i, randstate);
   }
 }
 
 
-void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, int group[GAMMA], flint_rand_t randstate) {
+void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size_t i, flint_rand_t randstate) {
   assert(self->kappa);
   assert(k <= self->kappa);
 
@@ -79,7 +63,7 @@ void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, int 
   fmpz_mod_poly_oz_ntt_enc(rop, rop, self->ntt);
   if (k == 0)
     return;
-  gghlite_enc_raise(rop, self, rop, k, 0, group, 1, randstate);
+  gghlite_enc_raise(rop, self, rop, k, 0, i, 1, randstate);
 }
 
 void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,

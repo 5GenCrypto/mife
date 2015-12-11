@@ -508,7 +508,7 @@ int gghlite_params_check_sec(const gghlite_params_t self) {
 }
 
 
-void gghlite_params_init(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma, uint64_t rerand_mask, gghlite_flag_t flags) {
+void gghlite_params_init_gamma(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma, uint64_t rerand_mask, gghlite_flag_t flags) {
   assert(lambda > 0);
   assert((kappa > 0) && (kappa <= KAPPA));
   assert((gamma > 0) && (gamma <= GAMMA));

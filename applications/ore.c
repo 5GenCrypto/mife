@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   gghlite_sk_t self;
 
 
-  gghlite_jigsaw_init(self,
+  gghlite_jigsaw_init_gamma(self,
                       cmdline_params->lambda,
                       cmdline_params->kappa,
 											cmdline_params->gamma,
