@@ -4,9 +4,9 @@
 #define MAXN 30 // the maximum length bitstring
 #define MAXW 20 // maximum matrix dimension
 
-void print_double_matrix(double **inv, int n);
-void matrix_inverse(double **inv, double **a, int n);
-double **calloc_matrix(int n);
+void print_int_matrix(int **inv, int n);
+void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int n, fmpz_t p);
+int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 
 
 // Function defines for tests
@@ -66,8 +66,8 @@ static void fmpz_mmult(fmpz_t ret[MAXW][MAXW], fmpz_t m1[MAXW][MAXW], fmpz_t m2[
 }
 
 
-// multiply two square dimension d matrices of doubles 
-static void double_mmult(double **ret, double **m1, double **m2, int d) {
+// multiply two square dimension d matrices of ints 
+static void int_mmult(int **ret, int **m1, int **m2, int d) {
 	for (int i = 0; i < d; i++) {
 		for (int j = 0; j < d; j++) {
 			for (int k = 0; k < d; k++) {
@@ -76,6 +76,20 @@ static void double_mmult(double **ret, double **m1, double **m2, int d) {
 		}
 	}
 }
+
+// multiply two square dimension d matrices of ints 
+static void modp_mmult(int **ret, int **m1, int **m2, int d, int p) {
+	for (int i = 0; i < d; i++) {
+		for (int j = 0; j < d; j++) {
+			for (int k = 0; k < d; k++) {
+				ret[i][j] += (m1[i][k] * m2[k][j]) % p;
+			}
+			ret[i][j] = ret[i][j] % p;
+		}
+	}
+}
+
+
 
 static void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate, fmpz_t p) {
 	for (int k = 0; k < n; k++) {
@@ -160,6 +174,15 @@ static void set_matrices(matrix_encodings_t met, int64_t message, int d, int n) 
 	}
 }
 
+void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n, fmpz_t p) {
+	fmpz_mat_mul(a, b, c);
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			fmpz_mod(fmpz_mat_entry(a, i, j), fmpz_mat_entry(a, i, j), p);
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
 	cmdline_params_t cmdline_params;
 
@@ -197,6 +220,7 @@ int main(int argc, char *argv[]) {
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);
 
+	test_matrix_inv(6, randstate, p);
 	test_dary_conversion();
 
 	int n = 4;
@@ -206,32 +230,6 @@ int main(int argc, char *argv[]) {
 	ore_sk_t sk;
 	ore_sk_init(sk, n, dim, randstate, p);
 
-
-	n = 4;
-	double samp[4][4] = {
-		{1,2,3,4},
-		{5,6,7,8},
-		{3,6,4,2},
-		{2,1,1,8}};
-
-	double **a = malloc(n * sizeof(double *));
-	for(int i = 0; i < n; i++) {
-		a[i] = calloc(n, sizeof(double *));
-		for(int j = 0; j < n; j++) {
-			a[i][j] = samp[i][j];
-		}
-	}
-
-	double **inv = calloc_matrix(n);
-	double **prod = calloc_matrix(n);
-
-
-
-	matrix_inverse(inv, a, n);
-	double_mmult(prod, a, inv, n);
-
-	print_double_matrix(inv, n);
-	print_double_matrix(prod, n);
 
 /*
 	matrix_encodings_t met;
@@ -284,7 +282,7 @@ static void fmpz_print_matrix(fmpz_t matrix[MAXW][MAXW], int d) {
 }
 
 static void test_dary_conversion() {
-	printf("\nTesting d-ary conversion function...                          ");
+	printf("Testing d-ary conversion function...                          ");
 	int dary1[MAXN];
 	int dary2[MAXN];
 	int dary3[MAXN];
@@ -312,28 +310,74 @@ static void test_dary_conversion() {
 
 }
 
+int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
+	printf("\nTesting matrix_inv function...                                ");
+	fmpz_mat_t a;
+	fmpz_mat_init(a, n, n);
+
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			fmpz_randm(fmpz_mat_entry(a, i, j), randstate, modp);
+		}
+	}
+
+	fmpz_mat_t inv;
+	fmpz_mat_init(inv, n, n);
+
+	fmpz_mat_t prod;
+	fmpz_mat_init(prod, n, n);
+
+	fmpz_modp_matrix_inverse(inv, a, n, modp);
+	fmpz_mat_mul_modp(prod, a, inv, n, modp);
+
+	fmpz_mat_t identity;
+	fmpz_mat_init(identity, n, n);
+	fmpz_mat_one(identity);
+
+	int status = fmpz_mat_equal(prod, identity);
+	if (status != 0)
+		printf("SUCCESS\n");
+	else
+		printf("FAIL\n");	
+}
+
+
 static void test_clr_matrix_gen() {
 	printf("\nTesting clr_matrix_gen function...                          ");
 
 }
 
-double **calloc_matrix(int n) {
-	double **inv = malloc(4 * sizeof(double *));
-	for(int i = 0; i < 4; i++) {
-		inv[i] = calloc(4, sizeof(double *));
-	}
-	return inv;
-}
-
-void print_double_matrix(double **inv, int n) {
+void print_int_matrix(int **inv, int n) {
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < n; j++) {
-			printf("%lf ", inv[i][j]);
+			printf("%d ", inv[i][j]);
 		}
 		printf("\n");
 	}
 }
 
+// From Wikipedia: a^-1 (mod b)
+int mod_inv(int a, int b)
+{
+	int b0 = b, t, q;
+	int x0 = 0, x1 = 1;
+	if (b == 1) return 1;
+	while (a > 1) {
+		q = a / b;
+		t = b, b = a % b, a = t;
+		t = x0, x0 = x1 - q * x0, x1 = t;
+	}
+	if (x1 < 0) x1 += b0;
+	return x1;
+}
+
+// Computes a - b (mod p)
+int mod_sub(int a, int b, int p)
+{
+	int tmp = a-b;
+		return p+tmp;
+	return tmp;
+}
 
 
 
@@ -346,111 +390,128 @@ void print_double_matrix(double **inv, int n) {
 /*
    Recursive definition of determinate using expansion by minors.
 */
-double Determinant(double **a,int n)
-{
-   int i,j,j1,j2;
-   double det = 0;
-   double **m = NULL;
+void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p) {
+	assert(n >= 1);
 
-   if (n < 1) { /* Error */
+	if(n == 1) {
+		fmpz_set(det, fmpz_mat_entry(a, 0, 0));
+		return;
+	}
+	
+	if (n == 2) {
+		fmpz_t tmp1;
+		fmpz_init(tmp1);
+		fmpz_mul(tmp1, fmpz_mat_entry(a,0,0), fmpz_mat_entry(a,1,1));
+		fmpz_mod(tmp1, tmp1, p);
+		fmpz_t tmp2;
+		fmpz_init(tmp2);
+		fmpz_mul(tmp2, fmpz_mat_entry(a,1,0), fmpz_mat_entry(a,0,1));
+		fmpz_mod(tmp2, tmp2, p);
+		fmpz_sub(det, tmp1, tmp2);
+		fmpz_mod(det, det, p);
+		fmpz_clear(tmp1);
+		fmpz_clear(tmp2);
+		return;
+	}
 
-   } else if (n == 1) { /* Shouldn't get used */
-      det = a[0][0];
-   } else if (n == 2) {
-      det = a[0][0] * a[1][1] - a[1][0] * a[0][1];
-   } else {
-      det = 0;
-      for (j1=0;j1<n;j1++) {
-         m = malloc((n-1)*sizeof(double *));
-         for (i=0;i<n-1;i++)
-            m[i] = malloc((n-1)*sizeof(double));
-         for (i=1;i<n;i++) {
-            j2 = 0;
-            for (j=0;j<n;j++) {
-               if (j == j1)
-                  continue;
-               m[i-1][j2] = a[i][j];
-               j2++;
-            }
-         }
-         det += pow(-1.0,j1+2.0) * a[0][j1] * Determinant(m,n-1);
-         for (i=0;i<n-1;i++)
-            free(m[i]);
-         free(m);
+	fmpz_mat_t m;
+	fmpz_mat_init(m, n-1, n-1);
+
+  fmpz_set_ui(det, 0);
+	for(int j1=0;j1<n;j1++) {
+    for (int i=1;i<n;i++) {
+			int j2 = 0;
+      for (int j=0;j<n;j++) {
+				if (j == j1)
+					continue;
+				fmpz_set(fmpz_mat_entry(m,i-1,j2), fmpz_mat_entry(a,i,j));
+				j2++;
       }
-   }
-   return(det);
+    }
+		fmpz_t det2;
+		fmpz_init(det2);
+		fmpz_mat_det_modp(det2, m, n-1, p);
+		fmpz_mul(det2, det2, fmpz_mat_entry(a,0,j1));
+		fmpz_mod(det2, det2, p);
+		if(j1 % 2 == 1) {
+			fmpz_negmod(det2, det2, p);
+		}
+		fmpz_add(det, det, det2);
+		fmpz_clear(det2);
+	}
+
+	fmpz_mat_clear(m);
 }
 
 /*
    Find the cofactor matrix of a square matrix
 */
-void CoFactor(double **b,int n,double **a)
-{
-   int i,j,ii,jj,i1,j1;
-   double det;
-   double **c;
+void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p) {
+  int i,j,ii,jj,i1,j1;
 
-   c = malloc((n-1)*sizeof(double *));
-   for (i=0;i<n-1;i++)
-     c[i] = malloc((n-1)*sizeof(double));
+	fmpz_t det;
+	fmpz_init(det);
 
-   for (j=0;j<n;j++) {
-      for (i=0;i<n;i++) {
+	fmpz_mat_t c;
+	fmpz_mat_init(c, n-1, n-1);
 
-         /* Form the adjoint a_ij */
-         i1 = 0;
-         for (ii=0;ii<n;ii++) {
-            if (ii == i)
-               continue;
-            j1 = 0;
-            for (jj=0;jj<n;jj++) {
-               if (jj == j)
-                  continue;
-               c[i1][j1] = a[ii][jj];
-               j1++;
-            }
-            i1++;
-         }
+  for (j=0;j<n;j++) {
+		for (i=0;i<n;i++) {
+			/* Form the adjoint a_ij */
+			i1 = 0;
+			for (ii=0;ii<n;ii++) {
+				if (ii == i)
+					continue;
+				j1 = 0;
+				for (jj=0;jj<n;jj++) {
+					if (jj == j)
+						continue;
+					fmpz_set(fmpz_mat_entry(c, i1, j1), fmpz_mat_entry(a, ii, jj));
+					j1++;
+				}
+				i1++;
+			}
+			
+			/* Calculate the determinant */
+			fmpz_mat_det_modp(det, c, n-1, p);
 
-         /* Calculate the determinate */
-         det = Determinant(c,n-1);
+			/* Fill in the elements of the cofactor */
+			if((i+j) % 2 == 1) {
+				fmpz_negmod(det, det, p);
+			}
+			fmpz_mod(det, det, p);
+      fmpz_set(fmpz_mat_entry(b, i, j), det);
+		}
+  }
 
-         /* Fill in the elements of the cofactor */
-         b[i][j] = pow(-1.0,i+j+2.0) * det;
-      }
-   }
-   for (i=0;i<n-1;i++)
-      free(c[i]);
-   free(c);
+	fmpz_clear(det);
+	fmpz_mat_clear(c);
 }
 
-/*
-   Transpose of a square matrix, do it in place
-*/
-void Transpose(double **a,int n)
-{
-   int i,j;
-   double tmp;
-
-   for (i=1;i<n;i++) {
-      for (j=0;j<i;j++) {
-         tmp = a[i][j];
-         a[i][j] = a[j][i];
-         a[j][i] = tmp;
-      }
-   }
-}
-
-void matrix_inverse(double **inv, double **a, int n) {
-	double det = Determinant(a, n);
-	double **cofactor = calloc_matrix(n);
-	CoFactor(cofactor, n, a);
-	Transpose(cofactor, n);
+void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int n, fmpz_t p) {
+	fmpz_t det;
+	fmpz_init(det);
+	fmpz_mat_det_modp(det, a, n, p);
+	fmpz_mat_t cofactor;
+	fmpz_mat_init(cofactor, n, n);
+	fmpz_mat_cofactor_modp(cofactor, a, n, p);
 
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < n; j++) {
-			inv[i][j] = cofactor[i][j] / det;
+			fmpz_t invmod;
+			fmpz_init(invmod);
+			fmpz_invmod(invmod, det, p);
+			fmpz_t tmp;
+			fmpz_init(tmp);
+			fmpz_mod(tmp, fmpz_mat_entry(cofactor, j, i), p);
+			fmpz_mul(tmp, tmp, invmod);
+			fmpz_mod(tmp, tmp, p);
+			fmpz_set(fmpz_mat_entry(inv,i,j), tmp);
+			fmpz_clear(invmod);
+			fmpz_clear(tmp);
 		}
 	}
+
+	fmpz_clear(det);
+	fmpz_mat_clear(cofactor);
 }
