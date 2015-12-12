@@ -4,7 +4,6 @@
 #define MAXN 30 // the maximum length bitstring
 #define MAXW 20 // maximum matrix dimension
 
-void print_int_matrix(int **inv, int n);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int n, fmpz_t p);
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 
@@ -30,66 +29,6 @@ struct _ore_sk_struct {
 };
 
 typedef struct _ore_sk_struct ore_sk_t[1];
-
-// initializes a matrix of fmpz_t of square dimension d
-static void fmpz_init_matrix(fmpz_t m[MAXW][MAXW], int d) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			fmpz_init(m[i][j]);
-		}
-	}	
-}
-
-// clears a matrix of fmpz_t of square dimension d
-static void fmpz_clear_matrix(fmpz_t m[MAXW][MAXW], int d) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			fmpz_clear(m[i][j]);
-		}
-	}	
-}
-
-// multiply two square dimension d matrices of fmpz_t types
-static void fmpz_mmult(fmpz_t ret[MAXW][MAXW], fmpz_t m1[MAXW][MAXW], fmpz_t m2[MAXW][MAXW], int d) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			fmpz_zero(ret[i][j]);
-			for (int k = 0; k < d; k++) {
-				fmpz_t mul;
-				fmpz_init(mul);
-				fmpz_mul(mul, m1[i][k], m2[k][j]);
-				fmpz_add(ret[i][j], ret[i][j], mul);
-				fmpz_clear(mul);
-			}
-		}
-	}
-}
-
-
-// multiply two square dimension d matrices of ints 
-static void int_mmult(int **ret, int **m1, int **m2, int d) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			for (int k = 0; k < d; k++) {
-				ret[i][j] += m1[i][k] * m2[k][j];
-			}
-		}
-	}
-}
-
-// multiply two square dimension d matrices of ints 
-static void modp_mmult(int **ret, int **m1, int **m2, int d, int p) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			for (int k = 0; k < d; k++) {
-				ret[i][j] += (m1[i][k] * m2[k][j]) % p;
-			}
-			ret[i][j] = ret[i][j] % p;
-		}
-	}
-}
-
-
 
 static void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate, fmpz_t p) {
 	for (int k = 0; k < n; k++) {
@@ -340,47 +279,6 @@ int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
 	else
 		printf("FAIL\n");	
 }
-
-
-static void test_clr_matrix_gen() {
-	printf("\nTesting clr_matrix_gen function...                          ");
-
-}
-
-void print_int_matrix(int **inv, int n) {
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++) {
-			printf("%d ", inv[i][j]);
-		}
-		printf("\n");
-	}
-}
-
-// From Wikipedia: a^-1 (mod b)
-int mod_inv(int a, int b)
-{
-	int b0 = b, t, q;
-	int x0 = 0, x1 = 1;
-	if (b == 1) return 1;
-	while (a > 1) {
-		q = a / b;
-		t = b, b = a % b, a = t;
-		t = x0, x0 = x1 - q * x0, x1 = t;
-	}
-	if (x1 < 0) x1 += b0;
-	return x1;
-}
-
-// Computes a - b (mod p)
-int mod_sub(int a, int b, int p)
-{
-	int tmp = a-b;
-		return p+tmp;
-	return tmp;
-}
-
-
-
 
 /**
  * Code to find the inverse of a matrix, adapted from:
