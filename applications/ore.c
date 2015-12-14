@@ -4,13 +4,14 @@
 #define MAXN 30 // the maximum length bitstring
 #define MAXW 20 // maximum matrix dimension
 
-void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int n, fmpz_t p);
+void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
 
 
 // Function defines for tests
+static void test_gen_partitioning();
 static void test_dary_conversion();
-static void fmpz_print_matrix(fmpz_t matrix[MAXW][MAXW], int d);
 
 struct _matrix_encodings_struct {
 	int dary_repr[MAXN];
@@ -26,6 +27,7 @@ typedef struct _matrix_encodings_struct matrix_encodings_t[1];
 
 struct _ore_sk_struct {
 	fmpz_mat_t kilian[MAXN];
+	fmpz_mat_t kilian_inv[MAXN];
 };
 
 typedef struct _ore_sk_struct ore_sk_t[1];
@@ -38,6 +40,9 @@ static void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate, fmp
 				fmpz_randm(fmpz_mat_entry(sk->kilian[k], i, j), randstate, p);
 			}
 		}
+		
+		fmpz_mat_init(sk->kilian_inv[k], dim, dim);
+		fmpz_modp_matrix_inverse(sk->kilian_inv[k], sk->kilian[k], dim, p);
 	}
 }
 
@@ -113,6 +118,39 @@ static void set_matrices(matrix_encodings_t met, int64_t message, int d, int n) 
 	}
 }
 
+/**
+ * Generates the i^th member of the exclusive partition family for the index 
+ * sets.
+ *
+ * @param partitioning The description of the partitioning, each entry is in 
+ * [0,d-1] and it is of length (1 + (d-1)(L+1)).
+ * @param i The i^th member of the partition family
+ * @param L the log of the size of the partition family. So, i must be in the 
+ * range [0,2^L-1]
+ * @param d The number of total multiplications. partitioning[] will describe a 
+ * d-partition of the universe set.
+ * @param len_p A pointer to an integer to set the length of the partitioning 
+ * array to. It should be (1 + (d-1)(L+1)).
+ */ 
+static void gen_partitioning(int partitioning[GAMMA], int i, int L, int d, int *len_p) {
+	int j = 0;
+
+	int bitstring[MAXN];
+	message_to_dary(bitstring, L, i, 2);
+
+	for(; j < d; j++) {
+		partitioning[j] = j;
+	}
+
+	for(int k = 0; k < L; k++) {
+		for(int j1 = 1; j1 < d; j1++) {
+			partitioning[j] = (bitstring[k] == 1) ? j1 : 0;
+			j++;
+		}
+	}
+	*len_p = j;
+}
+
 void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n, fmpz_t p) {
 	fmpz_mat_mul(a, b, c);
 	for(int i = 0; i < n; i++) {
@@ -159,6 +197,7 @@ int main(int argc, char *argv[]) {
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);
 
+	//test_gen_partitioning(); // TODO: add a test for the partition selection
 	test_matrix_inv(6, randstate, p);
 	test_dary_conversion();
 
@@ -170,7 +209,7 @@ int main(int argc, char *argv[]) {
 	ore_sk_init(sk, n, dim, randstate, p);
 
 
-/*
+
 	matrix_encodings_t met;
 	set_matrices(met, 10, d, n);
 
@@ -182,20 +221,24 @@ int main(int argc, char *argv[]) {
 
 	fmpz_mat_t C;
 	fmpz_mat_init(C, dim, dim);
-	fmpz_mat_mul(C, met->x_clr[0], sk->kilian[1]);
+	fmpz_mat_mul(C, met->x_clr[0], sk->kilian_inv[0]);
+	fmpz_mat_t D;
+	fmpz_mat_init(D, dim, dim);
+	fmpz_mat_mul(D, sk->kilian[0], met->y_clr[0]);
+	fmpz_mat_mul(C, C, D);
+	fmpz_mat_modp(C, dim, p);
+
 	fmpz_mat_print_pretty(C);
-*/
 
-/*
-	fmpz_t result[MAXW][MAXW];
-	fmpz_init_matrix(result, met->dim);
-	fmpz_mmult(result, met->x_clr[0], met->y_clr[1], met->dim);
 
-	printf("THE PRODUCT MATRIX:\n");
-	fmpz_print_matrix(result, met->dim);
-	fmpz_clear_matrix(result, met->dim);
-*/
+}
 
+void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), p);
+		}
+	}	
 }
 
 /**
@@ -210,11 +253,19 @@ static int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
 	return 0;
 }
 
-static void fmpz_print_matrix(fmpz_t matrix[MAXW][MAXW], int d) {
-	for (int i = 0; i < d; i++) {
-		for (int j = 0; j < d; j++) {
-			fmpz_print(matrix[i][j]);
-			printf(" ");
+static void test_gen_partitioning() {
+	int ptn[GAMMA];
+	int L = 4;
+	int i = 5;
+	int d = 3;
+	int len;
+
+	for(int i = 0; i < 16; i++) {
+		gen_partitioning(ptn, i, L, d, &len);
+
+		printf("Partition %d: ", i);
+		for(int j = 0; j < len; j++) {
+			printf("%d ", ptn[j]);
 		}
 		printf("\n");
 	}
@@ -386,16 +437,16 @@ void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p) {
 	fmpz_mat_clear(c);
 }
 
-void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int n, fmpz_t p) {
+void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p) {
 	fmpz_t det;
 	fmpz_init(det);
-	fmpz_mat_det_modp(det, a, n, p);
+	fmpz_mat_det_modp(det, a, dim, p);
 	fmpz_mat_t cofactor;
-	fmpz_mat_init(cofactor, n, n);
-	fmpz_mat_cofactor_modp(cofactor, a, n, p);
+	fmpz_mat_init(cofactor, dim, dim);
+	fmpz_mat_cofactor_modp(cofactor, a, dim, p);
 
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++) {
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
 			fmpz_t invmod;
 			fmpz_init(invmod);
 			fmpz_invmod(invmod, det, p);
