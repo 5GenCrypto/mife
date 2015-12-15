@@ -2,47 +2,78 @@
 #include "common.h"
 #include "ore.h"
 
-#define MAXN 30 // the maximum length bitstring
+int main(int argc, char *argv[]) {
+	cmdline_params_t cmdline_params;
 
-void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
-int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
-void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
+  const char *name =  "Order Revealing Encryption";
+  parse_cmdline(cmdline_params, argc, argv, name, NULL);
+
+	//print_header(name, cmdline_params);
+
+  flint_rand_t randstate;
+  flint_randinit_seed(randstate, cmdline_params->seed, 1);
+
+  uint64_t t = ggh_walltime(0);
+  uint64_t t_total = ggh_walltime(0);
+
+  uint64_t t_gen = 0;
+
+	ore_flag_t flags = ORE_DEFAULT;
+
+	int n = 4;
+	int d = 2;
+	int dim = d+3;
+	int L = 3; // 2^L = # of total messages we can encrypt
+
+	int kappa = 2 * n;
+	int gamma = 2 * (1 + (n-1) * (L+1));
+
+	ore_sk_t sk;
+	
+  gghlite_jigsaw_init_gamma(sk->self,
+                      cmdline_params->lambda,
+                      kappa,
+											gamma,
+                      cmdline_params->flags,
+                      randstate);
+
+  printf("\n");
+  gghlite_params_print(sk->self->params);
+  printf("\n---\n\n");
+
+  t_gen = ggh_walltime(t);
+  printf("1. GGH InstGen wall time:                 %8.2f s\n",
+			ggh_seconds(t_gen));
+
+  t = ggh_walltime(0);
+  fmpz_t p; fmpz_init(p);
+  fmpz_poly_oz_ideal_norm(p, sk->self->g, sk->self->params->n, 0);
+
+	ore_sk_init(sk, n, dim, randstate, p);
 
 
-// Function defines for tests
-static void test_gen_partitioning();
-static void test_dary_conversion();
+	//test_gen_partitioning(); // TODO: add a test for the partition selection
+	test_matrix_inv(6, randstate, p);
+	test_dary_conversion();
 
-struct _gghlite_enc_mat_struct {
-	gghlite_enc_t **m;
-	int nrows; // number of rows in the matrix
-	int ncols; // number of columns in the matrix
-};
+	int num1 = 12;
+	int num2 = 10;
 
-typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
+	matrix_encodings_t met1;
+	set_matrices(met1, num1, d, n, p, randstate, flags);
+	set_encodings(sk, met1, 0, 3, randstate, flags);
 
-struct _matrix_encodings_struct {
-	int dary_repr[MAXN];
-	int dim; // matrix dimension (FIXME: allow for rectangular matrices)
-	int n; // the bitstring length
-  gghlite_enc_mat_t x_enc[MAXN];
-  gghlite_enc_mat_t y_enc[MAXN];
-	fmpz_mat_t x_clr[MAXN];
-	fmpz_mat_t y_clr[MAXN];
-};
+	matrix_encodings_t met2;
+	set_matrices(met2, num2, d, n, p, randstate, flags);
+	set_encodings(sk, met2, 4, 3, randstate, flags);
 
-typedef struct _matrix_encodings_struct matrix_encodings_t[1];
+	printf("Comparing %d with %d: ", num1, num2);
+	compare(sk->self, met1->x_enc, met2->y_enc, 4);
+}
 
-struct _ore_sk_struct {
-	gghlite_sk_t self;
-	fmpz_mat_t R[MAXN];
-	fmpz_mat_t R_inv[MAXN];
-};
 
-typedef struct _ore_sk_struct ore_sk_t[1];
-
-static void ore_sk_init(ore_sk_t sk, int n, int dim,
-		flint_rand_t randstate, fmpz_t p) {
+void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate,
+		fmpz_t p) {
 	// need 2 * n - 1 kilian randomizer matrices R
 	int num_r = 2 * n - 1;
 	for (int k = 0; k < num_r; k++) {
@@ -59,7 +90,7 @@ static void ore_sk_init(ore_sk_t sk, int n, int dim,
 }
 
 // message >= 0, d >= 2
-static void message_to_dary(int dary[MAXN], int bitstring_len,
+void message_to_dary(int dary[MAXN], int bitstring_len,
 		int64_t message, int64_t d) {
 	assert(message >= 0);
 	assert(d >= 2);
@@ -71,10 +102,6 @@ static void message_to_dary(int dary[MAXN], int bitstring_len,
 	}
 }
 
-#define X_TYPE 0
-#define Y_TYPE 1
-#define NONZERO_VAL 1
-
 /* input = the digit being read, (i,j) = coordinates of matrix, type = X or Y
  *
  * The DFA is defined as follows:
@@ -83,7 +110,7 @@ static void message_to_dary(int dary[MAXN], int bitstring_len,
  * - state 2 is the greater than state
  *
  */
-static int get_matrix_bit(int input, int i, int j, int type) {
+int get_matrix_bit(int input, int i, int j, int type) {
 	if (type == X_TYPE) {
 		if ((i == 1 && j == 1) || (i == 2 && j == 2))
 			return NONZERO_VAL;
@@ -121,7 +148,7 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t r, fmpz_mat_t m, fmpz_t scalar,
 }
 
 /* sets the cleartext matrices x_clr and y_clr */
-static void set_matrices(matrix_encodings_t met, int64_t message, int d,
+void set_matrices(matrix_encodings_t met, int64_t message, int d,
 		int n, fmpz_t modp, flint_rand_t randstate, ore_flag_t flags) {
 	message_to_dary(met->dary_repr, n, message, d);
 	met->n = n;
@@ -175,7 +202,7 @@ static void set_matrices(matrix_encodings_t met, int64_t message, int d,
  * @param len_p A pointer to an integer to set the length of the partitioning 
  * array to. It should be (1 + (d-1)(L+1)).
  */ 
-static void gen_partitioning(int partitioning[GAMMA], int i, int L, int d,
+void gen_partitioning(int partitioning[GAMMA], int i, int L, int d,
 		int *len_p) {
 	int j = 0;
 
@@ -395,10 +422,10 @@ void compare(gghlite_sk_t self, gghlite_enc_mat_t x[MAXN],
 	int lessthan = 1 - gghlite_enc_is_zero(self->params, tmp[0]->m[0][1]);
 	int greaterthan = 1 - gghlite_enc_is_zero(self->params, tmp[0]->m[0][2]);
 
-	printf("equals: %d, lessthan: %d, greaterthan: %d\n", equals,
-			lessthan, greaterthan);
+	//printf("equals: %d, lessthan: %d, greaterthan: %d\n", equals,
+	//		lessthan, greaterthan);
 
-	gghlite_enc_mat_zeros_print(self, tmp[0]);
+	//gghlite_enc_mat_zeros_print(self, tmp[0]);
 	assert(equals + lessthan + greaterthan == 1);
 
 	if(equals) {
@@ -412,75 +439,8 @@ void compare(gghlite_sk_t self, gghlite_enc_mat_t x[MAXN],
 	if(greaterthan) {
 		printf("GREATER THAN\n");
 	}
-
 }
 
-
-int main(int argc, char *argv[]) {
-	cmdline_params_t cmdline_params;
-
-  const char *name =  "Order Revealing Encryption";
-  parse_cmdline(cmdline_params, argc, argv, name, NULL);
-
-  print_header(name, cmdline_params);
-
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, cmdline_params->seed, 1);
-
-  uint64_t t = ggh_walltime(0);
-  uint64_t t_total = ggh_walltime(0);
-
-  uint64_t t_gen = 0;
-
-	ore_flag_t flags = ORE_DEFAULT;
-
-	int n = 4;
-	int d = 2;
-	int dim = d+3;
-	int L = 3; // 2^L = # of total messages we can encrypt
-
-	int kappa = 2 * n;
-	int gamma = 2 * (1 + (n-1) * (L+1));
-
-	ore_sk_t sk;
-	
-  gghlite_jigsaw_init_gamma(sk->self,
-                      cmdline_params->lambda,
-                      kappa,
-											gamma,
-                      cmdline_params->flags,
-                      randstate);
-
-  printf("\n");
-  gghlite_params_print(sk->self->params);
-  printf("\n---\n\n");
-
-  t_gen = ggh_walltime(t);
-  printf("1. GGH InstGen wall time:                 %8.2f s\n",
-			ggh_seconds(t_gen));
-
-  t = ggh_walltime(0);
-  fmpz_t p; fmpz_init(p);
-  fmpz_poly_oz_ideal_norm(p, sk->self->g, sk->self->params->n, 0);
-
-	ore_sk_init(sk, n, dim, randstate, p);
-
-
-	//test_gen_partitioning(); // TODO: add a test for the partition selection
-	test_matrix_inv(6, randstate, p);
-	test_dary_conversion();
-
-
-	matrix_encodings_t met1;
-	set_matrices(met1, 12, d, n, p, randstate, flags);
-	set_encodings(sk, met1, 0, 3, randstate, flags);
-
-	matrix_encodings_t met2;
-	set_matrices(met2, 10, d, n, p, randstate, flags);
-	set_encodings(sk, met2, 4, 3, randstate, flags);
-
-	compare(sk->self, met1->x_enc, met2->y_enc, 4);
-}
 
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
 	for(int i = 0; i < dim; i++) {
@@ -494,7 +454,7 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
  * Test code
  */
 
-static int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
+int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
 	for (int i = 0; i < length; i++) {
 		if (arr1[i] != arr2[i])
 			return 1;
@@ -502,7 +462,7 @@ static int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
 	return 0;
 }
 
-static void test_gen_partitioning() {
+void test_gen_partitioning() {
 	int ptn[GAMMA];
 	int L = 4;
 	int i = 5;
@@ -520,7 +480,7 @@ static void test_gen_partitioning() {
 	}
 }
 
-static void test_dary_conversion() {
+void test_dary_conversion() {
 	printf("Testing d-ary conversion function...                          ");
 	int dary1[MAXN];
 	int dary2[MAXN];
