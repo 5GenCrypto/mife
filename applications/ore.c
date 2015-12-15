@@ -13,6 +13,14 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
 static void test_gen_partitioning();
 static void test_dary_conversion();
 
+struct _enc_mat_struct {
+	gghlite_enc_t m[MAXW][MAXW];
+	int num_rows;
+	int num_cols;
+};
+
+typedef struct _enc_mat_struct ent_mat_t[1];
+
 struct _matrix_encodings_struct {
 	int dary_repr[MAXN];
 	int dim; // matrix dimension, dim <= MAXW
@@ -26,23 +34,26 @@ struct _matrix_encodings_struct {
 typedef struct _matrix_encodings_struct matrix_encodings_t[1];
 
 struct _ore_sk_struct {
-	fmpz_mat_t kilian[MAXN];
-	fmpz_mat_t kilian_inv[MAXN];
+	gghlite_sk_t self;
+	fmpz_mat_t R[MAXN];
+	fmpz_mat_t R_inv[MAXN];
 };
 
 typedef struct _ore_sk_struct ore_sk_t[1];
 
 static void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate, fmpz_t p) {
-	for (int k = 0; k < n; k++) {
-		fmpz_mat_init(sk->kilian[k], dim, dim);
+	// need 2 * n - 1 kilian randomizer matrices R
+	int num_r = 2 * n - 1;
+	for (int k = 0; k < num_r; k++) {
+		fmpz_mat_init(sk->R[k], dim, dim);
 		for (int i = 0; i < dim; i++) {
 			for(int j = 0; j < dim; j++) {
-				fmpz_randm(fmpz_mat_entry(sk->kilian[k], i, j), randstate, p);
+				fmpz_randm(fmpz_mat_entry(sk->R[k], i, j), randstate, p);
 			}
 		}
 		
-		fmpz_mat_init(sk->kilian_inv[k], dim, dim);
-		fmpz_modp_matrix_inverse(sk->kilian_inv[k], sk->kilian[k], dim, p);
+		fmpz_mat_init(sk->R_inv[k], dim, dim);
+		fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dim, p);
 	}
 }
 
@@ -97,25 +108,49 @@ static int get_matrix_bit(int input, int i, int j, int type) {
 	}
 }
 
+void fmpz_mat_scalar_mul_modp(fmpz_mat_t r, fmpz_mat_t m, fmpz_t scalar, fmpz_t modp, int dim) {
+	for (int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			fmpz_mul(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), scalar);
+			fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), modp);
+		}
+	}	
+}
+
 /* sets the cleartext matrices x_clr and y_clr */
-static void set_matrices(matrix_encodings_t met, int64_t message, int d, int n) {
+static void set_matrices(matrix_encodings_t met, int64_t message, int d, int n, flint_rand_t randstate, fmpz_t modp) {
 	message_to_dary(met->dary_repr, n, message, d);
 	met->n = n;
 	met->dim = d+3;
 
+	fmpz_t x_rand;
+	fmpz_t y_rand;
+	fmpz_init(x_rand);
+	fmpz_init(y_rand);
+
 	for (int k = 0; k < met->n; k++) {
 		fmpz_mat_init(met->x_clr[k], met->dim, met->dim);
 		fmpz_mat_init(met->y_clr[k], met->dim, met->dim);
+
+		fmpz_randm(x_rand, randstate, modp);
+		fmpz_randm(y_rand, randstate, modp);
+		
 		for (int i = 0; i < met->dim; i++) {
 			for(int j = 0; j < met->dim; j++) {
 				int x_digit = get_matrix_bit(met->dary_repr[k], i, j, X_TYPE);
 				int y_digit = get_matrix_bit(met->dary_repr[k], i, j, Y_TYPE);
 				fmpz_set_ui(fmpz_mat_entry(met->x_clr[k], i, j), x_digit);
 				fmpz_set_ui(fmpz_mat_entry(met->y_clr[k], i, j), y_digit);
-				/* TODO multiply by randomizer */
+
+				/* apply scalar randomizers */
+				fmpz_mat_scalar_mul_modp(met->x_clr[k], met->x_clr[k], x_rand, modp, met->dim);
+				fmpz_mat_scalar_mul_modp(met->y_clr[k], met->y_clr[k], y_rand, modp, met->dim);
 			}
 		}
 	}
+
+	fmpz_clear(x_rand);
+	fmpz_clear(y_rand);
 }
 
 /**
@@ -160,6 +195,189 @@ void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n, fmpz_t p
 	}
 }
 
+void mat_encode(gghlite_sk_t self, gghlite_enc_t enc[MAXW][MAXW], fmpz_mat_t m, int dim, int group[GAMMA], flint_rand_t randstate) {
+	gghlite_clr_t e;
+	gghlite_clr_init(e);
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			fmpz_poly_set_coeff_fmpz(e, 0, fmpz_mat_entry(m, i, j));
+			gghlite_enc_init(enc[i][j], self->params);
+			gghlite_enc_set_gghlite_clr(enc[i][j], self, e, 1, group, 1, randstate);
+		}
+	}
+	gghlite_clr_clear(e);
+}
+
+void print_enc_matrix_zeros(gghlite_sk_t self, gghlite_enc_t m[MAXW][MAXW], int dim) {
+	for(int i = 0; i < dim; i++) {
+		printf("[");
+		for(int j = 0; j < dim; j++) {
+			printf(gghlite_enc_is_zero(self->params, m[i][j]) ? "0 " : "x " );
+		}
+		printf("]\n");
+	}
+}
+
+void set_encodings(ore_sk_t sk, matrix_encodings_t met, int i, int L, flint_rand_t randstate) {
+	int n = met->n;
+	int ptnx[GAMMA];
+	int lenx;
+	gen_partitioning(ptnx, i, L, n, &lenx);
+	int ptny[GAMMA];
+	int leny;
+	gen_partitioning(ptny, i, L, n, &leny);
+
+	int partition_offset = 1 + (L+1) * (n-1);
+
+	int group_x[MAXN][GAMMA];
+	int group_y[MAXN][GAMMA];
+	for(int j = 0; j < n; j++) {
+		memset(group_x[j], 0, GAMMA * sizeof(int));
+		memset(group_y[j], 0, GAMMA * sizeof(int));
+		for(int k = 0; k < lenx; k++) {
+			if(ptnx[k] == j) {
+				group_x[j][k] = 1;
+			}
+		}
+		for(int k = 0; k < leny; k++) {
+			if(ptny[k] == j) {
+				group_y[j][k+partition_offset] = 1;
+			}
+		}
+	}
+
+	// construct trivial partitioning (for testing correctness)
+	/*
+	for(int j = 0; j < n; j++) {
+		memset(group_x[j], 0, GAMMA * sizeof(int));
+		memset(group_y[j], 0, GAMMA * sizeof(int));
+	}
+	for(int k = 0; k < 2 * partition_offset; k++) {
+		group_x[0][k] = 1;
+	}
+	*/
+
+
+	// apply kilian and encode
+	
+	fmpz_mat_t tmp;
+	fmpz_mat_init(tmp, met->dim, met->dim);
+
+	fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
+	mat_encode(sk->self, met->x_enc[0], tmp, met->dim, group_x[0], randstate);
+	//mat_encode(sk->self, met->x_enc[0], met->x_clr[0], met->dim, group_x[0], 
+	//randstate);
+
+
+	for(int j = 1; j < n; j++) {
+		fmpz_mat_mul(tmp, sk->R_inv[2 * j - 1], met->x_clr[j]);
+		fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
+		mat_encode(sk->self, met->x_enc[j], tmp, met->dim, group_x[j], randstate);
+		//mat_encode(sk->self, met->x_enc[j], met->x_clr[j], met->dim, group_x[j], 
+		//randstate);
+	}
+
+	for(int j = 0; j < n-1; j++) {
+		fmpz_mat_mul(tmp, sk->R_inv[2 * j], met->y_clr[j]);
+		fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
+		mat_encode(sk->self, met->y_enc[j], tmp, met->dim, group_y[j], randstate);
+		//mat_encode(sk->self, met->y_enc[j], met->y_clr[j], met->dim, group_y[j], 
+		//randstate);
+	}
+
+	fmpz_mat_mul(tmp, sk->R_inv[2 * (n-1)], met->y_clr[n-1]);
+	mat_encode(sk->self, met->y_enc[n-1], tmp, met->dim, group_y[n-1], 
+	randstate);
+	//mat_encode(sk->self, met->y_enc[n-1], met->y_clr[n-1], met->dim, 
+	//group_y[n-1], randstate);
+
+
+	fmpz_mat_clear(tmp);
+}
+
+void enc_mul_init(gghlite_params_t params, gghlite_enc_t m[MAXW][MAXW], int dim) {
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			gghlite_enc_init(m[i][j], params);
+		}
+	}
+}
+
+void enc_mul_clear(gghlite_enc_t m[MAXW][MAXW], int dim) {
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			gghlite_enc_clear(m[i][j]);
+		}
+	}
+}
+
+
+
+void gghlite_enc_mmult(gghlite_params_t params, gghlite_enc_t r[MAXW][MAXW], gghlite_enc_t m1[MAXW][MAXW], gghlite_enc_t m2[MAXW][MAXW], int dim) {
+	gghlite_enc_t tmp;
+	gghlite_enc_init(tmp, params);
+
+	gghlite_enc_t tmp_mat[MAXW][MAXW];
+	enc_mul_init(params, tmp_mat, dim);
+	
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			for(int k = 0; k < dim; k++) {
+				gghlite_enc_mul(tmp, params, m1[i][k], m2[k][j]);
+				gghlite_enc_add(tmp_mat[i][j], params, tmp_mat[i][j], tmp);
+			}
+		}
+	}
+
+	for(int i = 0; i < dim; i++) {
+		for(int j = 0; j < dim; j++) {
+			gghlite_enc_set(r[i][j], tmp_mat[i][j]);
+		}
+	}
+
+	enc_mul_clear(tmp_mat, dim);
+	gghlite_enc_clear(tmp);
+}
+
+
+void compare(gghlite_sk_t self, gghlite_enc_t x[MAXN][MAXW][MAXW], gghlite_enc_t y[MAXN][MAXW][MAXW], int n, int dim) {
+	gghlite_enc_t tmp[MAXN][MAXW][MAXW];
+	for(int i = 0; i < n; i++) {
+		enc_mul_init(self->params, tmp[i], dim);
+	}
+	
+	for(int i = 0; i < n; i++) {
+		gghlite_enc_mmult(self->params, tmp[i], x[i], y[i], dim);
+	}
+
+	for(int i = 1; i < n; i++) {
+		gghlite_enc_mmult(self->params, tmp[0], tmp[0], tmp[i], dim);
+	}
+	
+	int equals = 1 - gghlite_enc_is_zero(self->params, tmp[0][0][0]);
+	int lessthan = 1 - gghlite_enc_is_zero(self->params, tmp[0][0][1]);
+	int greaterthan = 1 - gghlite_enc_is_zero(self->params, tmp[0][0][2]);
+
+	printf("equals: %d, lessthan: %d, greaterthan: %d\n", equals, lessthan, greaterthan);
+
+	print_enc_matrix_zeros(self, tmp[0], 5);
+	assert(equals + lessthan + greaterthan == 1);
+
+	if(equals) {
+		printf("EQUALS\n");
+	}
+
+	if(lessthan) {
+		printf("LESS THAN\n");
+	}
+
+	if(greaterthan) {
+		printf("GREATER THAN\n");
+	}
+
+}
+
+
 int main(int argc, char *argv[]) {
 	cmdline_params_t cmdline_params;
 
@@ -176,18 +394,25 @@ int main(int argc, char *argv[]) {
 
   uint64_t t_gen = 0;
 
-  gghlite_sk_t self;
+	int n = 4;
+	int d = 2;
+	int dim = d+3;
+	int L = 3; // 2^L = # of total messages we can encrypt
 
+	int kappa = 2 * n;
+	int gamma = 2 * (1 + (n-1) * (L+1));
 
-  gghlite_jigsaw_init_gamma(self,
+	ore_sk_t sk;
+	
+  gghlite_jigsaw_init_gamma(sk->self,
                       cmdline_params->lambda,
-                      cmdline_params->kappa,
-											cmdline_params->gamma,
+                      kappa,
+											gamma,
                       cmdline_params->flags,
                       randstate);
 
   printf("\n");
-  gghlite_params_print(self->params);
+  gghlite_params_print(sk->self->params);
   printf("\n---\n\n");
 
   t_gen = ggh_walltime(t);
@@ -195,40 +420,32 @@ int main(int argc, char *argv[]) {
 
   t = ggh_walltime(0);
   fmpz_t p; fmpz_init(p);
-  fmpz_poly_oz_ideal_norm(p, self->g, self->params->n, 0);
+  fmpz_poly_oz_ideal_norm(p, sk->self->g, sk->self->params->n, 0);
+
+	ore_sk_init(sk, n, dim, randstate, p);
+
 
 	//test_gen_partitioning(); // TODO: add a test for the partition selection
 	test_matrix_inv(6, randstate, p);
 	test_dary_conversion();
 
-	int n = 4;
-	int d = 2;
-	int dim = d+3;
 
-	ore_sk_t sk;
-	ore_sk_init(sk, n, dim, randstate, p);
+	matrix_encodings_t met1;
+	set_matrices(met1, 9, d, n, randstate, p);
+	set_encodings(sk, met1, 0, 3, randstate);
 
+	matrix_encodings_t met2;
+	set_matrices(met2, 10, d, n, randstate, p);
+	set_encodings(sk, met2, 4, 3, randstate);
 
+	/*
+	gghlite_enc_t r[MAXW][MAXW];
+	enc_mul_init(sk->self->params, r, 5);
+	gghlite_enc_mmult(sk->self->params, r, met1->x_enc[0], met2->y_enc[0], 5);
+	print_enc_matrix_zeros(sk->self, r, 5);
+	*/
 
-	matrix_encodings_t met;
-	set_matrices(met, 10, d, n);
-
-	printf("THE X0 MATRIX:\n");
-	fmpz_mat_print_pretty(met->x_clr[0]);
-	
-	printf("THE Y0 MATRIX:\n");
-	fmpz_mat_print_pretty(met->y_clr[0]);
-
-	fmpz_mat_t C;
-	fmpz_mat_init(C, dim, dim);
-	fmpz_mat_mul(C, met->x_clr[0], sk->kilian_inv[0]);
-	fmpz_mat_t D;
-	fmpz_mat_init(D, dim, dim);
-	fmpz_mat_mul(D, sk->kilian[0], met->y_clr[0]);
-	fmpz_mat_mul(C, C, D);
-	fmpz_mat_modp(C, dim, p);
-
-	fmpz_mat_print_pretty(C);
+	compare(sk->self, met1->x_enc, met2->y_enc, 4, 5);
 
 
 }
