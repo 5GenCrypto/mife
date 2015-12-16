@@ -20,13 +20,16 @@ int main(int argc, char *argv[]) {
 
 	ore_flag_t flags = ORE_DEFAULT;
 
-	int n = 4;
-	int d = 2;
-	int dim = d+3;
-	int L = 3; // 2^L = # of total messages we can encrypt
+	int bitstring_length = 4;
+	int base = 2;
+	int dim = base+3;
+	int log_total_plaintexts = 3; // 2^L = # of total messages we can encrypt
 
-	int kappa = 2 * n;
-	int gamma = 2 * (1 + (n-1) * (L+1));
+	int kappa = 2 * bitstring_length;
+	int gamma = 2 * (1 + (bitstring_length-1) * (log_total_plaintexts+1));
+
+	//kappa = cmdline_params->kappa;
+	//gamma = cmdline_params->gamma;
 
 	ore_sk_t sk;
 	
@@ -41,6 +44,9 @@ int main(int argc, char *argv[]) {
   gghlite_params_print(sk->self->params);
   printf("\n---\n\n");
 
+	printf("Supporting at most 2^%d plaintexts, each in base %d, of length %d\n\n",
+			log_total_plaintexts, base, bitstring_length);
+
   t_gen = ggh_walltime(t);
   printf("1. GGH InstGen wall time:                 %8.2f s\n",
 			ggh_seconds(t_gen));
@@ -49,26 +55,42 @@ int main(int argc, char *argv[]) {
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, sk->self->g, sk->self->params->n, 0);
 
-	ore_sk_init(sk, n, dim, randstate, p);
+	ore_sk_init(sk, bitstring_length, dim, randstate, p);
 
 
 	//test_gen_partitioning(); // TODO: add a test for the partition selection
-	test_matrix_inv(6, randstate, p);
-	test_dary_conversion();
+	//test_matrix_inv(6, randstate, p);
+	//test_dary_conversion();
 
-	int num1 = 12;
-	int num2 = 10;
+	int num1 = 13, index1 = 0;
+	int num2 = 9, index2 = 4;
 
+	NUM_ENCODINGS_GENERATED = 0;
 	matrix_encodings_t met1;
-	set_matrices(met1, num1, d, n, p, randstate, flags);
-	set_encodings(sk, met1, 0, 3, randstate, flags);
+	set_matrices(met1, num1, base, bitstring_length, p, randstate, flags);
+	set_encodings(sk, met1, index1, log_total_plaintexts, randstate, flags);
+	printf("Number of encodings generated per ciphertext: %d\n",
+			NUM_ENCODINGS_GENERATED);
+
+	t_gen = ggh_walltime(t);
+  printf("2. Time it takes to create a single ciphertext: %8.2f s\n",
+			ggh_seconds(t_gen));
+
+
 
 	matrix_encodings_t met2;
-	set_matrices(met2, num2, d, n, p, randstate, flags);
-	set_encodings(sk, met2, 4, 3, randstate, flags);
+	set_matrices(met2, num2, base, bitstring_length, p, randstate, flags);
+	set_encodings(sk, met2, index2, log_total_plaintexts, randstate, flags);
 
 	printf("Comparing %d with %d: ", num1, num2);
-	compare(sk->self, met1->x_enc, met2->y_enc, 4);
+	t = ggh_walltime(0);
+	compare(sk->self, met1->x_enc, met2->y_enc, bitstring_length);
+
+	t_gen = ggh_walltime(t);
+  printf("3. Time it takes to run comparison: %8.2f s\n",
+			ggh_seconds(t_gen));
+
+
 }
 
 
@@ -267,6 +289,7 @@ void mat_encode(gghlite_sk_t self, gghlite_enc_mat_t enc, fmpz_mat_t m,
 			fmpz_poly_set_coeff_fmpz(e, 0, fmpz_mat_entry(m, i, j));
 			gghlite_enc_set_gghlite_clr(enc->m[i][j], self, e, 1, group, 1,
 					randstate);
+			NUM_ENCODINGS_GENERATED++;
 		}
 	}
 	gghlite_clr_clear(e);

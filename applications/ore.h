@@ -8,6 +8,8 @@
 
 #define MAXN 30 // the maximum length bitstring
 
+int NUM_ENCODINGS_GENERATED;
+
 /* these are used for get_matrix_bit() */
 #define X_TYPE 0
 #define Y_TYPE 1
