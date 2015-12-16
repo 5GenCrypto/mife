@@ -32,7 +32,6 @@ typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
 struct _matrix_encodings_struct {
 	int dary_repr[MAXN];
-	int dim; // matrix dimension (FIXME: allow for rectangular matrices)
 	int n; // the bitstring length
   gghlite_enc_mat_t x_enc[MAXN];
   gghlite_enc_mat_t y_enc[MAXN];
@@ -57,8 +56,7 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
-void fmpz_mat_scalar_mul_modp(fmpz_mat_t r, fmpz_mat_t m, fmpz_t scalar,
-		fmpz_t modp, int dim);
+void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp);
 void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
 		fmpz_t p);
 void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
@@ -66,8 +64,8 @@ void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
 void gghlite_enc_mat_clear(gghlite_enc_mat_t m);
 
 /* functions dealing with ORE challenge generation */
-void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate,
-		fmpz_t p);
+void ore_sk_init(ore_sk_t sk, int *dims, int dims_len,
+    flint_rand_t randstate, fmpz_t p);
 void message_to_dary(int dary[MAXN], int bitstring_len,
 		int64_t message, int64_t d);
 int get_matrix_bit(int input, int i, int j, int type);

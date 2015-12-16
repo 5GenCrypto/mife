@@ -8,8 +8,6 @@ int main(int argc, char *argv[]) {
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
 
-	//print_header(name, cmdline_params);
-
   flint_rand_t randstate;
   flint_randinit_seed(randstate, cmdline_params->seed, 1);
 
@@ -23,7 +21,7 @@ int main(int argc, char *argv[]) {
 	int bitstring_length = 4;
 	int base = 2;
 	int dim = base+3;
-	int log_total_plaintexts = 3; // 2^L = # of total messages we can encrypt
+	int log_total_plaintexts = 80; // 2^L = # of total messages we can encrypt
 
 	int kappa = 2 * bitstring_length;
 	int gamma = 2 * (1 + (bitstring_length-1) * (log_total_plaintexts+1));
@@ -32,7 +30,9 @@ int main(int argc, char *argv[]) {
 	//gamma = cmdline_params->gamma;
 
 	ore_sk_t sk;
-	
+
+  printf("gamma: %d\n", gamma);
+
   gghlite_jigsaw_init_gamma(sk->self,
                       cmdline_params->lambda,
                       kappa,
@@ -55,15 +55,21 @@ int main(int argc, char *argv[]) {
   fmpz_t p; fmpz_init(p);
   fmpz_poly_oz_ideal_norm(p, sk->self->g, sk->self->params->n, 0);
 
-	ore_sk_init(sk, bitstring_length, dim, randstate, p);
+  int dims_len = 2*bitstring_length-1;
+  int *dims = malloc(dims_len * sizeof(int));
+  for(int i = 0; i < dims_len; i++) {
+    dims[i] = dim;
+  }
+	ore_sk_init(sk, dims, dims_len, randstate, p);
+  free(dims);
 
 
 	//test_gen_partitioning(); // TODO: add a test for the partition selection
 	//test_matrix_inv(6, randstate, p);
 	//test_dary_conversion();
 
-	int num1 = 13, index1 = 0;
-	int num2 = 9, index2 = 4;
+	int num1 = 5, index1 = 0;
+	int num2 = 7, index2 = 4;
 
 	NUM_ENCODINGS_GENERATED = 0;
 	matrix_encodings_t met1;
@@ -94,20 +100,18 @@ int main(int argc, char *argv[]) {
 }
 
 
-void ore_sk_init(ore_sk_t sk, int n, int dim, flint_rand_t randstate,
-		fmpz_t p) {
-	// need 2 * n - 1 kilian randomizer matrices R
-	int num_r = 2 * n - 1;
-	for (int k = 0; k < num_r; k++) {
-		fmpz_mat_init(sk->R[k], dim, dim);
-		for (int i = 0; i < dim; i++) {
-			for(int j = 0; j < dim; j++) {
+void ore_sk_init(ore_sk_t sk, int *dims, int dims_len,
+    flint_rand_t randstate, fmpz_t p) {
+	for (int k = 0; k < dims_len; k++) {
+		fmpz_mat_init(sk->R[k], dims[k], dims[k]);
+		for (int i = 0; i < dims[k]; i++) {
+			for(int j = 0; j < dims[k]; j++) {
 				fmpz_randm(fmpz_mat_entry(sk->R[k], i, j), randstate, p);
 			}
 		}
 		
-		fmpz_mat_init(sk->R_inv[k], dim, dim);
-		fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dim, p);
+		fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
+		fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], p);
 	}
 }
 
@@ -159,10 +163,9 @@ int get_matrix_bit(int input, int i, int j, int type) {
 	}
 }
 
-void fmpz_mat_scalar_mul_modp(fmpz_mat_t r, fmpz_mat_t m, fmpz_t scalar,
-		fmpz_t modp, int dim) {
-	for (int i = 0; i < dim; i++) {
-		for(int j = 0; j < dim; j++) {
+void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
+	for (int i = 0; i < m->r; i++) {
+		for(int j = 0; j < m->c; j++) {
 			fmpz_mul(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), scalar);
 			fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), modp);
 		}
@@ -174,7 +177,7 @@ void set_matrices(matrix_encodings_t met, int64_t message, int d,
 		int n, fmpz_t modp, flint_rand_t randstate, ore_flag_t flags) {
 	message_to_dary(met->dary_repr, n, message, d);
 	met->n = n;
-	met->dim = d+3;
+	int dim = d+3;
 
 	fmpz_t x_rand;
 	fmpz_t y_rand;
@@ -182,28 +185,26 @@ void set_matrices(matrix_encodings_t met, int64_t message, int d,
 	fmpz_init(y_rand);
 
 	for (int k = 0; k < met->n; k++) {
-		fmpz_mat_init(met->x_clr[k], met->dim, met->dim);
-		fmpz_mat_init(met->y_clr[k], met->dim, met->dim);
+		fmpz_mat_init(met->x_clr[k], dim, dim);
+		fmpz_mat_init(met->y_clr[k], dim, dim);
 
 		fmpz_randm(x_rand, randstate, modp);
 		fmpz_randm(y_rand, randstate, modp);
 		
-		for (int i = 0; i < met->dim; i++) {
-			for(int j = 0; j < met->dim; j++) {
+		for (int i = 0; i < dim; i++) {
+			for(int j = 0; j < dim; j++) {
 				int x_digit = get_matrix_bit(met->dary_repr[k], i, j, X_TYPE);
 				int y_digit = get_matrix_bit(met->dary_repr[k], i, j, Y_TYPE);
 				fmpz_set_ui(fmpz_mat_entry(met->x_clr[k], i, j), x_digit);
 				fmpz_set_ui(fmpz_mat_entry(met->y_clr[k], i, j), y_digit);
-
-				if(! (flags & ORE_NO_RANDOMIZERS)) {
-					/* apply scalar randomizers */
-					fmpz_mat_scalar_mul_modp(met->x_clr[k], met->x_clr[k],
-							x_rand, modp, met->dim);
-					fmpz_mat_scalar_mul_modp(met->y_clr[k], met->y_clr[k],
-							y_rand, modp, met->dim);
-				}
 			}
 		}
+
+    if(! (flags & ORE_NO_RANDOMIZERS)) {
+      /* apply scalar randomizers */
+      fmpz_mat_scalar_mul_modp(met->x_clr[k], x_rand, modp);
+      fmpz_mat_scalar_mul_modp(met->y_clr[k], y_rand, modp);
+    }
 	}
 
 	fmpz_clear(x_rand);
@@ -346,29 +347,34 @@ void set_encodings(ore_sk_t sk, matrix_encodings_t met, int i, int L,
 	}
 
 	for(int j = 0; j < n; j++) {
-		gghlite_enc_mat_init(sk->self->params, met->x_enc[j], met->dim, met->dim);
-		gghlite_enc_mat_init(sk->self->params, met->y_enc[j], met->dim, met->dim);
+		gghlite_enc_mat_init(sk->self->params, met->x_enc[j],
+        met->x_clr[j]->r, met->x_clr[j]->c);
+		gghlite_enc_mat_init(sk->self->params, met->y_enc[j],
+        met->y_clr[j]->r, met->y_clr[j]->c);
 	}
 
 	// apply kilian and encode
 	
 	fmpz_mat_t tmp;
-	fmpz_mat_init(tmp, met->dim, met->dim);
-
+  
 	if(flags & ORE_NO_KILIAN) {
 		mat_encode(sk->self, met->x_enc[0], met->x_clr[0], group_x[0], randstate);
 	} else {
+    fmpz_mat_init(tmp, met->x_clr[0]->r, sk->R[0]->c);
 		fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
 		mat_encode(sk->self, met->x_enc[0], tmp, group_x[0], randstate);
+    fmpz_mat_clear(tmp);
 	}
 
 	for(int j = 1; j < n; j++) {
 		if(flags & ORE_NO_KILIAN) {
 			mat_encode(sk->self, met->x_enc[j], met->x_clr[j], group_x[j], randstate);
 		} else {
+      fmpz_mat_init(tmp, sk->R_inv[2 * j - 1]->r, met->x_clr[j]->c);
 			fmpz_mat_mul(tmp, sk->R_inv[2 * j - 1], met->x_clr[j]);
 			fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
 			mat_encode(sk->self, met->x_enc[j], tmp, group_x[j], randstate);
+      fmpz_mat_clear(tmp);
 		}
 	}
 
@@ -376,9 +382,11 @@ void set_encodings(ore_sk_t sk, matrix_encodings_t met, int i, int L,
 		if(flags & ORE_NO_KILIAN) {
 			mat_encode(sk->self, met->y_enc[j], met->y_clr[j], group_y[j], randstate);
 		} else {
+      fmpz_mat_init(tmp, sk->R_inv[2 * j]->r, met->y_clr[j]->c);
 			fmpz_mat_mul(tmp, sk->R_inv[2 * j], met->y_clr[j]);
 			fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
 			mat_encode(sk->self, met->y_enc[j], tmp, group_y[j], randstate);
+      fmpz_mat_clear(tmp);
 		}
 	}
 
@@ -386,11 +394,12 @@ void set_encodings(ore_sk_t sk, matrix_encodings_t met, int i, int L,
 		mat_encode(sk->self, met->y_enc[n-1], met->y_clr[n-1],
 				group_y[n-1], randstate);
 	} else {
+    fmpz_mat_init(tmp, sk->R_inv[2 * (n-1)]->r, met->y_clr[n-1]->c);
 		fmpz_mat_mul(tmp, sk->R_inv[2 * (n-1)], met->y_clr[n-1]);
 		mat_encode(sk->self, met->y_enc[n-1], tmp, group_y[n-1], randstate);
+    fmpz_mat_clear(tmp);
 	}
 
-	fmpz_mat_clear(tmp);
 }
 
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
