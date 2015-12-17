@@ -17,7 +17,7 @@ int NUM_ENCODINGS_GENERATED;
 
 typedef enum {
   //!< default behaviour
-  ORE_DEFAULT    = 0x08,
+  ORE_ALL_RANDOMIZERS = 0x00,
   
   //!< do not multiply kilian randomizers into the encodings
   ORE_NO_KILIAN    = 0x01, 
@@ -39,6 +39,9 @@ typedef enum {
   //!< the MBP produced is matrix-compressed, with dimensions 3 x d. This is not 
   //compatible with ORE_MBP_DC, though.
   ORE_MBP_MC = 0x20,
+
+  //!, the default behavior
+  ORE_DEFAULT = ORE_ALL_RANDOMIZERS | ORE_MBP_DC,
 } ore_flag_t;
 
 struct _gghlite_enc_mat_struct {
@@ -65,6 +68,7 @@ struct _ore_ciphertext_struct {
 typedef struct _ore_ciphertext_struct ore_ciphertext_t[1];
 
 struct _ore_pp_struct {
+  int bitstr_len;
   int d; // the base
   int nx; // number of x components
   int ny; // number of y components
@@ -72,6 +76,7 @@ struct _ore_pp_struct {
   int gammax; // number of indices needed for the x components
   int gammay; // number of indices needed for the y components
   int kappa; // the kappa for gghlite (degree of multilinearity)
+  int numR; // number of kilian matrices. should be kappa-1
   fmpz_t p; // the prime, the order of the field
   ore_flag_t flags;
   gghlite_params_t *params_ref; // gghlite's public parameters, by reference
@@ -90,7 +95,7 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 
 
 /* ORE interface */
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstring_length, int base,
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     int L, cmdline_params_t cmdline_params);
 void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk);
 void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);

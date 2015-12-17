@@ -15,13 +15,13 @@ int main(int argc, char *argv[]) {
 
   uint64_t t_gen = 0;
 
-  int bitstring_length = 4;
-  int base = 2;
+  int bitstr_len = 6;
+  int base = 7;
   int L = 3; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
   ore_sk_t sk;
-  ore_setup(pp, sk, bitstring_length, base, L, cmdline_params);
+  ore_setup(pp, sk, bitstr_len, base, L, cmdline_params);
 
   t_gen = ggh_walltime(t);
   printf("1. GGH InstGen wall time:                 %8.2f s\n",
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
 
-  int num1 = 10;
+  int num1 = 7;
   int num2 = 9;
 
   NUM_ENCODINGS_GENERATED = 0;
@@ -71,21 +71,22 @@ void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
   // FIXME clear met1 and reclaim memory
 }
 
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstring_length, int base,
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     int L, cmdline_params_t cmdline_params) {
   flint_randinit_seed(sk->randstate, cmdline_params->seed, 1);
-  pp->flags = ORE_DEFAULT;
+  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_DC;
   pp->d = base;
   pp->L = L;
+  pp->bitstr_len = bitstr_len;
 
   if(pp->flags & ORE_MBP_NORMAL) {
-    pp->kappa = 2 * bitstring_length;
-    pp->nx = bitstring_length;
-    pp->ny = bitstring_length;
+    pp->kappa = 2 * pp->bitstr_len;
+    pp->nx = pp->bitstr_len;
+    pp->ny = pp->bitstr_len;
   } else if(pp->flags & ORE_MBP_DC) {
-    pp->kappa = 1 + bitstring_length;
-    pp->nx = bitstring_length / 2 + 1;
-    pp->ny = (bitstring_length+1) / 2;
+    pp->kappa = 1 + pp->bitstr_len;
+    pp->nx = pp->bitstr_len / 2 + 1;
+    pp->ny = (pp->bitstr_len+1) / 2;
   }
 
   pp->gammax = 1 + (pp->nx-1) * (pp->L+1);
@@ -104,39 +105,39 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstring_length, int base,
 
   pp->params_ref = &(sk->self->params);
 
-  printf("Supporting at most 2^%d plaintexts, each in base %d, of length \
-      %d, with gamma = %d\n\n", pp->L, pp->d,
-      bitstring_length, gamma);
+  printf("Supporting at most 2^%d plaintexts, each in base %d,\n", pp->L,
+      pp->d);
+  printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, gamma);
 
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
 
   // set the kilian randomizers in sk
-  int dims_len = pp->kappa - 1;
-  int *dims = malloc(dims_len * sizeof(int));
+  pp->numR = pp->kappa - 1;
+  int *dims = malloc(pp->numR * sizeof(int));
 
 
   if(pp->flags & ORE_MBP_NORMAL) {
-    for(int i = 0; i < dims_len; i++) {
+    for(int i = 0; i < pp->numR; i++) {
       dims[i] = pp->d+3;
     }
   } else if(pp->flags & ORE_MBP_DC) {
     dims[0] = pp->d;
-    for(int i = 1; i < dims_len; i++) {
+    for(int i = 1; i < pp->numR; i++) {
       dims[i] = pp->d+2;
     }
   } else {
     assert(0);
   }
 
-  for (int k = 0; k < dims_len; k++) {
+  for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
       for(int j = 0; j < dims[k]; j++) {
         fmpz_randm(fmpz_mat_entry(sk->R[k], i, j), sk->randstate, pp->p);
       }
     }
-		
+	
     fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
     fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
   }
@@ -171,7 +172,7 @@ void message_to_dary(int dary[MAXN], int bitstring_len,
 void ore_dc_clrmat_init_FIRST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, 1, d);
   fmpz_mat_zero(m);
-  fmpz_set_ui(fmpz_mat_entry(m, 1, input), NONZERO_VAL);
+  fmpz_set_ui(fmpz_mat_entry(m, 0, input), NONZERO_VAL);
 }
 
 /**
@@ -221,11 +222,11 @@ void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d) {
   fmpz_mat_zero(m);
   
   for(int i = 0; i < d; i++) {
-    int j;
+    int j = -1;
     if(i < input1) {
-      j = d+1;
+      j = d;
     } else if(i > input1) {
-      j = d+2;
+      j = d+1;
     } else { // i == input1
       j = input2;
     }
@@ -258,7 +259,8 @@ void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d) {
       j = 0;
     } else if(i < input) {
       j = 1;
-    } else if(i > input) {
+    } else {
+      assert(i > input);
       j = 2;
     }
     fmpz_set_ui(fmpz_mat_entry(m, i, j), NONZERO_VAL);
@@ -343,7 +345,7 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
 /* sets the cleartext matrices x_clr and y_clr */
 void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     ore_sk_t sk) {
-  message_to_dary(met->dary_repr, pp->nx, message, pp->d);
+  message_to_dary(met->dary_repr, pp->bitstr_len, message, pp->d);
 
   if(pp->flags & ORE_MBP_NORMAL) {
     assert(pp->nx == pp->ny);
@@ -364,10 +366,11 @@ void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
       }
     }
   } else if(pp->flags & ORE_MBP_DC) {
+
     for(int k = 0, bc = 0; k < pp->nx; k++, bc++) {
-      if(k == 0) {
+      if(bc == 0) {
         ore_dc_clrmat_init_FIRST(met->x_clr[k], met->dary_repr[bc], pp->d);
-      } else if((pp->nx % 4 == 1) && (k == pp->nx-1)) {
+      } else if(bc == pp->bitstr_len - 1) {
         ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
       } else {
         ore_dc_clrmat_init_MIDDLE(met->x_clr[k], met->dary_repr[bc],
@@ -375,15 +378,22 @@ void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
         bc++;
       }
     }
+    
     for(int k = 0, bc = 0; k < pp->ny; k++, bc++) {
       if(k == 0 && pp->ny > 1) {
+        fmpz_mat_init(met->y_clr[k], pp->d, pp->d+2);
         ore_dc_clrmat_init_SECOND(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
         bc++;
       } else if(k == 0 && pp->ny == 1) {
+        fmpz_mat_init(met->y_clr[k], pp->d, 3);
         ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
             pp->d);
+      } else if((pp->bitstr_len % 2 == 1) && (k == pp->ny-1)) {
+        fmpz_mat_init(met->x_clr[k], pp->d+2, 3);
+        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
       } else {
+        fmpz_mat_init(met->y_clr[k], pp->d+2, pp->d+2);
         ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
         bc++;
@@ -531,7 +541,6 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     }
   }
 
-  
   if(pp->flags & ORE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
     for(int j = 0; j < pp->nx; j++) {
@@ -545,63 +554,43 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     }
   }
 
+  if(! (pp->flags & ORE_NO_KILIAN)) {
+    // apply kilian to the cleartext matrices (overwriting them in the process)
+    fmpz_mat_t tmp;
+    fmpz_mat_init(tmp, met->x_clr[0]->r, sk->R[0]->c);
+    fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
+    fmpz_mat_init_set(met->x_clr[0], tmp);
+   
+    for(int j = 1; j < pp->nx; j++) {
+      fmpz_mat_init(tmp, sk->R_inv[2 * j - 1]->r, met->x_clr[j]->c);
+      fmpz_mat_mul(tmp, sk->R_inv[2 * j - 1], met->x_clr[j]);
+      if(2 * j < pp->numR) {
+        fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
+      }
+      fmpz_mat_init_set(met->x_clr[j], tmp);
+    }
+
+    for(int j = 0; j < pp->ny; j++) {
+      fmpz_mat_init(tmp, sk->R_inv[2 * j]->r, met->y_clr[j]->c);
+      fmpz_mat_mul(tmp, sk->R_inv[2 * j], met->y_clr[j]);
+      if(2 * j + 1 < pp->numR) {
+        fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
+      }
+      fmpz_mat_init_set(met->y_clr[j], tmp);
+    }
+  }
+
+  // encode
   for(int j = 0; j < pp->nx; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->x_enc[j],
         met->x_clr[j]->r, met->x_clr[j]->c);
+    mat_encode(sk, ct->x_enc[j], met->x_clr[j], group_x[j]);
   }
   for(int j = 0; j < pp->ny; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->y_enc[j],
         met->y_clr[j]->r, met->y_clr[j]->c);
+    mat_encode(sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
   }
-
-  // apply kilian and encode
-	
-  fmpz_mat_t tmp;
-  
-  if(pp->flags & ORE_NO_KILIAN) {
-    mat_encode(sk, ct->x_enc[0], met->x_clr[0], group_x[0]);
-  } else {
-    fmpz_mat_init(tmp, met->x_clr[0]->r, sk->R[0]->c);
-    fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
-    mat_encode(sk, ct->x_enc[0], tmp, group_x[0]);
-    fmpz_mat_clear(tmp);
-  }
- 
-  for(int j = 1; j < pp->nx; j++) { // FIXME x and y
-    if(pp->flags & ORE_NO_KILIAN) {
-      mat_encode(sk, ct->x_enc[j], met->x_clr[j], group_x[j]);
-    } else {
-      fmpz_mat_init(tmp, sk->R_inv[2 * j - 1]->r, met->x_clr[j]->c);
-      fmpz_mat_mul(tmp, sk->R_inv[2 * j - 1], met->x_clr[j]);
-      fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
-      mat_encode(sk, ct->x_enc[j], tmp, group_x[j]);
-      fmpz_mat_clear(tmp);
-    }
-  }
-
-  for(int j = 0; j < pp->ny-1; j++) { // FIXME x and y
-    if(pp->flags & ORE_NO_KILIAN) {
-      mat_encode(sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
-    } else {
-      fmpz_mat_init(tmp, sk->R_inv[2 * j]->r, met->y_clr[j]->c);
-      fmpz_mat_mul(tmp, sk->R_inv[2 * j], met->y_clr[j]);
-      fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
-      mat_encode(sk, ct->y_enc[j], tmp, group_y[j]);
-      fmpz_mat_clear(tmp);
-    }
-  }
- 
-
-  if(pp->flags & ORE_NO_KILIAN) {
-    mat_encode(sk, ct->y_enc[pp->ny-1], met->y_clr[pp->ny-1],
-        group_y[pp->ny-1]);
-  } else {
-    fmpz_mat_init(tmp, sk->R_inv[2 * (pp->ny-1)]->r, met->y_clr[pp->ny-1]->c);
-    fmpz_mat_mul(tmp, sk->R_inv[2 * (pp->ny-1)], met->y_clr[pp->ny-1]);
-    mat_encode(sk, ct->y_enc[pp->ny-1], tmp, group_y[pp->ny-1]);
-    fmpz_mat_clear(tmp);
-  }
-
 }
 
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
@@ -637,27 +626,29 @@ void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
 }
 
 void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
-  gghlite_enc_mat_t tmp[MAXN];
-  for(int i = 0; i < pp->nx; i++) { // FIXME nx and ny
-    gghlite_enc_mat_init(*pp->params_ref, tmp[i], ct1->x_enc[i]->nrows,
-        ct2->y_enc[i]->ncols);
-  }
-	
-  for(int i = 0; i < pp->nx; i++) { // FIXME nx and ny
-    gghlite_enc_mat_mul(*pp->params_ref, tmp[i], ct1->x_enc[i], ct2->y_enc[i]);
-  }
+  gghlite_enc_mat_t tmp;
+  gghlite_enc_mat_init(*pp->params_ref, tmp,
+      ct1->x_enc[0]->nrows, ct2->y_enc[0]->ncols);
+  gghlite_enc_mat_mul(*pp->params_ref, tmp, ct1->x_enc[0], ct2->y_enc[0]);
 
-  for(int i = 1; i < pp->nx; i++) {
-    gghlite_enc_mat_mul(*pp->params_ref, tmp[0], tmp[0], tmp[i]);
-  }
+  for(int i = 0, xc = 1, yc = 1; i < pp->nx + pp->ny - 2; i++) {
+    if(i % 2 == 0) {
+      // multiply tmp by x
+      gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, ct1->x_enc[xc]);
+      xc++;
+    } else {
+      // multiply tmp by y
+      gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, ct2->y_enc[yc]);
+      yc++;
+    }
+  } 
 	
-  int equals = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp[0]->m[0][0]);
-  int lessthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp[0]->m[0][1]);
-  int greaterthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp[0]->m[0][2]);
+  int equals = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][0]);
+  int lessthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][1]);
+  int greaterthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][2]);
+  gghlite_enc_mat_zeros_print(pp, tmp);
+  gghlite_enc_mat_clear(tmp);
 
-  //printf("equals: %d, lessthan: %d, greaterthan: %d\n", equals,
-  //		lessthan, greaterthan);
-  //gghlite_enc_mat_zeros_print(pp, tmp[0]);
   assert(equals + lessthan + greaterthan == 1);
 
   if(equals) {
@@ -671,6 +662,7 @@ void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
   if(greaterthan) {
     printf("GREATER THAN\n");
   }
+
 }
 
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
