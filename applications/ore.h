@@ -49,14 +49,13 @@ struct _gghlite_enc_mat_struct {
 
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
-struct _matrix_encodings_struct {
+struct _ore_mat_clr_struct {
   int dary_repr[MAXN]; // TODO make one for x and y
-  int n; // the bitstring length
   fmpz_mat_t x_clr[MAXN];
   fmpz_mat_t y_clr[MAXN];
 };
 
-typedef struct _matrix_encodings_struct matrix_encodings_t[1];
+typedef struct _ore_mat_clr_struct ore_mat_clr_t[1];
 
 struct _ore_ciphertext_struct {
   gghlite_enc_mat_t x_enc[MAXN];
@@ -108,17 +107,17 @@ void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
 void gghlite_enc_mat_clear(gghlite_enc_mat_t m);
 
 /* functions dealing with ORE challenge generation */
+void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk);
 void message_to_dary(int dary[MAXN], int bitstring_len,
     int64_t message, int64_t d);
-int get_matrix_bit(int input, int i, int j, int type);
-void set_matrices(matrix_encodings_t met, int64_t message, ore_pp_t pp,
+int get_matrix_bit_normal_mbp(int input, int i, int j, int type);
+void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     ore_sk_t sk);
-void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu,
-    int *len_p);
+void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu);
 void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m,
     int group[GAMMA]);
 void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m);
-void set_encodings(ore_ciphertext_t ct, matrix_encodings_t met, int i,
+void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     ore_pp_t pp, ore_sk_t sk);
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);
@@ -131,13 +130,7 @@ void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
 /* test functions */
 int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length);
-void test_gen_partitioning();
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
-
-// Function defines for tests
-void test_gen_partitioning();
-void test_dary_conversion();
-
 
 #endif /* _ORE_H_ */

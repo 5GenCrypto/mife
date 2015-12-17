@@ -29,7 +29,6 @@ int main(int argc, char *argv[]) {
 
   t = ggh_walltime(0);
 
-  //test_gen_partitioning(); // TODO: add a test for the partition selection
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
 
@@ -63,8 +62,11 @@ int main(int argc, char *argv[]) {
 
 void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
   int index = 0; // FIXME choose it randomly using sk->randstate
-  matrix_encodings_t met;
+  ore_mat_clr_t met;
   set_matrices(met, message, pp, sk);
+  if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
+    apply_scalar_randomizers(met, pp, sk);     
+  }
   set_encodings(ct, met, index, pp, sk);
   // FIXME clear met1 and reclaim memory
 }
@@ -303,7 +305,7 @@ void ore_dc_clrmat_init_SECONDANDLAST(fmpz_mat_t m, int input, int d) {
  * - state 2 is the greater than state
  *
  */
-int get_matrix_bit(int input, int i, int j, int type) {
+int get_matrix_bit_normal_mbp(int input, int i, int j, int type) {
   if (type == X_TYPE) {
     if ((i == 1 && j == 1) || (i == 2 && j == 2))
       return NONZERO_VAL;
@@ -339,41 +341,76 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
   }	}
 
 /* sets the cleartext matrices x_clr and y_clr */
-void set_matrices(matrix_encodings_t met, int64_t message, ore_pp_t pp,
+void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     ore_sk_t sk) {
   message_to_dary(met->dary_repr, pp->nx, message, pp->d);
-  int dim = pp->d+3;
 
-  fmpz_t x_rand;
-  fmpz_t y_rand;
-  fmpz_init(x_rand);
-  fmpz_init(y_rand);
+  if(pp->flags & ORE_MBP_NORMAL) {
+    assert(pp->nx == pp->ny);
+    for (int k = 0; k < pp->nx; k++) {
+      int dim = pp->d+3;
+      fmpz_mat_init(met->x_clr[k], dim, dim);
+      fmpz_mat_init(met->y_clr[k], dim, dim);
 
-  for (int k = 0; k < pp->nx; k++) {
-    fmpz_mat_init(met->x_clr[k], dim, dim);
-    fmpz_mat_init(met->y_clr[k], dim, dim);
-
-    fmpz_randm(x_rand, sk->randstate, pp->p);
-    fmpz_randm(y_rand, sk->randstate, pp->p);
-		
-    for (int i = 0; i < dim; i++) {
-      for(int j = 0; j < dim; j++) {
-        int x_digit = get_matrix_bit(met->dary_repr[k], i, j, X_TYPE);
-        int y_digit = get_matrix_bit(met->dary_repr[k], i, j, Y_TYPE);
-        fmpz_set_ui(fmpz_mat_entry(met->x_clr[k], i, j), x_digit);
-        fmpz_set_ui(fmpz_mat_entry(met->y_clr[k], i, j), y_digit);
+      for (int i = 0; i < dim; i++) {
+        for(int j = 0; j < dim; j++) {
+          int x_digit = get_matrix_bit_normal_mbp(met->dary_repr[k],
+              i, j, X_TYPE);
+          int y_digit = get_matrix_bit_normal_mbp(met->dary_repr[k],
+              i, j, Y_TYPE);
+          fmpz_set_ui(fmpz_mat_entry(met->x_clr[k], i, j), x_digit);
+          fmpz_set_ui(fmpz_mat_entry(met->y_clr[k], i, j), y_digit);
+        }
       }
     }
-
-    if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
-      /* apply scalar randomizers */
-      fmpz_mat_scalar_mul_modp(met->x_clr[k], x_rand, pp->p);
-      fmpz_mat_scalar_mul_modp(met->y_clr[k], y_rand, pp->p);
+  } else if(pp->flags & ORE_MBP_DC) {
+    for(int k = 0, bc = 0; k < pp->nx; k++, bc++) {
+      if(k == 0) {
+        ore_dc_clrmat_init_FIRST(met->x_clr[k], met->dary_repr[bc], pp->d);
+      } else if((pp->nx % 4 == 1) && (k == pp->nx-1)) {
+        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
+      } else {
+        ore_dc_clrmat_init_MIDDLE(met->x_clr[k], met->dary_repr[bc],
+            met->dary_repr[bc+1], pp->d);
+        bc++;
+      }
     }
+    for(int k = 0, bc = 0; k < pp->ny; k++, bc++) {
+      if(k == 0 && pp->ny > 1) {
+        ore_dc_clrmat_init_SECOND(met->y_clr[k], met->dary_repr[bc],
+            met->dary_repr[bc+1], pp->d);
+        bc++;
+      } else if(k == 0 && pp->ny == 1) {
+        ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
+            pp->d);
+      } else {
+        ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
+            met->dary_repr[bc+1], pp->d);
+        bc++;
+      }
+    }
+  } else {
+    assert(0);
+  }
+    
+}
+
+void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk) {
+  for(int k = 0; k < pp->nx; k++) {
+    fmpz_t x_rand;
+    fmpz_init(x_rand);
+    fmpz_randm(x_rand, sk->randstate, pp->p);
+    fmpz_mat_scalar_mul_modp(met->x_clr[k], x_rand, pp->p);
+    fmpz_clear(x_rand);
   }
 
-  fmpz_clear(x_rand);
-  fmpz_clear(y_rand);
+  for(int k = 0; k < pp->ny; k++) {
+    fmpz_t y_rand;
+    fmpz_init(y_rand);
+    fmpz_randm(y_rand, sk->randstate, pp->p);
+    fmpz_mat_scalar_mul_modp(met->y_clr[k], y_rand, pp->p);
+    fmpz_clear(y_rand);
+  }
 }
 
 /**
@@ -387,15 +424,13 @@ void set_matrices(matrix_encodings_t met, int64_t message, ore_pp_t pp,
  * range [0,2^L-1]
  * @param nu The number of total elements to be multiplied. partitioning[] 
  * will describe a nu-partition of the universe set.
- * @param len_p A pointer to an integer to set the length of the partitioning 
- * array to. It should be (1 + (d-1)(L+1)).
  */ 
-void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu,
-    int *len_p) {
+void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu) {
   int j = 0;
 
   int bitstring[MAXN];
   message_to_dary(bitstring, L, i, 2);
+  // FIXME use fmpz_get_str instead of message_to_dary everywhere!
 
   for(; j < nu; j++) {
     partitioning[j] = j;
@@ -407,7 +442,6 @@ void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu,
       j++;
     }
   }
-  *len_p = j;
 }
 
 void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
@@ -471,32 +505,28 @@ void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m) {
   }
 }
 
-void set_encodings(ore_ciphertext_t ct, matrix_encodings_t met, int i,
+void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     ore_pp_t pp, ore_sk_t sk) {
-  int gammax = pp->gammax;
-  int gammay = pp->gammay;
-  int ptnx[GAMMA];
-  int lenx;
-  gen_partitioning(ptnx, i, pp->L, pp->nx, &lenx);
-  int ptny[GAMMA];
-  int leny;
-  gen_partitioning(ptny, i, pp->L, pp->ny, &leny);
+  int ptnx[GAMMA], ptny[GAMMA];
+  gen_partitioning(ptnx, index, pp->L, pp->nx);
+  gen_partitioning(ptny, index, pp->L, pp->ny);
 
-  int partition_offset = pp->gammax;
-
+  /* construct the partitions in the group array form */
   int group_x[MAXN][GAMMA];
   int group_y[MAXN][GAMMA];
-  for(int j = 0; j < pp->nx; j++) { // FIXME nx and ny
+  for(int j = 0; j < pp->nx; j++) {
     memset(group_x[j], 0, GAMMA * sizeof(int));
-    memset(group_y[j], 0, GAMMA * sizeof(int));
-    for(int k = 0; k < lenx; k++) {
+    for(int k = 0; k < pp->gammax; k++) {
       if(ptnx[k] == j) {
         group_x[j][k] = 1;
       }
     }
-    for(int k = 0; k < leny; k++) {
+  }
+  for(int j = 0; j < pp->nx; j++) {
+    memset(group_y[j], 0, GAMMA * sizeof(int));
+    for(int k = 0; k < pp->gammay; k++) {
       if(ptny[k] == j) {
-        group_y[j][k+partition_offset] = 1;
+        group_y[j][k + pp->gammax] = 1;
       }
     }
   }
@@ -504,18 +534,22 @@ void set_encodings(ore_ciphertext_t ct, matrix_encodings_t met, int i,
   
   if(pp->flags & ORE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
-    for(int j = 0; j < pp->nx; j++) { // FIXME x and y
+    for(int j = 0; j < pp->nx; j++) {
       memset(group_x[j], 0, GAMMA * sizeof(int));
+    }
+    for(int j = 0; j < pp->ny; j++) {
       memset(group_y[j], 0, GAMMA * sizeof(int));
     }
-    for(int k = 0; k < 2 * partition_offset; k++) {
+    for(int k = 0; k < pp->gammax + pp->gammay; k++) {
       group_x[0][k] = 1;
     }
   }
 
-  for(int j = 0; j < pp->nx; j++) { // FIXME x and y
+  for(int j = 0; j < pp->nx; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->x_enc[j],
         met->x_clr[j]->r, met->x_clr[j]->c);
+  }
+  for(int j = 0; j < pp->ny; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->y_enc[j],
         met->y_clr[j]->r, met->y_clr[j]->c);
   }
@@ -545,7 +579,7 @@ void set_encodings(ore_ciphertext_t ct, matrix_encodings_t met, int i,
     }
   }
 
-  for(int j = 0; j < pp->nx-1; j++) { // FIXME x and y
+  for(int j = 0; j < pp->ny-1; j++) { // FIXME x and y
     if(pp->flags & ORE_NO_KILIAN) {
       mat_encode(sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
     } else {
@@ -656,24 +690,6 @@ int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
       return 1;
   }
   return 0;
-}
-
-void test_gen_partitioning() {
-  int ptn[GAMMA];
-  int L = 4;
-  int i = 5;
-  int d = 3;
-  int len;
-
-  for(int i = 0; i < 16; i++) {
-    gen_partitioning(ptn, i, L, d, &len);
-
-    printf("Partition %d: ", i);
-    for(int j = 0; j < len; j++) {
-      printf("%d ", ptn[j]);
-    }
-    printf("\n");
-  }
 }
 
 void test_dary_conversion() {
