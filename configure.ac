@@ -15,6 +15,7 @@ m4_ifdef([AM_SILENT_RULES],
 
 AC_CONFIG_HEADERS([gghlite/config.h])
 
+m4_pattern_allow([AM_PROG_AR])
 AM_PROG_AR()
 
 AC_PROG_LIBTOOL()
