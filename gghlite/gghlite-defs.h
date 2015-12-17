@@ -51,7 +51,7 @@ typedef enum {
    Maximum supported index universe size.
 */
 
-#define GAMMA (1000)
+#define GAMMA (100)
 
 
 /**
