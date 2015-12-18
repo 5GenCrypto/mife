@@ -9,11 +9,13 @@
 #define MAXN 30 // the maximum length bitstring
 
 int NUM_ENCODINGS_GENERATED;
+uint64_t T;
 
 /* these are used for get_matrix_bit() */
 #define X_TYPE 0
 #define Y_TYPE 1
 #define NONZERO_VAL 1
+
 
 typedef enum {
   //!< default behaviour
@@ -53,7 +55,7 @@ struct _gghlite_enc_mat_struct {
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
 struct _ore_mat_clr_struct {
-  int dary_repr[MAXN]; // TODO make one for x and y
+  int dary_repr[MAXN];
   fmpz_mat_t x_clr[MAXN];
   fmpz_mat_t y_clr[MAXN];
 };
@@ -112,6 +114,9 @@ void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
 void gghlite_enc_mat_clear(gghlite_enc_mat_t m);
 
 /* functions dealing with ORE challenge generation */
+void ore_clear_pp_sk(ore_pp_t pp, ore_sk_t sk);
+void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct);
+void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met);
 void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk);
 void message_to_dary(int dary[MAXN], int bitstring_len,
     int64_t message, int64_t d);

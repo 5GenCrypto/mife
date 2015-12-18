@@ -7,27 +7,17 @@ int main(int argc, char *argv[]) {
 
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
-
   flint_rand_t randstate;
 
-  uint64_t t = ggh_walltime(0);
-  uint64_t t_total = ggh_walltime(0);
-
-  uint64_t t_gen = 0;
-
-  int bitstr_len = 6;
-  int base = 7;
+  int bitstr_len = 4;
+  int base = 2;
   int L = 3; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
   ore_sk_t sk;
+
+  T = ggh_walltime(0);
   ore_setup(pp, sk, bitstr_len, base, L, cmdline_params);
-
-  t_gen = ggh_walltime(t);
-  printf("1. GGH InstGen wall time:                 %8.2f s\n",
-      ggh_seconds(t_gen));
-
-  t = ggh_walltime(0);
 
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
@@ -38,26 +28,61 @@ int main(int argc, char *argv[]) {
   NUM_ENCODINGS_GENERATED = 0;
 
   ore_ciphertext_t ct1;
+  T = ggh_walltime(0);
   ore_encrypt(ct1, num1, pp, sk);
-  printf("Number of encodings generated per ciphertext: %d\n",
-      NUM_ENCODINGS_GENERATED);
-
-  t_gen = ggh_walltime(t);
-  printf("2. Time it takes to create a single ciphertext: %8.2f s\n",
-      ggh_seconds(t_gen));
+  printf("3. Time it takes to create a single ciphertext: %8.2f s\n",
+    ggh_seconds(ggh_walltime(T)));
+  int num_encodings_generated = NUM_ENCODINGS_GENERATED; 
 
   ore_ciphertext_t ct2;
   ore_encrypt(ct2, num2, pp, sk);
 
   printf("Comparing %d with %d: ", num1, num2);
-  t = ggh_walltime(0);
+  
+  T = ggh_walltime(0);
   compare(pp, ct1, ct2);
 
-  t_gen = ggh_walltime(t);
-  printf("3. Time it takes to run comparison: %8.2f s\n",
-      ggh_seconds(t_gen));
+  printf("4. Time it takes to run comparison: %8.2f s\n",
+      ggh_seconds(ggh_walltime(T)));
 
+  printf("Number of encodings generated per ciphertext: %d\n",
+      num_encodings_generated);
 
+  ore_ciphertext_clear(pp, ct1);
+  ore_ciphertext_clear(pp, ct2);
+  ore_clear_pp_sk(pp, sk);
+  mpfr_free_cache();
+  flint_cleanup();
+}
+
+void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct) {
+  for(int i = 0; i < pp->nx; i++) {
+    gghlite_enc_mat_clear(ct->x_enc[i]);
+  }
+  for(int i = 0; i < pp->ny; i++) {
+    gghlite_enc_mat_clear(ct->y_enc[i]);
+  }
+}
+
+void ore_clear_pp_sk(ore_pp_t pp, ore_sk_t sk) {
+  fmpz_clear(pp->p);
+  gghlite_sk_clear(sk->self, 1);
+
+  for(int i = 0; i < pp->numR; i++) {
+    fmpz_mat_clear(sk->R[i]);
+    fmpz_mat_clear(sk->R_inv[i]);
+  }
+
+  flint_randclear(sk->randstate);
+}
+
+void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met) {
+  for(int i = 0; i < pp->nx; i++) {
+    fmpz_mat_clear(met->x_clr[i]);
+  }
+  for(int i = 0; i < pp->ny; i++) {
+    fmpz_mat_clear(met->y_clr[i]);
+  }
 }
 
 void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
@@ -68,13 +93,13 @@ void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
     apply_scalar_randomizers(met, pp, sk);     
   }
   set_encodings(ct, met, index, pp, sk);
-  // FIXME clear met1 and reclaim memory
+  ore_mat_clr_clear(pp, met);
 }
 
 void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     int L, cmdline_params_t cmdline_params) {
   flint_randinit_seed(sk->randstate, cmdline_params->seed, 1);
-  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_DC;
+  pp->flags = ORE_DEFAULT;
   pp->d = base;
   pp->L = L;
   pp->bitstr_len = bitstr_len;
@@ -92,7 +117,8 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
   pp->gammax = 1 + (pp->nx-1) * (pp->L+1);
   pp->gammay = 1 + (pp->ny-1) * (pp->L+1);
   int gamma = pp->gammax + pp->gammay;
-  
+
+  T = ggh_walltime(0);
   gghlite_jigsaw_init_gamma(sk->self,
                       cmdline_params->lambda,
                       pp->kappa,
@@ -111,6 +137,11 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
 
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
+
+  printf("1. GGH InstGen wall time:                 %8.2f s\n",
+      ggh_seconds(ggh_walltime(T)));
+
+  T = ggh_walltime(0);
 
   // set the kilian randomizers in sk
   pp->numR = pp->kappa - 1;
@@ -143,6 +174,9 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
   }
 
   free(dims);
+
+  printf("2. Time it takes to generate the ORE secret key:    %8.2f s\n",
+      ggh_seconds(ggh_walltime(T)));
 }
 
 // message >= 0, d >= 2
@@ -381,19 +415,15 @@ void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     
     for(int k = 0, bc = 0; k < pp->ny; k++, bc++) {
       if(k == 0 && pp->ny > 1) {
-        fmpz_mat_init(met->y_clr[k], pp->d, pp->d+2);
         ore_dc_clrmat_init_SECOND(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
         bc++;
       } else if(k == 0 && pp->ny == 1) {
-        fmpz_mat_init(met->y_clr[k], pp->d, 3);
         ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
             pp->d);
       } else if((pp->bitstr_len % 2 == 1) && (k == pp->ny-1)) {
-        fmpz_mat_init(met->x_clr[k], pp->d+2, 3);
         ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
       } else {
-        fmpz_mat_init(met->y_clr[k], pp->d+2, pp->d+2);
         ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
         bc++;
@@ -559,7 +589,8 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     fmpz_mat_t tmp;
     fmpz_mat_init(tmp, met->x_clr[0]->r, sk->R[0]->c);
     fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
-    fmpz_mat_init_set(met->x_clr[0], tmp);
+    fmpz_mat_set(met->x_clr[0], tmp);
+    fmpz_mat_clear(tmp);
    
     for(int j = 1; j < pp->nx; j++) {
       fmpz_mat_init(tmp, sk->R_inv[2 * j - 1]->r, met->x_clr[j]->c);
@@ -567,7 +598,8 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
       if(2 * j < pp->numR) {
         fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
       }
-      fmpz_mat_init_set(met->x_clr[j], tmp);
+      fmpz_mat_set(met->x_clr[j], tmp);
+      fmpz_mat_clear(tmp);
     }
 
     for(int j = 0; j < pp->ny; j++) {
@@ -576,7 +608,8 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
       if(2 * j + 1 < pp->numR) {
         fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
       }
-      fmpz_mat_init_set(met->y_clr[j], tmp);
+      fmpz_mat_set(met->y_clr[j], tmp);
+      fmpz_mat_clear(tmp);
     }
   }
 
@@ -670,7 +703,8 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
     for(int j = 0; j < dim; j++) {
       fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), p);
     }
-  }	}
+  }
+}
 
 /**
  * Test code
@@ -741,7 +775,13 @@ int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
   if (status != 0)
     printf("SUCCESS\n");
   else
-    printf("FAIL\n");	}
+    printf("FAIL\n");
+
+  fmpz_mat_clear(a);
+  fmpz_mat_clear(inv);
+  fmpz_mat_clear(prod);
+  fmpz_mat_clear(identity);
+}
 
 /**
  * Code to find the inverse of a matrix, adapted from:
