@@ -1,13 +1,7 @@
-#include <fcntl.h>
 #include <getopt.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "matrix.h"
 #include "parse.h"
@@ -164,25 +158,11 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *ins, keygen_output_loca
 	if(NULL == outs->private.path) location_init(ins, &outs->private, "private-", 6);
 
 	/* read plaintext */
-	int fd = open(plaintext_location.path, O_RDONLY, 0);
-	if(-1 == fd) {
-		fprintf(stderr, "%s: couldn't open plaintext file '%s'\n", *argv, plaintext_location.path);
+	if(!jsmn_parse_f2_mbp_location(&plaintext_location, &ins->plaintext)) {
+		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program over the field F_2\n", *argv, plaintext_location.path);
 		usage(7);
 	}
-	struct stat fd_stat;
-	if(-1 == fstat(fd, &fd_stat)) {
-		fprintf(stderr, "%s: couldn't stat plaintext file '%s'\n", *argv, plaintext_location.path);
-		exit(8);
-	}
-	char *plaintext_contents = mmap(NULL, fd_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if(NULL == plaintext_contents) {
-		fprintf(stderr, "mmap failed, out of address space?\n");
-		exit(9);
-	}
-	if(!jsmn_parse_f2_mbp_string(plaintext_contents, fd_stat.st_size, &ins->plaintext)) {
-		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program over the field F_2\n", *argv, plaintext_location.path);
-		usage(10);
-	}
+
 	location_free(plaintext_location);
 }
 

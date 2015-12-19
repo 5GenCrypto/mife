@@ -28,5 +28,5 @@ bool jsmn_parse_f2_matrix(char * const json_string, jsmntok_t **json_tokens, f2_
 bool jsmn_parse_f2_mbp(char * const json_string, jsmntok_t **json_tokens, f2_mbp *mbp);
 
 /* top-level wrapper */
-bool jsmn_parse_f2_mbp_string(char * const json_string, const int json_string_len, f2_mbp *mbp);
+bool jsmn_parse_f2_mbp_location(location * const loc, f2_mbp *mbp);
 #endif

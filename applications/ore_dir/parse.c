@@ -1,5 +1,8 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
 #include "parse.h"
 
@@ -138,19 +141,37 @@ bool jsmn_parse_f2_mbp(char * const json_string, jsmntok_t **json_tokens, f2_mbp
 	return true;
 }
 
-bool jsmn_parse_f2_mbp_string(char * const json_string, const int json_string_len, f2_mbp *mbp) {
+bool jsmn_parse_f2_mbp_location(location * const loc, f2_mbp *mbp) {
+	int fd;
+	struct stat fd_stat;
+	char *json_string;
 	jsmn_parser parser;
 	jsmntok_t *json_tokens;
 
+	/* read plaintext */
+	if(-1 == (fd = open(loc->path, O_RDONLY, 0))) {
+		fprintf(stderr, "could not open matrix branching program '%s'\n", loc->path);
+		return false;
+	}
+	if(-1 == fstat(fd, &fd_stat)) {
+		fprintf(stderr, "could not stat matrix branching program '%s'\n", loc->path);
+		return false;
+	}
+	if(NULL == (json_string = mmap(NULL, fd_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0))) {
+		fprintf(stderr, "mmap failed, out of address space?\n");
+		return false;
+	}
+	/* TODO: munmap, close */
+
 	/* first pass: figure out how much stuff is in the string */
 	jsmn_init(&parser);
-	int json_tokens_len = jsmn_parse(&parser, json_string, json_string_len, NULL, 0);
+	int json_tokens_len = jsmn_parse(&parser, json_string, fd_stat.st_size, NULL, 0);
 	if(json_tokens_len < 1) return false;
 	if(NULL == (json_tokens = malloc(json_tokens_len * sizeof(jsmntok_t)))) return false;
 
 	/* second pass: record the results of parsing */
 	jsmn_init(&parser);
-	int tokens_parsed = jsmn_parse(&parser, json_string, json_string_len, json_tokens, json_tokens_len);
+	int tokens_parsed = jsmn_parse(&parser, json_string, fd_stat.st_size, json_tokens, json_tokens_len);
 	if(tokens_parsed != json_tokens_len) {
 		fprintf(stderr, "The impossible happened: parsed the same string twice and got two\ndifferent token counts (%d first time, %d second).\n", json_tokens_len, tokens_parsed);
 		return false;
