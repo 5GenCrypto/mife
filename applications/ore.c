@@ -10,6 +10,8 @@
  * - obtain benchmarks and implement optimal parameter estimation
  *
  *
+ * f(x) = 3.305*x^3-48.47*x^2+234.895*x-375.54
+ * x = base, f(x) = time it takes to generate ORE secret key
  */
 
 int main(int argc, char *argv[]) {
@@ -19,8 +21,8 @@ int main(int argc, char *argv[]) {
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
   flint_rand_t randstate;
 
-  int bitstr_len = 4;
-  int base = 2;
+  int bitstr_len = 8;
+  int base = 4;
   int L = 3; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
@@ -351,6 +353,10 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     pp->kappa = 1 + pp->bitstr_len;
     pp->nx = pp->bitstr_len / 2 + 1;
     pp->ny = (pp->bitstr_len+1) / 2;
+  } else if(pp->flags & ORE_MBP_MC) {
+    pp->kappa = 2 * pp->bitstr_len;
+    pp->nx = pp->bitstr_len;
+    pp->ny = pp->bitstr_len;
   }
 
   pp->gammax = 1 + (pp->nx-1) * (pp->L+1);
@@ -388,7 +394,7 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
   int *dims = malloc(pp->numR * sizeof(int));
   assert(dims);
 
-
+  // set the kilian dimensions
   if(pp->flags & ORE_MBP_NORMAL) {
     for(int i = 0; i < pp->numR; i++) {
       dims[i] = pp->d+3;
@@ -397,6 +403,15 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     dims[0] = pp->d;
     for(int i = 1; i < pp->numR; i++) {
       dims[i] = pp->d+2;
+    }
+  } else if(pp->flags & ORE_MBP_MC) {
+    dims[0] = pp->d;
+    for(int i = 1; i < pp->numR; i++) {
+      if(i % 2 == 1) {
+        dims[i] = 3;
+      } else {
+        dims[i] = pp->d+2;
+      }
     }
   } else {
     assert(0);
@@ -434,6 +449,112 @@ void message_to_dary(int *dary, int bitstring_len, int64_t message, int64_t d) {
     message /= d;
   }
 }
+
+/**
+ * Creates the first x-matrix in the matrix-compressed version of ORE.
+ *
+ * This matrix has a single row (so it's actually a vector), and d columns, 
+ * which each represent the bit that is being read.
+ *
+ * @param m The matrix
+ * @param input1 A number in [0,d-1]
+ * @param input2 A number in [0,d-1]
+ * @param d The base
+ */
+void ore_mc_clrmat_init_XFIRST(fmpz_mat_t m, int input, int d) {
+  fmpz_mat_init(m, 1, d);
+  fmpz_mat_zero(m);
+  fmpz_set_ui(fmpz_mat_entry(m, 0, input), NONZERO_VAL);
+}
+
+/**
+ * Creates the first y-matrix in the matrix-compressed version of ORE.
+ *
+ * This matrix is d x 3.
+ *
+ * @param m The matrix
+ * @param input1 A number in [0,d-1]
+ * @param input2 A number in [0,d-1]
+ * @param d The base
+ */
+void ore_mc_clrmat_init_YFIRST(fmpz_mat_t m, int input, int d) {
+  fmpz_mat_init(m, d, 3);
+  fmpz_mat_zero(m);
+ 
+  for(int i = 0; i < d; i++) {
+    int j;
+    if(i == input) {
+      j = 0;
+    } else if(i < input) {
+      j = 1;
+    } else { // i > input
+      j = 2;
+    }
+    fmpz_set_ui(fmpz_mat_entry(m, i, j), NONZERO_VAL);
+  }
+}
+
+/**
+ * Creates the x matrices (not the first) in the matrix-compressed version of 
+ * ORE.
+ *
+ * This matrix is 3 x (d+2).
+ *
+ * @param m The matrix
+ * @param input1 A number in [0,d-1]
+ * @param input2 A number in [0,d-1]
+ * @param d The base
+ */
+void ore_mc_clrmat_init_XREST(fmpz_mat_t m, int input, int d) {
+  fmpz_mat_init(m, 3, d+2);
+  fmpz_mat_zero(m);
+ 
+  for(int i = 0; i < 3; i++) {
+    int j;
+    if(i == 0) {
+      j = input;
+    } else if(i == 1) {
+      j = d;
+    } else { // i == 2
+      j = d+1;
+    }
+    fmpz_set_ui(fmpz_mat_entry(m, i, j), NONZERO_VAL);
+  }
+}
+
+/**
+ * Creates the y matrices (not the first) in the matrix-compressed version of 
+ * ORE.
+ *
+ * This matrix is (d+2) x 3.
+ *
+ * @param m The matrix
+ * @param input1 A number in [0,d-1]
+ * @param input2 A number in [0,d-1]
+ * @param d The base
+ */
+void ore_mc_clrmat_init_YREST(fmpz_mat_t m, int input, int d) {
+  fmpz_mat_init(m, d+2, 3);
+  fmpz_mat_zero(m);
+ 
+  for(int i = 0; i < 3; i++) {
+    int j;
+    if(i == d) {
+      j = 1;
+    } else if(i == d+1) {
+      j = 2;
+    } else if(i == input) {
+      j = 0;
+    } else if(i < input) {
+      j = 1;
+    } else { // i > input
+      j = 2;
+    }
+    fmpz_set_ui(fmpz_mat_entry(m, i, j), NONZERO_VAL);
+  }
+}
+
+
 
 /**
  * Creates the first matrix in the degree-compressed version of ORE.
@@ -674,6 +795,21 @@ void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
         ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
         bc++;
+      }
+    }
+  } else if(pp->flags & ORE_MBP_MC) {
+    for(int k = 0; k < pp->nx; k++) {
+      if(k == 0) {
+        ore_mc_clrmat_init_XFIRST(met->x_clr[k], met->dary_repr[k], pp->d);
+      } else {
+        ore_mc_clrmat_init_XREST(met->x_clr[k], met->dary_repr[k], pp->d);
+      }
+    }
+    for(int k = 0; k < pp->ny; k++) {
+      if(k == 0) {
+        ore_mc_clrmat_init_YFIRST(met->y_clr[k], met->dary_repr[k], pp->d);
+      } else {
+        ore_mc_clrmat_init_YREST(met->y_clr[k], met->dary_repr[k], pp->d);
       }
     }
   } else {
