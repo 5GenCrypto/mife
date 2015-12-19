@@ -92,7 +92,6 @@ void usage(const int code) {
 }
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_output_locations *const outs) {
-	int opt_index = 0, error = 0;
 	bool done = false;
 
 	/* set defaults; the NULLs in outs will be overwritten */
@@ -112,7 +111,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_outpu
 		};
 
 	while(!done) {
-		int c = getopt_long(argc, argv, "hl:n:r:s:u:", long_opts, &opt_index);
+		int c = getopt_long(argc, argv, "hl:n:r:s:u:", long_opts, NULL);
 		switch(c) {
 			case  -1: done = true; break;
 			case   0: break;
