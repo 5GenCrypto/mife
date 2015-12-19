@@ -1,5 +1,17 @@
 #include "ore.h"
 
+/**
+ * TODO:
+ * - remove GAMMA dependency in the updated API functions
+ * - add concurrency (but im not sure how much this will help)
+ * - optimize the computation of matrix inverses during setup
+ * - implement the 3 x d optimization as an alternative
+ * - add tests
+ * - obtain benchmarks and implement optimal parameter estimation
+ *
+ *
+ */
+
 int main(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
