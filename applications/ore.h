@@ -1,10 +1,13 @@
 #ifndef _ORE_H_
 #define _ORE_H_
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <gmp.h>
 #include <gghlite/gghlite-defs.h>
+#include <gghlite/gghlite.h>
+#include "common.h"
 
 #define MAXN 30 // the maximum length bitstring
 
@@ -47,9 +50,9 @@ typedef enum {
 } ore_flag_t;
 
 struct _gghlite_enc_mat_struct {
-  gghlite_enc_t **m;
   int nrows; // number of rows in the matrix
   int ncols; // number of columns in the matrix
+  gghlite_enc_t **m;
 };
 
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
@@ -63,14 +66,14 @@ struct _ore_mat_clr_struct {
 typedef struct _ore_mat_clr_struct ore_mat_clr_t[1];
 
 struct _ore_ciphertext_struct {
-  gghlite_enc_mat_t x_enc[MAXN];
-  gghlite_enc_mat_t y_enc[MAXN];
+  gghlite_enc_mat_t *x_enc;
+  gghlite_enc_mat_t *y_enc;
 };
 
 typedef struct _ore_ciphertext_struct ore_ciphertext_t[1];
 
 struct _ore_pp_struct {
-  int bitstr_len;
+  int bitstr_len; // length of the plaintexts in d-ary
   int d; // the base
   int nx; // number of x components
   int ny; // number of y components
@@ -79,13 +82,13 @@ struct _ore_pp_struct {
   int gammay; // number of indices needed for the y components
   int kappa; // the kappa for gghlite (degree of multilinearity)
   int numR; // number of kilian matrices. should be kappa-1
-  fmpz_t p; // the prime, the order of the field
   ore_flag_t flags;
+  fmpz_t p; // the prime, the order of the field
   gghlite_params_t *params_ref; // gghlite's public parameters, by reference
 };
 
 struct _ore_sk_struct {
-  // the following parameters actually need to be kept secret
+  int numR;
   gghlite_sk_t self;
   fmpz_mat_t R[MAXN];
   fmpz_mat_t R_inv[MAXN];
@@ -114,7 +117,9 @@ void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
 void gghlite_enc_mat_clear(gghlite_enc_mat_t m);
 
 /* functions dealing with ORE challenge generation */
-void ore_clear_pp_sk(ore_pp_t pp, ore_sk_t sk);
+void ore_clear_pp_read(ore_pp_t pp);
+void ore_clear_pp(ore_pp_t pp);
+void ore_clear_sk(ore_sk_t sk);
 void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct);
 void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met);
 void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk);
@@ -132,6 +137,17 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);
 
+/* functions dealing with file reading and writing for encodings */
+#define gghlite_enc_fprint fmpz_mod_poly_fprint 
+int gghlite_enc_fread(FILE * f, gghlite_enc_t poly);
+void gghlite_params_clear_read(gghlite_params_t self);
+void fwrite_ore_pp(ore_pp_t pp, char *filepath);
+void fread_ore_pp(ore_pp_t pp, char *filepath);
+void fwrite_ore_ciphertext(ore_pp_t pp, ore_ciphertext_t ct, char *filepath);
+void fwrite_gghlite_enc_mat(ore_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
+void fread_ore_ciphertext(ore_pp_t pp, ore_ciphertext_t ct, char *filepath);
+void fread_gghlite_enc_mat(ore_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
+
 /* functions for computing matrix inverse mod fmpz_t */
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
 void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p);
@@ -142,5 +158,6 @@ void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length);
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+
 
 #endif /* _ORE_H_ */

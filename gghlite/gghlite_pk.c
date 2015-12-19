@@ -3,7 +3,7 @@
 #include "gghlite-internals.h"
 #include "gghlite.h"
 
-void _gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma) {
+void gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma) {
   memset(self, 0, sizeof(struct _gghlite_params_struct));
 
   self->lambda = lambda;
@@ -514,7 +514,7 @@ void gghlite_params_init_gamma(gghlite_params_t self, size_t lambda, size_t kapp
   assert((gamma > 0) && (gamma <= GAMMA));
 
 
-  _gghlite_params_initzero(self, lambda, kappa, gamma);
+  gghlite_params_initzero(self, lambda, kappa, gamma);
 
   self->rerand_mask = rerand_mask;
   self->flags = flags;

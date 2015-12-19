@@ -1,6 +1,6 @@
-#include <gghlite/gghlite.h>
-#include "common.h"
 #include "ore.h"
+
+int DEBUG = 0;
 
 int main(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
 
-  int num1 = 7;
+  int num1 = 5;
   int num2 = 9;
 
   NUM_ENCODINGS_GENERATED = 0;
@@ -34,13 +34,33 @@ int main(int argc, char *argv[]) {
     ggh_seconds(ggh_walltime(T)));
   int num_encodings_generated = NUM_ENCODINGS_GENERATED; 
 
-  ore_ciphertext_t ct2;
+  T = ggh_walltime(0);
+  fwrite_ore_ciphertext(pp, ct1, "ct1.out");
+  printf("Time it takes to write the ciphertext to a file: %8.2f s\n",
+    ggh_seconds(ggh_walltime(T)));
+  ore_ciphertext_clear(pp, ct1);
+
+  ore_ciphertext_t ct1_read;
+  T = ggh_walltime(0);
+  fread_ore_ciphertext(pp, ct1_read, "ct1.out");
+  printf("Time it takes to read a ciphertext from a file: %8.2f s\n",
+    ggh_seconds(ggh_walltime(T)));
+
+  ore_ciphertext_t ct2, ct2_read;
   ore_encrypt(ct2, num2, pp, sk);
+  fwrite_ore_ciphertext(pp, ct2, "ct2.out");
+  ore_ciphertext_clear(pp, ct2);
+  fread_ore_ciphertext(pp, ct2_read, "ct2.out");
+
+  fwrite_ore_pp(pp, "pp.out");
+  ore_clear_pp(pp);
+  ore_pp_t pp_read;
+  fread_ore_pp(pp_read, "pp.out");
 
   printf("Comparing %d with %d: ", num1, num2);
   
   T = ggh_walltime(0);
-  compare(pp, ct1, ct2);
+  compare(pp_read, ct1_read, ct2_read);
 
   printf("4. Time it takes to run comparison: %8.2f s\n",
       ggh_seconds(ggh_walltime(T)));
@@ -48,11 +68,204 @@ int main(int argc, char *argv[]) {
   printf("Number of encodings generated per ciphertext: %d\n",
       num_encodings_generated);
 
-  ore_ciphertext_clear(pp, ct1);
-  ore_ciphertext_clear(pp, ct2);
-  ore_clear_pp_sk(pp, sk);
+  ore_ciphertext_clear(pp, ct1_read);
+  ore_ciphertext_clear(pp, ct2_read);
+  ore_clear_pp_read(pp_read);
+  ore_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
+}
+
+void gghlite_params_clear_read(gghlite_params_t self) {
+  fmpz_mod_poly_clear(self->pzt);
+  mpfr_clear(self->xi);
+  mpfr_clear(self->sigma_s);
+  mpfr_clear(self->ell_b);
+  mpfr_clear(self->sigma_p);
+  mpfr_clear(self->ell_g);
+  mpfr_clear(self->sigma);
+  fmpz_mod_poly_oz_ntt_precomp_clear(self->ntt);
+  fmpz_clear(self->q);
+  free(self);
+}
+
+/**
+ * 
+ * Members of pp that are not currently transferred:
+ * pp->flags
+ * params->rerand_mask
+ * params->flags
+ * params->x
+ * params->y
+ * params->D_sigma_p
+ * params->D_sigma_s
+ */
+void fwrite_ore_pp(ore_pp_t pp, char *filepath) {
+  int mpfr_base = 10;
+  FILE *fp = fopen(filepath, "w");
+  fprintf(fp, "%d %d %d %d %d %d %d %d %d\n",
+    pp->bitstr_len,
+    pp->d,
+    pp->nx,
+    pp->ny,
+    pp->L,
+    pp->gammax,
+    pp->gammay,
+    pp->kappa,
+    pp->numR
+  );
+  fmpz_fprint(fp, pp->p);
+  fprintf(fp, "\n");
+  fprintf(fp, "%zd %zd %zd %ld %ld\n",
+    (*pp->params_ref)->lambda,
+    (*pp->params_ref)->gamma,
+    (*pp->params_ref)->kappa,
+    (*pp->params_ref)->n,
+    (*pp->params_ref)->ell
+  );
+  fmpz_fprint(fp, (*pp->params_ref)->q);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma_p, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma_s, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->ell_b, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->ell_g, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->xi, MPFR_RNDN);
+  fprintf(fp, "\n");
+  gghlite_enc_fprint(fp, (*pp->params_ref)->pzt);
+  fprintf(fp, "\n");
+  fprintf(fp, "%zd\n", (*pp->params_ref)->ntt->n);
+  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->w);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->w_inv);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->phi);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->phi_inv);
+  fclose(fp);
+}
+
+void fread_ore_pp(ore_pp_t pp, char *filepath) {
+  int mpfr_base = 10;
+  FILE *fp = fopen(filepath, "r");
+  fscanf(fp, "%d %d %d %d %d %d %d %d %d\n",
+    &pp->bitstr_len,
+    &pp->d,
+    &pp->nx,
+    &pp->ny,
+    &pp->L,
+    &pp->gammax,
+    &pp->gammay,
+    &pp->kappa,
+    &pp->numR
+  ) > 0;
+  fmpz_fread(fp, pp->p);
+  fscanf(fp, "\n") == 1;
+
+  pp->params_ref = malloc(sizeof(gghlite_params_t));
+  size_t lambda, kappa, gamma, n, ell;
+  fscanf(fp, "%zd %zd %zd %ld %ld\n",
+    &lambda,
+    &gamma,
+    &kappa,
+    &n,
+    &ell
+  ) > 0;
+  gghlite_params_initzero(*pp->params_ref, lambda, kappa, gamma);
+  (*pp->params_ref)->n = n;
+  (*pp->params_ref)->ell = ell;
+
+  fmpz_fread(fp, (*pp->params_ref)->q);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->sigma, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->sigma_p, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->sigma_s, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->ell_b, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->ell_g, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  mpfr_inp_str((*pp->params_ref)->xi, fp, mpfr_base, MPFR_RNDN);
+  fscanf(fp, "\n") == 1;
+  
+  gghlite_enc_init((*pp->params_ref)->pzt, *pp->params_ref);
+  gghlite_enc_init((*pp->params_ref)->ntt->w, *pp->params_ref);
+  gghlite_enc_init((*pp->params_ref)->ntt->w_inv, *pp->params_ref);
+  gghlite_enc_init((*pp->params_ref)->ntt->phi, *pp->params_ref);
+  gghlite_enc_init((*pp->params_ref)->ntt->phi_inv, *pp->params_ref);
+
+  gghlite_enc_fread(fp, (*pp->params_ref)->pzt);
+  fscanf(fp, "\n") == 1;
+  fscanf(fp, "%zd\n", &(*pp->params_ref)->ntt->n) == 1;
+  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w);
+  fscanf(fp, "\n") == 1;
+  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w_inv);
+  fscanf(fp, "\n") == 1;
+  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi);
+  fscanf(fp, "\n") == 1;
+  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi_inv);
+  fclose(fp);
+}
+
+void fwrite_ore_ciphertext(ore_pp_t pp, ore_ciphertext_t ct, char *filepath) {
+  FILE *fp = fopen(filepath, "w");
+  for(int i = 0; i < pp->nx; i++) {
+    fwrite_gghlite_enc_mat(pp, ct->x_enc[i], fp);
+  }
+  for(int i = 0; i < pp->ny; i++) {
+    fwrite_gghlite_enc_mat(pp, ct->y_enc[i], fp);
+  }
+  fclose(fp);
+}
+
+void fwrite_gghlite_enc_mat(ore_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
+  fprintf(fp, " %d ", m->nrows);
+  fprintf(fp, " %d ", m->ncols);
+  for(int i = 0; i < m->nrows; i++) {
+    for(int j = 0; j < m->ncols; j++) {
+      gghlite_enc_fprint(fp, m->m[i][j]);
+      fprintf(fp, "\n");
+    }
+  }
+}
+
+void fread_ore_ciphertext(ore_pp_t pp, ore_ciphertext_t ct, char *filepath) {
+  FILE *fp = fopen(filepath, "r");
+  ct->x_enc = malloc(pp->nx * sizeof(gghlite_enc_mat_t));
+  ct->y_enc = malloc(pp->ny * sizeof(gghlite_enc_mat_t));
+  assert(ct->x_enc && ct->y_enc);
+  for(int i = 0; i < pp->nx; i++) {
+    fread_gghlite_enc_mat(pp, ct->x_enc[i], fp);
+  }
+  for(int i = 0; i < pp->ny; i++) {
+    fread_gghlite_enc_mat(pp, ct->y_enc[i], fp);
+  }
+  fclose(fp);
+}
+
+void fread_gghlite_enc_mat(ore_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
+  int check1 = fscanf(fp, " %d ", &m->nrows);
+  int check2 = fscanf(fp, " %d ", &m->ncols);
+  assert(check1 == 1 && check2 == 1);
+  m->m = malloc(m->nrows * sizeof(gghlite_enc_t *));
+  assert(m->m);
+  for(int i = 0; i < m->nrows; i++) {
+    m->m[i] = malloc(m->ncols * sizeof(gghlite_enc_t));
+    assert(m->m[i]);
+    for(int j = 0; j < m->ncols; j++) {
+      gghlite_enc_init(m->m[i][j], *pp->params_ref);
+      int check3 = gghlite_enc_fread(fp, m->m[i][j]);
+      assert(check3 == 1);
+      fscanf(fp, "\n") == 1;
+    }
+  }
 }
 
 void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct) {
@@ -62,17 +275,25 @@ void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct) {
   for(int i = 0; i < pp->ny; i++) {
     gghlite_enc_mat_clear(ct->y_enc[i]);
   }
+  free(ct->x_enc);
+  free(ct->y_enc);
 }
 
-void ore_clear_pp_sk(ore_pp_t pp, ore_sk_t sk) {
+void ore_clear_pp_read(ore_pp_t pp) {
   fmpz_clear(pp->p);
-  gghlite_sk_clear(sk->self, 1);
+  gghlite_params_clear_read(*pp->params_ref);
+}
 
-  for(int i = 0; i < pp->numR; i++) {
+void ore_clear_pp(ore_pp_t pp) {
+  fmpz_clear(pp->p);
+}
+
+void ore_clear_sk(ore_sk_t sk) {
+  gghlite_sk_clear(sk->self, 1);
+  for(int i = 0; i < sk->numR; i++) {
     fmpz_mat_clear(sk->R[i]);
     fmpz_mat_clear(sk->R_inv[i]);
   }
-
   flint_randclear(sk->randstate);
 }
 
@@ -145,7 +366,9 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
 
   // set the kilian randomizers in sk
   pp->numR = pp->kappa - 1;
+  sk->numR = pp->numR;
   int *dims = malloc(pp->numR * sizeof(int));
+  assert(dims);
 
 
   if(pp->flags & ORE_MBP_NORMAL) {
@@ -498,11 +721,11 @@ void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
     int nrows, int ncols) {
   m->nrows = nrows;
   m->ncols = ncols;
-	
   m->m = malloc(nrows * sizeof(gghlite_enc_t *));
-
+  assert(m->m);
   for(int i = 0; i < m->nrows; i++) {
     m->m[i] = malloc(m->ncols * sizeof(gghlite_enc_t));
+    assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
       gghlite_enc_init(m->m[i][j], params);
     }
@@ -547,6 +770,7 @@ void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m) {
 
 void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     ore_pp_t pp, ore_sk_t sk) {
+
   int ptnx[GAMMA], ptny[GAMMA];
   gen_partitioning(ptnx, index, pp->L, pp->nx);
   gen_partitioning(ptny, index, pp->L, pp->ny);
@@ -614,6 +838,9 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
   }
 
   // encode
+  ct->x_enc = malloc(pp->nx * sizeof(gghlite_enc_mat_t));
+  ct->y_enc = malloc(pp->ny * sizeof(gghlite_enc_mat_t));
+  assert(ct->x_enc && ct->y_enc);
   for(int j = 0; j < pp->nx; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->x_enc[j],
         met->x_clr[j]->r, met->x_clr[j]->c);
@@ -682,7 +909,7 @@ void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
   gghlite_enc_mat_zeros_print(pp, tmp);
   gghlite_enc_mat_clear(tmp);
 
-  assert(equals + lessthan + greaterthan == 1);
+  assert((equals + lessthan + greaterthan) == 1);
 
   if(equals) {
     printf("EQUALS\n");
@@ -916,3 +1143,45 @@ void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p) {
   fmpz_clear(det);
   fmpz_mat_clear(cofactor);
 }
+
+/* copied from fmpz_mod_poly_fread, mostly (but fixed) */
+int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
+{
+    slong i, length;
+    fmpz_t coeff;
+    ulong res;
+
+    fmpz_init(coeff);
+    if (flint_fscanf(f, "%wd", &length) != 1) {
+        fmpz_clear(coeff);
+        return 0;
+    }
+
+    fmpz_fread(f,coeff);
+    fmpz_mod_poly_clear(poly);
+    fmpz_mod_poly_init(poly, coeff);
+    fmpz_mod_poly_fit_length(poly, length);
+
+    poly->length = length;
+    flint_fscanf(f, " ");
+  
+    for (i = 0; i < length; i++)
+    {
+        flint_fscanf(f, " ");
+        res = fmpz_fread(f, coeff);
+        fmpz_mod_poly_set_coeff_fmpz(poly,i,coeff);
+
+        if (!res)
+        {
+            poly->length = i;
+            fmpz_clear(coeff);
+            return 0;
+        }
+    }
+
+    fmpz_clear(coeff);
+    _fmpz_mod_poly_normalise(poly);
+
+    return 1;
+}
+

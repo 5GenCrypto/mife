@@ -34,6 +34,9 @@
    @defgroup params Instance Generation & Parameters
 */
 
+
+void gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma);
+
 /**
    @brief Generate parameters for GGHLite instance requiring no randomness.
 
