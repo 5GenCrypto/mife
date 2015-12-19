@@ -27,12 +27,12 @@ missing
 /applications/nike
 */.dirstamp
 */*.lo
-*/*.o
+*.o
 tests/*.trs
 *.la
 /libtool
 */stamp-h1
-*/.deps/
+.deps/
 tests/test_dgsl
 tests/test_norm
 tests/test_invert
@@ -61,3 +61,5 @@ callgrind.*
 /tests/test_jigsaw
 /applications/jigsaw
 /applications/bench_rem
+/applications/ore_dir/keygen
+/applications/ore_dir/Makefile
