@@ -9,8 +9,6 @@
 #include <gghlite/gghlite.h>
 #include "common.h"
 
-#define MAXN 30 // the maximum length bitstring
-
 int NUM_ENCODINGS_GENERATED;
 uint64_t T;
 
@@ -58,9 +56,9 @@ struct _gghlite_enc_mat_struct {
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
 struct _ore_mat_clr_struct {
-  int dary_repr[MAXN];
-  fmpz_mat_t x_clr[MAXN];
-  fmpz_mat_t y_clr[MAXN];
+  int *dary_repr;
+  fmpz_mat_t *x_clr;
+  fmpz_mat_t *y_clr;
 };
 
 typedef struct _ore_mat_clr_struct ore_mat_clr_t[1];
@@ -80,6 +78,7 @@ struct _ore_pp_struct {
   int L; // log # of plaintexts we can support
   int gammax; // number of indices needed for the x components
   int gammay; // number of indices needed for the y components
+  int gamma; // should be gammax + gammay
   int kappa; // the kappa for gghlite (degree of multilinearity)
   int numR; // number of kilian matrices. should be kappa-1
   ore_flag_t flags;
@@ -90,8 +89,8 @@ struct _ore_pp_struct {
 struct _ore_sk_struct {
   int numR;
   gghlite_sk_t self;
-  fmpz_mat_t R[MAXN];
-  fmpz_mat_t R_inv[MAXN];
+  fmpz_mat_t *R;
+  fmpz_mat_t *R_inv;
   flint_rand_t randstate;
 };
 
@@ -123,14 +122,12 @@ void ore_clear_sk(ore_sk_t sk);
 void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct);
 void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met);
 void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk);
-void message_to_dary(int dary[MAXN], int bitstring_len,
-    int64_t message, int64_t d);
+void message_to_dary(int *dary, int bitstring_len, int64_t message, int64_t d);
 int get_matrix_bit_normal_mbp(int input, int i, int j, int type);
 void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     ore_sk_t sk);
-void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu);
-void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m,
-    int group[GAMMA]);
+void gen_partitioning(int *partitioning, int i, int L, int nu);
+void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group);
 void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m);
 void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     ore_pp_t pp, ore_sk_t sk);
@@ -155,7 +152,7 @@ void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
 /* test functions */
-int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length);
+int int_arrays_equal(int *arr1, int *arr2, int length);
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 

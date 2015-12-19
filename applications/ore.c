@@ -1,7 +1,5 @@
 #include "ore.h"
 
-int DEBUG = 0;
-
 int main(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
@@ -164,6 +162,8 @@ void fread_ore_pp(ore_pp_t pp, char *filepath) {
     &pp->kappa,
     &pp->numR
   ) > 0;
+
+  fmpz_init(pp->p);
   fmpz_fread(fp, pp->p);
   fscanf(fp, "\n") == 1;
 
@@ -176,6 +176,7 @@ void fread_ore_pp(ore_pp_t pp, char *filepath) {
     &n,
     &ell
   ) > 0;
+  
   gghlite_params_initzero(*pp->params_ref, lambda, kappa, gamma);
   (*pp->params_ref)->n = n;
   (*pp->params_ref)->ell = ell;
@@ -294,16 +295,21 @@ void ore_clear_sk(ore_sk_t sk) {
     fmpz_mat_clear(sk->R[i]);
     fmpz_mat_clear(sk->R_inv[i]);
   }
+  free(sk->R);
+  free(sk->R_inv);
   flint_randclear(sk->randstate);
 }
 
 void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met) {
+  free(met->dary_repr);
   for(int i = 0; i < pp->nx; i++) {
     fmpz_mat_clear(met->x_clr[i]);
   }
+  free(met->x_clr);
   for(int i = 0; i < pp->ny; i++) {
     fmpz_mat_clear(met->y_clr[i]);
   }
+  free(met->y_clr);
 }
 
 void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
@@ -337,13 +343,13 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
 
   pp->gammax = 1 + (pp->nx-1) * (pp->L+1);
   pp->gammay = 1 + (pp->ny-1) * (pp->L+1);
-  int gamma = pp->gammax + pp->gammay;
+  pp->gamma = pp->gammax + pp->gammay;
 
   T = ggh_walltime(0);
   gghlite_jigsaw_init_gamma(sk->self,
                       cmdline_params->lambda,
                       pp->kappa,
-                      gamma,
+                      pp->gamma,
                       cmdline_params->flags,
                       sk->randstate);
   printf("\n");
@@ -354,7 +360,7 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
 
   printf("Supporting at most 2^%d plaintexts, each in base %d,\n", pp->L,
       pp->d);
-  printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, gamma);
+  printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
 
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
@@ -384,6 +390,9 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
     assert(0);
   }
 
+  sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
+  sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
+
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
@@ -403,8 +412,7 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
 }
 
 // message >= 0, d >= 2
-void message_to_dary(int dary[MAXN], int bitstring_len,
-    int64_t message, int64_t d) {
+void message_to_dary(int *dary, int bitstring_len, int64_t message, int64_t d) {
   assert(message >= 0);
   assert(d >= 2);
 
@@ -602,7 +610,11 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
 /* sets the cleartext matrices x_clr and y_clr */
 void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
     ore_sk_t sk) {
+  met->dary_repr = malloc(pp->bitstr_len * sizeof(int));
   message_to_dary(met->dary_repr, pp->bitstr_len, message, pp->d);
+
+  met->x_clr = malloc(pp->nx * sizeof(fmpz_mat_t));
+  met->y_clr = malloc(pp->ny * sizeof(fmpz_mat_t));
 
   if(pp->flags & ORE_MBP_NORMAL) {
     assert(pp->nx == pp->ny);
@@ -688,12 +700,11 @@ void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk) {
  * @param nu The number of total elements to be multiplied. partitioning[] 
  * will describe a nu-partition of the universe set.
  */ 
-void gen_partitioning(int partitioning[GAMMA], int i, int L, int nu) {
+void gen_partitioning(int *partitioning, int i, int L, int nu) {
   int j = 0;
 
-  int bitstring[MAXN];
+  int bitstring[L];
   message_to_dary(bitstring, L, i, 2);
-  // FIXME use fmpz_get_str instead of message_to_dary everywhere!
 
   for(; j < nu; j++) {
     partitioning[j] = j;
@@ -743,8 +754,7 @@ void gghlite_enc_mat_clear(gghlite_enc_mat_t m) {
 }
 
 
-void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m,
-    int group[GAMMA]) {
+void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group) {
   gghlite_clr_t e;
   gghlite_clr_init(e);
   for(int i = 0; i < enc->nrows; i++) {
@@ -771,14 +781,17 @@ void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m) {
 void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
     ore_pp_t pp, ore_sk_t sk) {
 
-  int ptnx[GAMMA], ptny[GAMMA];
+  int *ptnx = malloc(pp->gammax * sizeof(int));
+  int *ptny = malloc(pp->gammay * sizeof(int));
   gen_partitioning(ptnx, index, pp->L, pp->nx);
   gen_partitioning(ptny, index, pp->L, pp->ny);
 
+
   /* construct the partitions in the group array form */
-  int group_x[MAXN][GAMMA];
-  int group_y[MAXN][GAMMA];
+  int **group_x = malloc(pp->nx * sizeof(int *));
+  int **group_y = malloc(pp->ny * sizeof(int *));
   for(int j = 0; j < pp->nx; j++) {
+    group_x[j] = malloc(GAMMA * sizeof(int));
     memset(group_x[j], 0, GAMMA * sizeof(int));
     for(int k = 0; k < pp->gammax; k++) {
       if(ptnx[k] == j) {
@@ -786,7 +799,9 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
       }
     }
   }
-  for(int j = 0; j < pp->nx; j++) {
+
+  for(int j = 0; j < pp->ny; j++) {
+    group_y[j] = malloc(GAMMA * sizeof(int));
     memset(group_y[j], 0, GAMMA * sizeof(int));
     for(int k = 0; k < pp->gammay; k++) {
       if(ptny[k] == j) {
@@ -794,6 +809,9 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
       }
     }
   }
+
+  free(ptnx);
+  free(ptny);
 
   if(pp->flags & ORE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
@@ -851,6 +869,16 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
         met->y_clr[j]->r, met->y_clr[j]->c);
     mat_encode(sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
   }
+  
+  // free group arrays
+  for(int j = 0; j < pp->nx; j++) {
+    free(group_x[j]);
+  }
+  free(group_x);
+  for(int j = 0; j < pp->ny; j++) {
+    free(group_y[j]);
+  }
+  free(group_y);
 }
 
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
@@ -937,7 +965,7 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
  * Test code
  */
 
-int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
+int int_arrays_equal(int *arr1, int *arr2, int length) {
   for (int i = 0; i < length; i++) {
     if (arr1[i] != arr2[i])
       return 1;
@@ -947,9 +975,9 @@ int int_arrays_equal(int arr1[MAXN], int arr2[MAXN], int length) {
 
 void test_dary_conversion() {
   printf("Testing d-ary conversion function...                          ");
-  int dary1[MAXN];
-  int dary2[MAXN];
-  int dary3[MAXN];
+  int dary1[4];
+  int dary2[8];
+  int dary3[4];
   int correct1[] = {1,0,1,0};
   int correct2[] = {0,0,0,0,5,4,1,4};
   int correct3[] = {0,0,0,2};
