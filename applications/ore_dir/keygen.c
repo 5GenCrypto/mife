@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <getopt.h>
+#include <jsmn.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -8,8 +9,6 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-/* TODO: work out correct way to include jsmn in this project */
-#include "jsmn.h"
 
 /* A brief note about this comment: there are two meanings of "field"
  * appropriate here; one is the mathematical term for a structured set, and the
