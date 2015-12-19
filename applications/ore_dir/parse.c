@@ -9,7 +9,7 @@
 
 void location_free(location loc) { if(!loc.stack_allocated) free(loc.path); }
 
-bool jsmn_parse_f2_elem(char * const json_string, jsmntok_t **json_tokens, bool *elem) {
+bool jsmn_parse_f2_elem(const char *const json_string, const jsmntok_t **const json_tokens, bool *const elem) {
 	if((*json_tokens)->type != JSMN_PRIMITIVE) return false;
 
 	const int pos = (*json_tokens)->start;
@@ -38,7 +38,7 @@ bool jsmn_parse_f2_elem(char * const json_string, jsmntok_t **json_tokens, bool 
 }
 
 /* The next three functions are almost identical. I miss polymorphism. =( */
-int jsmn_parse_f2_row(char * const json_string, jsmntok_t **json_tokens, int expected_num_cols, bool **row) {
+int jsmn_parse_f2_row(const char *const json_string, const jsmntok_t **const json_tokens, bool **const row, int expected_num_cols) {
 	/* demand an array of elements of the appropriate length */
 	if((*json_tokens)->type != JSMN_ARRAY) {
 		fprintf(stderr, "at position %d\nexpecting matrix row, found non-array\n", (*json_tokens)->start);
@@ -70,7 +70,7 @@ int jsmn_parse_f2_row(char * const json_string, jsmntok_t **json_tokens, int exp
 	return expected_num_cols;
 }
 
-bool jsmn_parse_f2_matrix(char * const json_string, jsmntok_t **json_tokens, f2_matrix *matrix) {
+bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const json_tokens, f2_matrix *const matrix) {
 	/* demand an array of rows */
 	matrix->f2_num_rows = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
@@ -89,7 +89,7 @@ bool jsmn_parse_f2_matrix(char * const json_string, jsmntok_t **json_tokens, f2_
 	int i;
 	for(i = 0; i < matrix->f2_num_rows; i++) {
 		++(*json_tokens);
-		if(0 > (num_cols = jsmn_parse_f2_row(json_string, json_tokens, num_cols, matrix->f2_elems+i))) {
+		if(0 > (num_cols = jsmn_parse_f2_row(json_string, json_tokens, matrix->f2_elems+i, num_cols))) {
 			int j;
 			for(j = 0; j < i; j++)
 				free(matrix->f2_elems[j]);
@@ -102,7 +102,7 @@ bool jsmn_parse_f2_matrix(char * const json_string, jsmntok_t **json_tokens, f2_
 	return true;
 }
 
-bool jsmn_parse_f2_mbp(char * const json_string, jsmntok_t **json_tokens, f2_mbp *mbp) {
+bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const json_tokens, f2_mbp *const mbp) {
 	/* demand an array of at least one matrix */
 	mbp->f2_len = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
@@ -142,7 +142,7 @@ bool jsmn_parse_f2_mbp(char * const json_string, jsmntok_t **json_tokens, f2_mbp
 	return true;
 }
 
-bool jsmn_parse_f2_mbp_location(location * const loc, f2_mbp *mbp) {
+bool jsmn_parse_f2_mbp_location(const location loc, f2_mbp *const mbp) {
 	int fd;
 	struct stat fd_stat;
 	char *json_string;
@@ -151,12 +151,12 @@ bool jsmn_parse_f2_mbp_location(location * const loc, f2_mbp *mbp) {
 	bool status = false;
 
 	/* read plaintext */
-	if(-1 == (fd = open(loc->path, O_RDONLY, 0))) {
-		fprintf(stderr, "could not open matrix branching program '%s'\n", loc->path);
+	if(-1 == (fd = open(loc.path, O_RDONLY, 0))) {
+		fprintf(stderr, "could not open matrix branching program '%s'\n", loc.path);
 		goto fail_none;
 	}
 	if(-1 == fstat(fd, &fd_stat)) {
-		fprintf(stderr, "could not stat matrix branching program '%s'\n", loc->path);
+		fprintf(stderr, "could not stat matrix branching program '%s'\n", loc.path);
 		goto fail_close;
 	}
 	if(NULL == (json_string = mmap(NULL, fd_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0))) {
@@ -185,8 +185,8 @@ bool jsmn_parse_f2_mbp_location(location * const loc, f2_mbp *mbp) {
 	}
 
 	/* convert the parsed JSON to our custom type */
-	jsmntok_t **state;
-	if(NULL == (state = malloc(sizeof(*state)))) {
+	const jsmntok_t **const state = malloc(sizeof(*state));
+	if(NULL == state) {
 		fprintf(stderr, "out of memory when allocating state in jsmn_parse_f2_mbp_location\n");
 		goto fail_free_tokens;
 	}

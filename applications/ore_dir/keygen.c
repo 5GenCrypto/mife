@@ -15,9 +15,8 @@ typedef struct {
 	location public, private;
 } keygen_output_locations;
 
-/* TODO: is `foo * const x` the right thing? */
-void parse_cmdline(int argc, char **argv, keygen_inputs *ins, keygen_output_locations *outs);
-void cleanup(keygen_inputs * const ins, keygen_output_locations * const outs);
+void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_output_locations *const outs);
+void cleanup(const keygen_inputs *const ins, const keygen_output_locations *const outs);
 
 int main(int argc, char **argv) {
 	keygen_inputs ins;
@@ -53,7 +52,7 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void location_init(keygen_inputs * const ins, location *loc, char * const prefix, int code) {
+void location_init(keygen_inputs *const ins, location *const loc, const char *const prefix, const int code) {
 	/* three characters per byte of number should be a safe
 	 * overapproximation of how much space is needed; note we use
 	 * sizeof(int) instead of sizeof(ins->sec_param) because of the implicit
@@ -74,7 +73,7 @@ void location_init(keygen_inputs * const ins, location *loc, char * const prefix
 	loc->stack_allocated = false;
 }
 
-void usage(int code) {
+void usage(const int code) {
 	printf(
 		"The key generation phase initializes the parameters that are shared across\n"
 		"an entire database. Brackets indicate default values for each argument.\n"
@@ -92,7 +91,7 @@ void usage(int code) {
 	exit(code);
 }
 
-void parse_cmdline(int argc, char **argv, keygen_inputs *ins, keygen_output_locations *outs) {
+void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_output_locations *const outs) {
 	int opt_index = 0, error = 0;
 	bool done = false;
 
@@ -158,7 +157,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *ins, keygen_output_loca
 	if(NULL == outs->private.path) location_init(ins, &outs->private, "private-", 6);
 
 	/* read plaintext */
-	if(!jsmn_parse_f2_mbp_location(&plaintext_location, &ins->plaintext)) {
+	if(!jsmn_parse_f2_mbp_location(plaintext_location, &ins->plaintext)) {
 		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program over the field F_2\n", *argv, plaintext_location.path);
 		usage(7);
 	}
@@ -166,7 +165,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *ins, keygen_output_loca
 	location_free(plaintext_location);
 }
 
-void cleanup(keygen_inputs * const ins, keygen_output_locations * const outs) {
+void cleanup(const keygen_inputs *const ins, const keygen_output_locations *const outs) {
 	location_free(outs-> public);
 	location_free(outs->private);
 	f2_mbp_free(ins->plaintext);
