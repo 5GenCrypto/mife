@@ -3,15 +3,9 @@
 /**
  * TODO:
  * - remove GAMMA dependency in the updated API functions
- * - add concurrency (but im not sure how much this will help)
- * - optimize the computation of matrix inverses during setup
- * - implement the 3 x d optimization as an alternative
  * - add tests
- * - obtain benchmarks and implement optimal parameter estimation
  *
  *
- * f(x) = 3.305*x^3-48.47*x^2+234.895*x-375.54
- * x = base, f(x) = time it takes to generate ORE secret key
  */
 
 int main(int argc, char *argv[]) {
@@ -21,8 +15,16 @@ int main(int argc, char *argv[]) {
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
   flint_rand_t randstate;
 
+  get_best_params(80, 10, 11);
+  exit(0);
+
+  FILE *fp = fopen("enc_sizes.out", "w"); 
+  gghlite_params_test_kappa_enc_size(80, 40, fp);
+  fclose(fp);
+  exit(0);
+
   int bitstr_len = 8;
-  int base = 4;
+  int base = 3;
   int L = 3; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
@@ -86,6 +88,115 @@ int main(int argc, char *argv[]) {
   ore_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
+}
+
+long dc_enc_size(int n) {
+  int kappa = n+1;
+  if(kappa < 2 || kappa > MAX_KAPPA_BENCH) {
+    return -1;
+  }
+  return KAPPA_BENCH[kappa];
+}
+
+long mc_enc_size(int n) {
+  int kappa = 2*n;
+  if(kappa < 2 || kappa > MAX_KAPPA_BENCH) {
+    return -1;
+  }
+  return KAPPA_BENCH[kappa];
+}
+
+int dc_num_enc(int d, int n) {
+  return d*d*(n-1) + (d+1)*(4*n-2);
+}
+
+int mc_num_enc(int d, int n) {
+  return 6*(n-1)*(d+2) + 4*d;
+}
+
+/**
+ * The message space size is d^n.
+ */
+void get_best_params(int lambda, int message_d, int message_n) {
+  mpfr_t dt; 
+  mpfr_t nt;
+  mpfr_t total;
+  mpfr_init(dt);
+  mpfr_init(nt);
+  mpfr_init(total);
+
+  mpfr_t tmp1;
+  mpfr_t tmp2;
+  mpfr_init(tmp1);
+  mpfr_init(tmp2);
+  mpfr_t bt;
+  mpfr_init(bt);
+
+  mpfr_set_ui(dt, message_d, MPFR_RNDN);
+  mpfr_set_ui(nt, message_n, MPFR_RNDN);
+  mpfr_pow(total, dt, nt, MPFR_RNDN);
+  
+  int max_base = 60;
+
+  long dc_vals[max_base];
+  long mc_vals[max_base];
+
+  for(int base = 2; base < max_base; base++) {
+    // compute minimum n
+    mpfr_set_ui(bt, base, MPFR_RNDN);
+    mpfr_log(tmp1, total, MPFR_RNDN);
+    mpfr_log(tmp2, bt, MPFR_RNDN);
+    mpfr_div(tmp1, tmp1, tmp2, MPFR_RNDN);
+    mpfr_ceil(tmp1, tmp1);
+    unsigned long n = mpfr_get_ui(tmp1, MPFR_RNDN);
+    
+    // num encodings #1, #2
+    int dc_enc = dc_num_enc(base,n);
+    int mc_enc = mc_num_enc(base,n);
+   
+    // use n to compute enc size
+    if(base == 4) {
+      printf("Base 4 dc num enc: %d\n", dc_num_enc(4,n));
+    }
+    dc_vals[base] = dc_enc * dc_enc_size(n);
+    mc_vals[base] = mc_enc * mc_enc_size(n);
+  }
+
+  mpfr_clear(dt);
+  mpfr_clear(bt);
+  mpfr_clear(nt);
+  mpfr_clear(total);
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+
+
+  for(int i = 2; i < max_base; i++) {
+    printf("%d: %ld %ld\n", i, dc_vals[i] / 8 / 1024 / 1024, mc_vals[i] / 8 / 1024 / 1024);
+  }
+
+  unsigned long min_enc = dc_vals[2]; 
+  int min_type = 0;
+  int min_base = 2;
+  for(int i = 2; i < max_base; i++) {
+    if(dc_vals[i] > 0 && dc_vals[i] < min_enc) {
+      min_type = 0;
+      min_base = i;
+      min_enc = dc_vals[i];
+    }
+    if(mc_vals[i] > 0 && mc_vals[i] < min_enc) {
+      min_type = 1;
+      min_base = i;
+      min_enc = mc_vals[i];
+    }
+  }
+
+
+  if(min_type == 0) {
+    printf("Using ORE_MBP_DC\n");
+  } else {
+    printf("Using ORE_MBP_MC\n");
+  }
+  printf("min_enc: %lu, min_base: %d,\n", min_enc, min_base);
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {

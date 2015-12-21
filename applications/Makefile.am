@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = ore_dir
+#SUBDIRS = ore_dir
 AM_CFLAGS = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -fopenmp
 
 AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint

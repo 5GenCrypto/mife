@@ -151,10 +151,59 @@ void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
+
 /* test functions */
 int int_arrays_equal(int *arr1, int *arr2, int length);
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+
+
+/* benchmarking functions */
+void get_best_params(int lambda, int message_d, int message_n);
+
+
+int MAX_KAPPA_BENCH = 28;
+long KAPPA_BENCH[] = {
+-1,
+-1,
+13743796,
+39428602,
+50011646,
+127578831,
+149971402,
+172363974,
+194756546,
+217149117,
+504072750,
+551305371,
+598537993,
+645770614,
+693003236,
+740235857,
+787468479,
+834701100,
+881933722,
+929166343,
+2051532015,
+2150882456,
+2250232897,
+2349583338,
+2448933779,
+2548284220,
+2647634661,
+2746985102,
+2846335543,
+2945685984,
+3045036425,
+3144386867,
+3243737308,
+3343087749,
+3442438190,
+3541788631,
+3641139072,
+3740489513,
+3839839954,
+};
 
 
 #endif /* _ORE_H_ */

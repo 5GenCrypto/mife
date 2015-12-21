@@ -148,6 +148,51 @@ int gghlite_enc_is_zero(const gghlite_params_t self, const fmpz_mod_poly_t op) {
     return 0;
 }
 
+/**
+ * Returns the number of bits of an encoding (estimated) based on the parameters
+ */
+double gghlite_params_get_enc(const gghlite_params_t self) {
+  mpfr_t enc;
+  mpfr_init2(enc, _gghlite_prec(self));
+
+  _gghlite_params_get_q_mpfr(enc, self, MPFR_RNDN);
+  mpfr_log2(enc, enc, MPFR_RNDN);
+  mpfr_mul_ui(enc, enc, self->n, MPFR_RNDN);
+
+  double sd = mpfr_get_d(enc, MPFR_RNDN);
+  return sd;
+}
+
+/**
+ * Tests a bunch of kappa values to see encoding sizes
+ */
+void gghlite_params_test_kappa_enc_size(size_t lambda, size_t max_kappa, FILE *fp) {
+  size_t gamma = 2;
+  gghlite_params_t self;
+
+  for(size_t kappa = 1; kappa < max_kappa; kappa++) {
+    gghlite_params_initzero(self, lambda, kappa, gamma);
+    //self->rerand_mask = rerand_mask;
+    //self->flags = flags;
+
+    for(int log_n = 7; ; log_n++) {
+      self->n = ((long)1)<<log_n;
+      _gghlite_params_set_sigma(self);
+      _gghlite_params_set_ell_g(self);
+      _gghlite_params_set_ell(self);
+      _gghlite_params_set_sigma_p(self);
+      _gghlite_params_set_ell_b(self);
+      _gghlite_params_set_sigma_s(self);
+      _gghlite_params_set_q(self);
+
+      if (gghlite_params_check_sec(self))
+        break;
+    }
+    double enc = gghlite_params_get_enc(self);
+    fprintf(fp, "%.0f,\n", enc);
+    fflush(fp);
+  }
+}
 
 void gghlite_params_print(const gghlite_params_t self) {
   assert(self->lambda);

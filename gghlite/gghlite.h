@@ -169,6 +169,10 @@ void gghlite_params_clear(gghlite_params_t self);
 
 void gghlite_sk_clear(gghlite_sk_t self, int clear_params);
 
+/* parameter estimation functions */
+double gghlite_params_get_enc(const gghlite_params_t self);
+void gghlite_params_test_kappa_enc_size(size_t lambda, size_t max_kappa, FILE *fp);
+
 /**
    @brief Print sizes of parameters to STDOUT.
 
