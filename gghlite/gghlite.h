@@ -410,7 +410,7 @@ void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size
 */
 
 void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
-                                 const size_t k, int group[GAMMA], const int rerand,
+                                 const size_t k, int *group, const int rerand,
                                  flint_rand_t randstate);
 
 
@@ -430,10 +430,11 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
 static inline void gghlite_enc_set_gghlite_clr0(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
                                                 flint_rand_t randstate) {
-	int group[GAMMA];
-	memset(group, 0, GAMMA * sizeof(int));
+	int *group = malloc(self->params->gamma * sizeof(int));
+	memset(group, 0, self->params->gamma * sizeof(int));
 	group[0] = 1;
   gghlite_enc_set_gghlite_clr(rop, self, f, 0, group, 0, randstate);
+  free(group);
 }
 
 /**

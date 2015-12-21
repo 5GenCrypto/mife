@@ -418,6 +418,21 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
   self->t_is_subideal = 0;
   self->t_sample = 0;
 
+  self->z = malloc(self->params->gamma * sizeof(gghlite_enc_t));
+  memset(self->z, 0, self->params->gamma * sizeof(gghlite_enc_t));
+  self->z_inv = malloc(self->params->gamma * sizeof(gghlite_enc_t));
+  memset(self->z_inv, 0, self->params->gamma * sizeof(gghlite_enc_t));
+  self->a = malloc(self->params->gamma * sizeof(gghlite_enc_t));
+  memset(self->a, 0, self->params->gamma * sizeof(gghlite_enc_t));
+  self->b = malloc(self->params->gamma * sizeof(gghlite_enc_t **));
+  for(int i = 0; i < self->params->gamma; i++) {
+    self->b[i] = malloc(KAPPA * sizeof(gghlite_enc_t *));
+    for(int j = 0; j < KAPPA; j++) {
+      self->b[i][j] = malloc(2 * sizeof(gghlite_enc_t));
+      memset(self->b[i][j], 0, 2 * sizeof(gghlite_enc_t));
+    }
+  }
+
   fmpz_mod_poly_oz_ntt_precomp_init(self->params->ntt, self->params->n, self->params->q);
 
   _gghlite_sk_sample_g(self, randstate);
@@ -467,6 +482,17 @@ void gghlite_sk_clear(gghlite_sk_t self, int clear_params) {
 
   if (clear_params)
     gghlite_params_clear(self->params);
+ 
+  free(self->z);
+  free(self->z_inv);
+  free(self->a);
+  for(int i = 0; i < self->params->gamma; i++) {
+    for(int j = 0; j < KAPPA; j++) {
+      free(self->b[i][j]);
+    }
+    free(self->b[i]);
+  }
+  free(self->b);
 }
 
 

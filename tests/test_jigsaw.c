@@ -1,6 +1,8 @@
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-internals.h>
 
+#define GAMMA (100)
+
 /**
  * Testing the flexibility of large index sets with a smaller kappa
  */

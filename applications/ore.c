@@ -2,7 +2,6 @@
 
 /**
  * TODO:
- * - remove GAMMA dependency in the updated API functions
  * - add tests
  *
  *
@@ -15,6 +14,7 @@ int main(int argc, char *argv[]) {
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
   flint_rand_t randstate;
 
+/*
   get_best_params(80, 10, 11);
   exit(0);
 
@@ -22,10 +22,11 @@ int main(int argc, char *argv[]) {
   gghlite_params_test_kappa_enc_size(80, 40, fp);
   fclose(fp);
   exit(0);
+*/
 
-  int bitstr_len = 8;
-  int base = 3;
-  int L = 3; // 2^L = # of total messages we can encrypt
+  int bitstr_len = 4;
+  int base = 2;
+  int L = 80; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
   ore_sk_t sk;
@@ -200,6 +201,15 @@ void get_best_params(int lambda, int message_d, int message_n) {
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
+  for(int i = 0; i < self->gamma; i++) {
+    for(int j = 0; j < KAPPA; j++) {
+      free(self->x[i][j]);
+    }
+    free(self->x[i]);
+  }
+  free(self->x);
+  free(self->y);
+
   fmpz_mod_poly_clear(self->pzt);
   mpfr_clear(self->xi);
   mpfr_clear(self->sigma_s);
@@ -1050,8 +1060,8 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
   int **group_x = malloc(pp->nx * sizeof(int *));
   int **group_y = malloc(pp->ny * sizeof(int *));
   for(int j = 0; j < pp->nx; j++) {
-    group_x[j] = malloc(GAMMA * sizeof(int));
-    memset(group_x[j], 0, GAMMA * sizeof(int));
+    group_x[j] = malloc(pp->gamma * sizeof(int));
+    memset(group_x[j], 0, pp->gamma * sizeof(int));
     for(int k = 0; k < pp->gammax; k++) {
       if(ptnx[k] == j) {
         group_x[j][k] = 1;
@@ -1060,8 +1070,8 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
   }
 
   for(int j = 0; j < pp->ny; j++) {
-    group_y[j] = malloc(GAMMA * sizeof(int));
-    memset(group_y[j], 0, GAMMA * sizeof(int));
+    group_y[j] = malloc(pp->gamma * sizeof(int));
+    memset(group_y[j], 0, pp->gamma * sizeof(int));
     for(int k = 0; k < pp->gammay; k++) {
       if(ptny[k] == j) {
         group_y[j][k + pp->gammax] = 1;
@@ -1075,12 +1085,12 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
   if(pp->flags & ORE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
     for(int j = 0; j < pp->nx; j++) {
-      memset(group_x[j], 0, GAMMA * sizeof(int));
+      memset(group_x[j], 0, pp->gamma * sizeof(int));
     }
     for(int j = 0; j < pp->ny; j++) {
-      memset(group_y[j], 0, GAMMA * sizeof(int));
+      memset(group_y[j], 0, pp->gamma * sizeof(int));
     }
-    for(int k = 0; k < pp->gammax + pp->gammay; k++) {
+    for(int k = 0; k < pp->gamma; k++) {
       group_x[0][k] = 1;
     }
   }

@@ -67,7 +67,7 @@ void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size
 }
 
 void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
-                                 const size_t k, int group[GAMMA], const int rerand,
+                                 const size_t k, int *group, const int rerand,
                                  flint_rand_t randstate) {
 
   fmpz_poly_t t_o;  fmpz_poly_init(t_o);
@@ -88,7 +88,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
     if(!gghlite_sk_is_symmetric(self) && (k>1))
       ggh_die("Raising to higher levels than 1 not supported. Instead, multiply by the right combination of y_i.");
 
-		for (int r = 0; r < GAMMA; r++) {
+		for (int r = 0; r < self->params->gamma; r++) {
 			if (group[r]) {
 				if(gghlite_sk_is_symmetric(self)) {
 					for(size_t j=0; j<k; j++) // divide by z_i^k

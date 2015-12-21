@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
 
   fmpz_poly_set_coeff_fmpz(e[0], 0, a[3]);
 
+  int GAMMA = 20;
   uint64_t t_enc = ggh_walltime(0);
 	int group0[GAMMA];
 	memset(group0, 0, GAMMA * sizeof(int));
