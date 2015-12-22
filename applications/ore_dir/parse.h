@@ -33,5 +33,5 @@ bool jsmn_parse_step     (const char *const json_string, const jsmntok_t **const
 bool jsmn_parse_template (const char *const json_string, const jsmntok_t **const json_tokens, template  *const templ );
 
 /* top-level wrapper */
-bool jsmn_parse_template_location(const location loc, template *const templ);
+bool jsmn_parse_template_location(const location loc, template *const template);
 #endif

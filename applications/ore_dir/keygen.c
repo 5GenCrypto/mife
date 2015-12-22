@@ -8,7 +8,7 @@
 
 typedef struct {
 	int sec_param, log_db_size;
-	template templ;
+	template template;
 } keygen_inputs;
 
 typedef struct {
@@ -137,7 +137,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		fprintf(stderr, "%s: out of memory when trying to create path to template\n", *argv);
 		exit(-1);
 	}
-	if(!jsmn_parse_template_location(template_location, &ins->templ)) {
+	if(!jsmn_parse_template_location(template_location, &ins->template)) {
 		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program template over the field F_2\n", *argv, template_location.path);
 		usage(7);
 	}

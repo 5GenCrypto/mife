@@ -237,35 +237,35 @@ bool jsmn_parse_step(const char *const json_string, const jsmntok_t **const json
 	return true;
 }
 
-bool jsmn_parse_steps(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+bool jsmn_parse_steps(const char *const json_string, const jsmntok_t **const json_tokens, template *const template) {
 	/* demand an array with at least one step in it */
-	templ->steps_len = (*json_tokens)->size;
-	if((*json_tokens)->type != JSMN_ARRAY || templ->steps_len <= 1) {
+	template->steps_len = (*json_tokens)->size;
+	if((*json_tokens)->type != JSMN_ARRAY || template->steps_len <= 1) {
 		fprintf(stderr, "at position %d\nexpecting array of steps\n", (*json_tokens)->start);
 		return false;
 	}
 
 	/* reserve some space */
-	if(NULL == (templ->steps = malloc(templ->steps_len * sizeof(*templ->steps)))) {
+	if(NULL == (template->steps = malloc(template->steps_len * sizeof(*template->steps)))) {
 		fprintf(stderr, "out of memory in jsmn_parse_steps\n");
 		return false;
 	}
 
 	/* parse each step */
 	int i;
-	for(i = 0; i < templ->steps_len; i++) {
+	for(i = 0; i < template->steps_len; i++) {
 		++(*json_tokens);
-		if(!jsmn_parse_step(json_string, json_tokens, templ->steps+i)) {
+		if(!jsmn_parse_step(json_string, json_tokens, template->steps+i)) {
 			/* caller is responsible for cleaning up; template_free will
 			 * inspect steps_len to decide how many steps to free */
-			templ->steps_len = i;
+			template->steps_len = i;
 			return false;
 		}
 	}
 
 	/* check that the steps' dimensions mesh */
-	for(i = 1; i < templ->steps_len; i++) {
-		if(templ->steps[i-1].matrix[0].f2_num_cols != templ->steps[i].matrix[0].f2_num_rows) {
+	for(i = 1; i < template->steps_len; i++) {
+		if(template->steps[i-1].matrix[0].f2_num_cols != template->steps[i].matrix[0].f2_num_rows) {
 			fprintf(stderr, "before position %d\ndimension mismatch in steps %d and %d\n", (*json_tokens)->end, i-1, i);
 			return false;
 		}
@@ -294,28 +294,28 @@ bool jsmn_parse_string(const char *const json_string, const jsmntok_t **const js
 	return true;
 }
 
-bool jsmn_parse_outputs(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+bool jsmn_parse_outputs(const char *const json_string, const jsmntok_t **const json_tokens, template *const template) {
 	/* demand an array */
-	templ->outputs_len = (*json_tokens)->size;
+	template->outputs_len = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
 		fprintf(stderr, "at position %d\nexpecting array of output strings\n", (*json_tokens)->start);
 		return false;
 	}
 
 	/* reserve some space */
-	if(NULL == (templ->outputs = malloc(templ->outputs_len * sizeof(*templ->outputs)))) {
+	if(NULL == (template->outputs = malloc(template->outputs_len * sizeof(*template->outputs)))) {
 		fprintf(stderr, "out of memory in jsmn_parse_outputs\n");
 		return false;
 	}
 
 	/* parse each output */
 	int i;
-	for(i = 0; i < templ->outputs_len; i++) {
+	for(i = 0; i < template->outputs_len; i++) {
 		++(*json_tokens);
-		if(!jsmn_parse_string(json_string, json_tokens, templ->outputs+i)) {
+		if(!jsmn_parse_string(json_string, json_tokens, template->outputs+i)) {
 			/* caller is responsible for cleaning up; template_free will
 			 * inspect outputs_len to decide how many outputs to free */
-			templ->outputs_len = i;
+			template->outputs_len = i;
 			return false;
 		}
 	}
@@ -323,7 +323,7 @@ bool jsmn_parse_outputs(const char *const json_string, const jsmntok_t **const j
 	return true;
 }
 
-bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const json_tokens, template *const template) {
 	int i;
 
 	/* demand an object with exactly two parts */
@@ -332,8 +332,8 @@ bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const 
 		return false;
 	}
 
-	templ->steps   = NULL;
-	templ->outputs = NULL;
+	template->steps   = NULL;
+	template->outputs = NULL;
 
 	for(i = 0; i < 2; i++) {
 		char *key;
@@ -341,16 +341,16 @@ bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const 
 		switch(json_string[(*json_tokens)->start]) {
 			case 's': /* steps */
 				++(*json_tokens);
-				if(!jsmn_parse_steps(json_string, json_tokens, templ)) {
-					template_free(*templ);
+				if(!jsmn_parse_steps(json_string, json_tokens, template)) {
+					template_free(*template);
 					return false;
 				}
 				break;
 
 			case 'o': /* outputs */
 				++(*json_tokens);
-				if(!jsmn_parse_outputs(json_string, json_tokens, templ)) {
-					template_free(*templ);
+				if(!jsmn_parse_outputs(json_string, json_tokens, template)) {
+					template_free(*template);
 					return false;
 				}
 				break;
@@ -360,31 +360,31 @@ bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const 
 					fprintf(stderr, "at position %d\nexpecting \"steps\" or \"outputs\", found %s\n", (*json_tokens)->start, key);
 					free(key);
 				}
-				template_free(*templ);
+				template_free(*template);
 				return false;
 		}
 	}
 
-	if(NULL == templ->steps) {
+	if(NULL == template->steps) {
 		fprintf(stderr, "before position %d\nmissing key \"steps\"\n", (*json_tokens)->end);
-		template_free(*templ);
+		template_free(*template);
 		return false;
 	}
-	if(NULL == templ->outputs) {
+	if(NULL == template->outputs) {
 		fprintf(stderr, "before position %d\nmissing key \"outputs\"\n", (*json_tokens)->end);
-		template_free(*templ);
+		template_free(*template);
 		return false;
 	}
-	if(templ->steps[templ->steps_len-1].matrix[0].f2_num_cols != templ->outputs_len) {
+	if(template->steps[template->steps_len-1].matrix[0].f2_num_cols != template->outputs_len) {
 		fprintf(stderr, "before position %d\ndimension mismatch between final step and outputs\n", (*json_tokens)->end);
-		template_free(*templ);
+		template_free(*template);
 		return false;
 	}
 
 	return true;
 }
 
-bool jsmn_parse_template_location(const location loc, template *const templ) {
+bool jsmn_parse_template_location(const location loc, template *const template) {
 	int fd;
 	struct stat fd_stat;
 	char *json_string;
@@ -433,7 +433,7 @@ bool jsmn_parse_template_location(const location loc, template *const templ) {
 		goto fail_free_tokens;
 	}
 	*state = json_tokens;
-	status = jsmn_parse_template(json_string, state, templ);
+	status = jsmn_parse_template(json_string, state, template);
 
 fail_free_state:
 	free(state);
