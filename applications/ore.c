@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   ore_pp_t pp;
   ore_sk_t sk;
 
-  get_best_params(pp, 80, 10, 11);
+  get_best_params(pp, 80, 10, 3);
   
   printf("Estimated ciphertext size for lambda = 80: ");
   const char *units[3] = {"KB","MB","GB"};
@@ -48,8 +48,13 @@ int main(int argc, char *argv[]) {
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
 
-  int num1 = 5;
-  int num2 = 9;
+  fmpz_t num1;
+  fmpz_init(num1);
+  fmpz_set_ui(num1, 992);
+
+  fmpz_t num2;
+  fmpz_init(num2);
+  fmpz_set_ui(num2, 101);
 
   NUM_ENCODINGS_GENERATED = 0;
 
@@ -83,7 +88,9 @@ int main(int argc, char *argv[]) {
   ore_pp_t pp_read;
   fread_ore_pp(pp_read, "pp.out");
 
-  printf("Comparing %d with %d: ", num1, num2);
+  printf("Comparing %lu with %lu: ", fmpz_get_ui(num1), fmpz_get_ui(num2));
+  fmpz_clear(num1);
+  fmpz_clear(num2);
   
   T = ggh_walltime(0);
   compare(pp_read, ct1_read, ct2_read);
@@ -165,7 +172,7 @@ int mc_num_enc(int d, int n) {
  * The message space size is d^n.
  */
 void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
-  int max_base = 8;
+  int max_base = 5;
   mpfr_t dt; 
   mpfr_t nt;
   mpfr_t total;
@@ -246,7 +253,7 @@ void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
     }
   }
 
-  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_DC;
+  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_MC;
   if(min_type != 0) {
     // Using ORE_MBP_MC
     pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_MC;
@@ -503,14 +510,44 @@ void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met) {
   free(met->y_clr);
 }
 
-void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
-  int index = 0; // FIXME choose it randomly using sk->randstate
+void print_ore_mat_clr(ore_pp_t pp, ore_mat_clr_t met) {
+  printf("dary_repr: ");
+  for(int i = 0; i < pp->bitstr_len; i++) {
+    printf("%lu ", met->dary_repr[i]);
+  }
+  printf("\n");
+  printf("x_clr matrices: \n");
+  for(int i = 0; i < pp->nx; i++) {
+    fmpz_mat_print_pretty(met->x_clr[i]);
+    printf("\n\n");
+  }
+  printf("y_clr matrices: \n");
+  for(int i = 0; i < pp->nx; i++) {
+    fmpz_mat_print_pretty(met->y_clr[i]);
+    printf("\n\n");
+  }
+  printf("\n");
+}
+
+void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk) {
+  // compute a random index in the range [0,2^L]
+  fmpz_t index, powL, two;
+  fmpz_init(index);
+  fmpz_init(powL);
+  fmpz_init(two);
+  fmpz_pow_ui(powL, two, pp->L); // computes powL = 2^L
+  fmpz_randm(index, sk->randstate, powL);
+  fmpz_clear(powL);
+  fmpz_clear(two);
+  
   ore_mat_clr_t met;
   set_matrices(met, message, pp, sk);
+
   if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
     apply_scalar_randomizers(met, pp, sk);     
   }
   set_encodings(ct, met, index, pp, sk);
+  fmpz_clear(index);
   ore_mat_clr_clear(pp, met);
 }
 
@@ -613,15 +650,24 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
 }
 
 // message >= 0, d >= 2
-void message_to_dary(int *dary, int bitstring_len, int64_t message, int64_t d) {
-  assert(message >= 0);
+void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d) {
   assert(d >= 2);
+  fmpz_t message2;
+  fmpz_init_set(message2, message);
+  fmpz_t modresult;
+  fmpz_init(modresult);
+  fmpz_t modd;
+  fmpz_init_set_ui(modd, d);
 
   int i;
   for (i = bitstring_len - 1; i >= 0; i--) {
-    dary[i] = message % d;
-    message /= d;
+    fmpz_tdiv_qr(message2, modresult, message2, modd);
+    dary[i] = fmpz_get_ui(modresult);
   }
+  
+  fmpz_clear(message2);
+  fmpz_clear(modd);
+  fmpz_clear(modresult);
 }
 
 /**
@@ -711,7 +757,7 @@ void ore_mc_clrmat_init_YREST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, d+2, 3);
   fmpz_mat_zero(m);
  
-  for(int i = 0; i < 3; i++) {
+  for(int i = 0; i < d+2; i++) {
     int j;
     if(i == d) {
       j = 1;
@@ -915,9 +961,9 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
   }	}
 
 /* sets the cleartext matrices x_clr and y_clr */
-void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
+void set_matrices(ore_mat_clr_t met, fmpz_t message, ore_pp_t pp,
     ore_sk_t sk) {
-  met->dary_repr = malloc(pp->bitstr_len * sizeof(int));
+  met->dary_repr = malloc(pp->bitstr_len * sizeof(ulong));
   message_to_dary(met->dary_repr, pp->bitstr_len, message, pp->d);
 
   met->x_clr = malloc(pp->nx * sizeof(fmpz_mat_t));
@@ -964,7 +1010,7 @@ void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
         ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
             pp->d);
       } else if((pp->bitstr_len % 2 == 1) && (k == pp->ny-1)) {
-        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
+        ore_dc_clrmat_init_LAST(met->y_clr[k], met->dary_repr[bc], pp->d);
       } else {
         ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
             met->dary_repr[bc+1], pp->d);
@@ -1016,17 +1062,17 @@ void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk) {
  *
  * @param partitioning The description of the partitioning, each entry is in 
  * [0,d-1] and it is of length (1 + (d-1)(L+1)).
- * @param i The i^th member of the partition family
+ * @param index The index being the i^th member of the partition family
  * @param L the log of the size of the partition family. So, i must be in the 
  * range [0,2^L-1]
  * @param nu The number of total elements to be multiplied. partitioning[] 
  * will describe a nu-partition of the universe set.
  */ 
-void gen_partitioning(int *partitioning, int i, int L, int nu) {
+void gen_partitioning(int *partitioning, fmpz_t index, int L, int nu) {
   int j = 0;
 
-  int bitstring[L];
-  message_to_dary(bitstring, L, i, 2);
+  ulong bitstring[L];
+  message_to_dary(bitstring, L, index, 2);
 
   for(; j < nu; j++) {
     partitioning[j] = j;
@@ -1100,7 +1146,7 @@ void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m) {
   }
 }
 
-void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
+void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, fmpz_t index,
     ore_pp_t pp, ore_sk_t sk) {
 
   int *ptnx = malloc(pp->gammax * sizeof(int));
@@ -1295,6 +1341,7 @@ int int_arrays_equal(int *arr1, int *arr2, int length) {
   return 0;
 }
 
+/*
 void test_dary_conversion() {
   printf("Testing d-ary conversion function...                          ");
   int dary1[4];
@@ -1323,6 +1370,7 @@ void test_dary_conversion() {
     printf("FAIL\n");	
 
 }
+*/
 
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
   printf("\nTesting matrix_inv function...                                ");

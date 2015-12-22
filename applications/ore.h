@@ -56,7 +56,7 @@ struct _gghlite_enc_mat_struct {
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
 struct _ore_mat_clr_struct {
-  int *dary_repr;
+  ulong *dary_repr;
   fmpz_mat_t *x_clr;
   fmpz_mat_t *y_clr;
 };
@@ -102,7 +102,7 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 /* ORE interface */
 void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
     cmdline_params_t cmdline_params);
-void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk);
+void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk);
 void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);
 
 /* functions dealing with fmpz types and matrix multiplications mod fmpz_t */
@@ -123,14 +123,14 @@ void ore_clear_sk(ore_sk_t sk);
 void ore_ciphertext_clear(ore_pp_t pp, ore_ciphertext_t ct);
 void ore_mat_clr_clear(ore_pp_t pp, ore_mat_clr_t met);
 void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk);
-void message_to_dary(int *dary, int bitstring_len, int64_t message, int64_t d);
+void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d);
 int get_matrix_bit_normal_mbp(int input, int i, int j, int type);
-void set_matrices(ore_mat_clr_t met, int64_t message, ore_pp_t pp,
+void set_matrices(ore_mat_clr_t met, fmpz_t message, ore_pp_t pp,
     ore_sk_t sk);
-void gen_partitioning(int *partitioning, int i, int L, int nu);
+void gen_partitioning(int *partitioning, fmpz_t index, int L, int nu);
 void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group);
 void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m);
-void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, int index,
+void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, fmpz_t index,
     ore_pp_t pp, ore_sk_t sk);
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);
