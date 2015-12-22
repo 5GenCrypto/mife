@@ -1,13 +1,26 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #include "parse.h"
 
-void location_free(location loc) { if(!loc.stack_allocated) free(loc.path); }
+void location_free(location loc) { if(!loc.stack_allocated && NULL != loc.path) free(loc.path); }
+
+location location_append(const location loc, const char *const path) {
+	location result = { NULL, false };
+	const unsigned int loc_len = strlen(loc.path), path_len = strlen(path);
+	const unsigned int result_len = loc_len+1+path_len, result_size = result_len+1;
+	if(NULL != (result.path = malloc(result_size * sizeof(*result.path))))
+		if(snprintf(result.path, result_size, "%s/%s", loc.path, path) != result_len) {
+			free(result.path);
+			result.path = NULL;
+		}
+	return result;
+}
 
 bool jsmn_parse_f2_elem(const char *const json_string, const jsmntok_t **const json_tokens, bool *const elem) {
 	if((*json_tokens)->type != JSMN_PRIMITIVE) return false;
@@ -104,22 +117,22 @@ bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const
 
 bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const json_tokens, f2_mbp *const mbp) {
 	/* demand an array of at least one matrix */
-	mbp->f2_len = (*json_tokens)->size;
+	mbp->f2_matrices_len = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
 		fprintf(stderr, "at position %d\nexpecting matrix branching program, found non-array\n", (*json_tokens)->start);
 		return false;
 	}
-	if(mbp->f2_len < 1) return false;
+	if(mbp->f2_matrices_len < 1) return false;
 
 	/* reserve some memory */
-	if(NULL == (mbp->f2_matrices = malloc(mbp->f2_len * sizeof(*mbp->f2_matrices)))) {
+	if(NULL == (mbp->f2_matrices = malloc(mbp->f2_matrices_len * sizeof(*mbp->f2_matrices)))) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_mbp\n");
 		return false;
 	}
 
 	/* parse each matrix */
 	int i;
-	for(i = 0; i < mbp->f2_len; i++) {
+	for(i = 0; i < mbp->f2_matrices_len; i++) {
 		++(*json_tokens);
 		if(!jsmn_parse_f2_matrix(json_string, json_tokens, mbp->f2_matrices+i)) {
 			int j;
@@ -131,7 +144,7 @@ bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const js
 	}
 
 	/* check that the dimensions match up */
-	for(i = 0; i < mbp->f2_len-1; i++) {
+	for(i = 0; i < mbp->f2_matrices_len-1; i++) {
 		if(mbp->f2_matrices[i].f2_num_cols != mbp->f2_matrices[i+1].f2_num_rows) {
 			fprintf(stderr, "matrices %d and %d have incompatible shapes\n", i, i+1);
 			f2_mbp_free(*mbp);
@@ -142,7 +155,236 @@ bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const js
 	return true;
 }
 
-bool jsmn_parse_f2_mbp_location(const location loc, f2_mbp *const mbp) {
+bool jsmn_parse_step(const char *const json_string, const jsmntok_t **const json_tokens, step *const step) {
+	int i;
+
+	/* demand an object with at least two parts */
+	step->symbols_len = (*json_tokens)->size - 1;
+	if((*json_tokens)->type != JSMN_OBJECT || step->symbols_len < 1) {
+		fprintf(stderr, "at position %d\nexpecting step (JSON object with key \"position\" and one key per input symbol), found non-object\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some memory; reserve one extra slot in case the user forgot to
+	 * specify a position */
+	step->position = NULL;
+	step->symbols  = NULL;
+	step->matrix   = NULL;
+	if(NULL == (step->symbols = malloc((step->symbols_len+1) * sizeof(*step->symbols)))) {
+		fprintf(stderr, "out of memory in jsmn_parse_step\n");
+		return false;
+	}
+	for(i = 0; i < step->symbols_len; i++) step->symbols[i] = NULL;
+	if(NULL == (step->matrix = malloc((step->symbols_len+1) * sizeof(*step->matrix)))) {
+		fprintf(stderr, "out of memory in jsmn_parse_step\n");
+		step_free(*step);
+		return false;
+	}
+
+	/* parse each key-value pair */
+	int next_symbol = 0;
+	for(i = 0; i < step->symbols_len+1; i++) {
+		++(*json_tokens);
+		char *key;
+		if(!jsmn_parse_string(json_string, json_tokens, &key)) {
+			step_free(*step);
+			return false;
+		}
+
+		++(*json_tokens);
+		if(strcmp(key, "position") == 0) {
+			free(key);
+			if(step->position != NULL) {
+				fprintf(stderr, "at position %d\nduplicate position information\n", (*json_tokens)->start);
+				step_free(*step);
+				return false;
+			}
+			if(!jsmn_parse_string(json_string, json_tokens, &step->position)) {
+				step_free(*step);
+				return false;
+			}
+		}
+		else {
+			step->symbols[next_symbol] = key;
+			if(!jsmn_parse_f2_matrix(json_string, json_tokens, step->matrix + next_symbol)) {
+				free(key);
+				step->symbols[next_symbol] = NULL;
+				step_free(*step);
+				return false;
+			}
+			++next_symbol;
+		}
+	}
+
+	/* make sure we saw a "position" key */
+	if(next_symbol == step->symbols_len+1) {
+		fprintf(stderr, "at position %d\nnever saw a \"position\" key in this object\n", (*json_tokens)->start);
+		++step->symbols_len;
+		step_free(*step);
+		return false;
+	}
+
+	/* check that all the matrices have the same size */
+	for(i = 1; i < step->symbols_len; i++) {
+		if(step->matrix[i].f2_num_rows != step->matrix[0].f2_num_rows ||
+		   step->matrix[i].f2_num_cols != step->matrix[0].f2_num_cols) {
+			fprintf(stderr, "before position %d\ndimension mismatch in matrices 0 and %d\n", (*json_tokens)->end, i);
+			step_free(*step);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool jsmn_parse_steps(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+	/* demand an array with at least one step in it */
+	templ->steps_len = (*json_tokens)->size;
+	if((*json_tokens)->type != JSMN_ARRAY || templ->steps_len <= 1) {
+		fprintf(stderr, "at position %d\nexpecting array of steps\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some space */
+	if(NULL == (templ->steps = malloc(templ->steps_len * sizeof(*templ->steps)))) {
+		fprintf(stderr, "out of memory in jsmn_parse_steps\n");
+		return false;
+	}
+
+	/* parse each step */
+	int i;
+	for(i = 0; i < templ->steps_len; i++) {
+		++(*json_tokens);
+		if(!jsmn_parse_step(json_string, json_tokens, templ->steps+i)) {
+			/* caller is responsible for cleaning up; template_free will
+			 * inspect steps_len to decide how many steps to free */
+			templ->steps_len = i;
+			return false;
+		}
+	}
+
+	/* check that the steps' dimensions mesh */
+	for(i = 1; i < templ->steps_len; i++) {
+		if(templ->steps[i-1].matrix[0].f2_num_cols != templ->steps[i].matrix[0].f2_num_rows) {
+			fprintf(stderr, "before position %d\ndimension mismatch in steps %d and %d\n", (*json_tokens)->end, i-1, i);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool jsmn_parse_string(const char *const json_string, const jsmntok_t **const json_tokens, char **const string) {
+	/* demand a string */
+	if((*json_tokens)->type != JSMN_STRING) {
+		fprintf(stderr, "at position %d\nexpecting string\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some space */
+	const unsigned int string_len = (*json_tokens)->end - (*json_tokens)->start;
+	if(NULL == (*string = malloc((string_len+1) * sizeof(**string)))) {
+		fprintf(stderr, "out of memory in jsmn_parse_string\n");
+		return false;
+	}
+
+	/* copy */
+	memcpy(*string, json_string+(*json_tokens)->start, string_len);
+	(*string)[string_len] = '\0';
+	return true;
+}
+
+bool jsmn_parse_outputs(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+	/* demand an array */
+	templ->outputs_len = (*json_tokens)->size;
+	if((*json_tokens)->type != JSMN_ARRAY) {
+		fprintf(stderr, "at position %d\nexpecting array of output strings\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some space */
+	if(NULL == (templ->outputs = malloc(templ->outputs_len * sizeof(*templ->outputs)))) {
+		fprintf(stderr, "out of memory in jsmn_parse_outputs\n");
+		return false;
+	}
+
+	/* parse each output */
+	int i;
+	for(i = 0; i < templ->outputs_len; i++) {
+		++(*json_tokens);
+		if(!jsmn_parse_string(json_string, json_tokens, templ->outputs+i)) {
+			/* caller is responsible for cleaning up; template_free will
+			 * inspect outputs_len to decide how many outputs to free */
+			templ->outputs_len = i;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const json_tokens, template *const templ) {
+	int i;
+
+	/* demand an object with exactly two parts */
+	if((*json_tokens)->type != JSMN_OBJECT || (*json_tokens)->size != 2) {
+		fprintf(stderr, "at position %d\nexpecting template (JSON object with keys \"steps\" and \"outputs\"), found non-object\n", (*json_tokens)->start);
+		return false;
+	}
+
+	templ->steps   = NULL;
+	templ->outputs = NULL;
+
+	for(i = 0; i < 2; i++) {
+		char *key;
+		++(*json_tokens);
+		switch(json_string[(*json_tokens)->start]) {
+			case 's': /* steps */
+				++(*json_tokens);
+				if(!jsmn_parse_steps(json_string, json_tokens, templ)) {
+					template_free(*templ);
+					return false;
+				}
+				break;
+
+			case 'o': /* outputs */
+				++(*json_tokens);
+				if(!jsmn_parse_outputs(json_string, json_tokens, templ)) {
+					template_free(*templ);
+					return false;
+				}
+				break;
+
+			default:
+				if(jsmn_parse_string(json_string, json_tokens, &key)) {
+					fprintf(stderr, "at position %d\nexpecting \"steps\" or \"outputs\", found %s\n", (*json_tokens)->start, key);
+					free(key);
+				}
+				template_free(*templ);
+				return false;
+		}
+	}
+
+	if(NULL == templ->steps) {
+		fprintf(stderr, "before position %d\nmissing key \"steps\"\n", (*json_tokens)->end);
+		template_free(*templ);
+		return false;
+	}
+	if(NULL == templ->outputs) {
+		fprintf(stderr, "before position %d\nmissing key \"outputs\"\n", (*json_tokens)->end);
+		template_free(*templ);
+		return false;
+	}
+	if(templ->steps[templ->steps_len-1].matrix[0].f2_num_cols != templ->outputs_len) {
+		fprintf(stderr, "before position %d\ndimension mismatch between final step and outputs\n", (*json_tokens)->end);
+		template_free(*templ);
+		return false;
+	}
+
+	return true;
+}
+
+bool jsmn_parse_template_location(const location loc, template *const templ) {
 	int fd;
 	struct stat fd_stat;
 	char *json_string;
@@ -172,7 +414,7 @@ bool jsmn_parse_f2_mbp_location(const location loc, f2_mbp *const mbp) {
 		goto fail_unmap;
 	}
 	if(NULL == (json_tokens = malloc(json_tokens_len * sizeof(jsmntok_t)))) {
-		fprintf(stderr, "out of memory when allocation tokens in jsmn_parse_f2_mbp_location\n");
+		fprintf(stderr, "out of memory when allocation tokens in jsmn_parse_template_location\n");
 		goto fail_unmap;
 	}
 
@@ -187,11 +429,11 @@ bool jsmn_parse_f2_mbp_location(const location loc, f2_mbp *const mbp) {
 	/* convert the parsed JSON to our custom type */
 	const jsmntok_t **const state = malloc(sizeof(*state));
 	if(NULL == state) {
-		fprintf(stderr, "out of memory when allocating state in jsmn_parse_f2_mbp_location\n");
+		fprintf(stderr, "out of memory when allocating state in jsmn_parse_template_location\n");
 		goto fail_free_tokens;
 	}
 	*state = json_tokens;
-	status = jsmn_parse_f2_mbp(json_string, state, mbp);
+	status = jsmn_parse_template(json_string, state, templ);
 
 fail_free_state:
 	free(state);

@@ -8,43 +8,25 @@
 
 typedef struct {
 	int sec_param, log_db_size;
-	f2_mbp plaintext;
+	template templ;
 } keygen_inputs;
 
 typedef struct {
 	location public, private;
-} keygen_output_locations;
+} keygen_locations;
 
-void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_output_locations *const outs);
-void cleanup(const keygen_inputs *const ins, const keygen_output_locations *const outs);
+void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
+void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs);
 
 int main(int argc, char **argv) {
 	keygen_inputs ins;
-	keygen_output_locations outs;
+	keygen_locations outs;
 	parse_cmdline(argc, argv, &ins, &outs);
 
 	/* TODO: do something interesting with this data */
 	printf("security parameter %d\ndb size %d\npublic output to %s\nprivate output to %s\n"
 	      , ins.sec_param, ins.log_db_size, outs.public.path, outs.private.path
 	      );
-	printf("matrix branching program\n");
-	int i, j, k;
-	for(i = 0; i < ins.plaintext.f2_len; i++) {
-		const unsigned int r = ins.plaintext.f2_matrices[i].f2_num_rows;
-		const unsigned int c = ins.plaintext.f2_matrices[i].f2_num_cols;
-		printf("[\n");
-		for(j = 0; j < r; j++) {
-			printf("[");
-			for(k = 0; k < c-1; k++)
-				printf("%d, ", ins.plaintext.f2_matrices[i].f2_elems[j][k]);
-			if(c > 0)
-				printf("%d"  , ins.plaintext.f2_matrices[i].f2_elems[j][c-1]);
-			if(j < r-1) printf("],\n");
-			else        printf("]\n");
-		}
-		if(i < ins.plaintext.f2_len-1) printf("],\n");
-		else                           printf("]\n");
-	}
 
 	/* TODO: write to the output locations */
 
@@ -80,9 +62,8 @@ void usage(const int code) {
 		"\n"
 		"Common options:\n"
 		"  -h, --help         Display this usage information\n"
-		"  -l, --plaintext    An input file containing a sample plaintext [plaintext.json]\n"
 		"  -r, --private      An output directory for private parameters [private-$secparam]\n"
-		"  -u, --public       An output directory for public parameters [public-$secparam]\n"
+		"  -u, --public       An input/output directory for public parameters [public-$secparam]\n"
 		"\n"
 		"Keygen-specific options:\n"
 		"  -s, --secparam     Security parameter [80]\n"
@@ -91,18 +72,16 @@ void usage(const int code) {
 	exit(code);
 }
 
-void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_output_locations *const outs) {
+void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
 
 	/* set defaults; the NULLs in outs will be overwritten */
-	location plaintext_location = (location) { "plaintext.json", true };
 	ins->sec_param = 80;
 	ins->log_db_size = 80;
-	*outs = (keygen_output_locations) { { NULL, false}, { NULL, false } };
+	*outs = (keygen_locations) { { NULL, false}, { NULL, false } };
 
 	struct option long_opts[] =
 		{ {"help"     ,       no_argument, NULL, 'h'}
-		, {"plaintext", required_argument, NULL, 'l'}
 		, {"dbsize"   , required_argument, NULL, 'n'}
 		, {"private"  , required_argument, NULL, 'r'}
 		, {"secparam" , required_argument, NULL, 's'}
@@ -111,15 +90,12 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_outpu
 		};
 
 	while(!done) {
-		int c = getopt_long(argc, argv, "hl:n:r:s:u:", long_opts, NULL);
+		int c = getopt_long(argc, argv, "hn:r:s:u:", long_opts, NULL);
 		switch(c) {
 			case  -1: done = true; break;
 			case   0: break;
 			case '?': usage(1); break; /* braking is good defensive driving */
 			case 'h': usage(0); break;
-			case 'l':
-				plaintext_location.path = optarg;
-				break;
 			case 'n':
 				if((ins->log_db_size = atoi(optarg)) < 1) {
 					fprintf(stderr, "%s: unparseable database size '%s', should be positive number\n", *argv, optarg);
@@ -155,17 +131,20 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_outpu
 	if(NULL == outs-> public.path) location_init(ins, &outs-> public,  "public-", 5);
 	if(NULL == outs->private.path) location_init(ins, &outs->private, "private-", 6);
 
-	/* read plaintext */
-	if(!jsmn_parse_f2_mbp_location(plaintext_location, &ins->plaintext)) {
-		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program over the field F_2\n", *argv, plaintext_location.path);
+	/* read template */
+	location template_location = location_append(outs->public, "template.json");
+	if(NULL == template_location.path) {
+		fprintf(stderr, "%s: out of memory when trying to create path to template\n", *argv);
+		exit(-1);
+	}
+	if(!jsmn_parse_template_location(template_location, &ins->templ)) {
+		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program template over the field F_2\n", *argv, template_location.path);
 		usage(7);
 	}
-
-	location_free(plaintext_location);
+	location_free(template_location);
 }
 
-void cleanup(const keygen_inputs *const ins, const keygen_output_locations *const outs) {
+void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs) {
 	location_free(outs-> public);
 	location_free(outs->private);
-	f2_mbp_free(ins->plaintext);
 }

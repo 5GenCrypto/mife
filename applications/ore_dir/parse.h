@@ -12,6 +12,7 @@ typedef struct {
 } location;
 
 void location_free(location loc);
+location location_append(const location loc, const char *const path);
 
 /* bool return type: whether the parse succeeded
  * json_string: the original string that was parsed
@@ -27,7 +28,10 @@ bool jsmn_parse_f2_elem  (const char *const json_string, const jsmntok_t **const
 int  jsmn_parse_f2_row   (const char *const json_string, const jsmntok_t **const json_tokens, bool     **const row   , int expected_num_cols);
 bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const json_tokens, f2_matrix *const matrix);
 bool jsmn_parse_f2_mbp   (const char *const json_string, const jsmntok_t **const json_tokens, f2_mbp    *const mbp   );
+bool jsmn_parse_string   (const char *const json_string, const jsmntok_t **const json_tokens, char     **const string);
+bool jsmn_parse_step     (const char *const json_string, const jsmntok_t **const json_tokens, step      *const step  );
+bool jsmn_parse_template (const char *const json_string, const jsmntok_t **const json_tokens, template  *const templ );
 
 /* top-level wrapper */
-bool jsmn_parse_f2_mbp_location(const location loc, f2_mbp *const mbp);
+bool jsmn_parse_template_location(const location loc, template *const templ);
 #endif
