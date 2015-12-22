@@ -71,6 +71,7 @@ struct _ore_ciphertext_struct {
 typedef struct _ore_ciphertext_struct ore_ciphertext_t[1];
 
 struct _ore_pp_struct {
+  long ct_size; // estimated size of a ciphertext based on # of encodings
   int bitstr_len; // length of the plaintexts in d-ary
   int d; // the base
   int nx; // number of x components
@@ -99,8 +100,8 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 
 
 /* ORE interface */
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
-    int L, cmdline_params_t cmdline_params);
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
+    cmdline_params_t cmdline_params);
 void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk);
 void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);
 
@@ -159,7 +160,7 @@ int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 
 
 /* benchmarking functions */
-void get_best_params(int lambda, int message_d, int message_n);
+void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n);
 
 
 int MAX_KAPPA_BENCH = 28;

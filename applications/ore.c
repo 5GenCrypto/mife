@@ -2,7 +2,9 @@
 
 /**
  * TODO:
+ * - parse command line params
  * - add tests
+ * - add number generation and comparisons
  *
  *
  */
@@ -15,24 +17,33 @@ int main(int argc, char *argv[]) {
   flint_rand_t randstate;
 
 /*
-  get_best_params(80, 10, 11);
-  exit(0);
-
   FILE *fp = fopen("enc_sizes.out", "w"); 
   gghlite_params_test_kappa_enc_size(80, 40, fp);
   fclose(fp);
   exit(0);
 */
 
-  int bitstr_len = 4;
-  int base = 2;
   int L = 80; // 2^L = # of total messages we can encrypt
 
   ore_pp_t pp;
   ore_sk_t sk;
 
+  get_best_params(pp, 80, 10, 11);
+  
+  printf("Estimated ciphertext size for lambda = 80: ");
+  const char *units[3] = {"KB","MB","GB"};
+  double sd = pp->ct_size / 8.0;
+  int i;
+  for(i=0; i<3; i++) {
+    if (sd < 1024.0)
+      break;
+    sd = sd/1024;
+  }
+  printf("%6.2f %s\n\n", sd, units[i-1]);
+
+
   T = ggh_walltime(0);
-  ore_setup(pp, sk, bitstr_len, base, L, cmdline_params);
+  ore_setup(pp, sk, L, cmdline_params);
 
   //test_matrix_inv(6, randstate, p);
   //test_dary_conversion();
@@ -91,6 +102,41 @@ int main(int argc, char *argv[]) {
   flint_cleanup();
 }
 
+void flint_randinit_seed_crypto(flint_rand_t randstate,
+    char *seed, int gmp) {
+  flint_randinit(randstate);
+  int cutoff = sizeof(long)  * 2;
+  int base = 16;
+  char *str_seed1 = malloc(sizeof(char) * (cutoff+1));
+  char *str_seed2 = malloc(sizeof(char) * (cutoff+1));
+  strncpy(str_seed1, seed, (cutoff+1));
+  strncpy(str_seed2, seed+32, (cutoff+1));
+  str_seed1[cutoff] = 0x0;
+  str_seed2[cutoff] = 0x0;
+  unsigned long seed1 = strtoul(str_seed1, NULL, base);
+  unsigned long seed2 = strtoul(str_seed2, NULL, base);
+  free(str_seed1);
+  free(str_seed2);
+  printf("The seeds: %ld %ld\n", seed1, seed2);
+  flint_randseed(randstate, seed1, seed2);
+  if (gmp) {
+    mpfr_t mpfr_seed;
+    mpfr_init(mpfr_seed);
+    mpfr_ui_pow_ui(mpfr_seed, 2, 64, MPFR_RNDN);
+    mpfr_mul_2ui(mpfr_seed, mpfr_seed, seed1, MPFR_RNDN);
+    mpfr_add_ui(mpfr_seed, mpfr_seed, seed2, MPFR_RNDN);
+    mpz_t mpz_seed;
+    mpz_init(mpz_seed);
+    mpfr_get_z(mpz_seed, mpfr_seed, MPFR_RNDN);
+    _flint_rand_init_gmp(randstate);
+    gmp_randseed(randstate->gmp_state, mpz_seed);
+    mpfr_clear(mpfr_seed);
+    mpz_clear(mpz_seed);
+  }
+}
+
+
+
 long dc_enc_size(int n) {
   int kappa = n+1;
   if(kappa < 2 || kappa > MAX_KAPPA_BENCH) {
@@ -118,7 +164,8 @@ int mc_num_enc(int d, int n) {
 /**
  * The message space size is d^n.
  */
-void get_best_params(int lambda, int message_d, int message_n) {
+void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
+  int max_base = 8;
   mpfr_t dt; 
   mpfr_t nt;
   mpfr_t total;
@@ -135,12 +182,11 @@ void get_best_params(int lambda, int message_d, int message_n) {
 
   mpfr_set_ui(dt, message_d, MPFR_RNDN);
   mpfr_set_ui(nt, message_n, MPFR_RNDN);
-  mpfr_pow(total, dt, nt, MPFR_RNDN);
-  
-  int max_base = 60;
+  mpfr_pow(total, dt, nt, MPFR_RNDN);  
 
   long dc_vals[max_base];
   long mc_vals[max_base];
+  long nmap[max_base];
 
   for(int base = 2; base < max_base; base++) {
     // compute minimum n
@@ -150,15 +196,13 @@ void get_best_params(int lambda, int message_d, int message_n) {
     mpfr_div(tmp1, tmp1, tmp2, MPFR_RNDN);
     mpfr_ceil(tmp1, tmp1);
     unsigned long n = mpfr_get_ui(tmp1, MPFR_RNDN);
+    nmap[base] = n;
     
     // num encodings #1, #2
     int dc_enc = dc_num_enc(base,n);
     int mc_enc = mc_num_enc(base,n);
    
     // use n to compute enc size
-    if(base == 4) {
-      printf("Base 4 dc num enc: %d\n", dc_num_enc(4,n));
-    }
     dc_vals[base] = dc_enc * dc_enc_size(n);
     mc_vals[base] = mc_enc * mc_enc_size(n);
   }
@@ -170,15 +214,26 @@ void get_best_params(int lambda, int message_d, int message_n) {
   mpfr_clear(tmp1);
   mpfr_clear(tmp2);
 
-
-  for(int i = 2; i < max_base; i++) {
-    printf("%d: %ld %ld\n", i, dc_vals[i] / 8 / 1024 / 1024, mc_vals[i] / 8 / 1024 / 1024);
-  }
-
-  unsigned long min_enc = dc_vals[2]; 
+  long first_positive_val = 0;
+  long min_enc = dc_vals[5]; 
   int min_type = 0;
-  int min_base = 2;
-  for(int i = 2; i < max_base; i++) {
+  int min_base;
+  int i = 2;
+  for(; i < max_base; i++) {
+    if(dc_vals[i] > 0) {
+      min_type = 0;
+      min_enc = dc_vals[i];
+      break;
+    }
+    if(mc_vals[i] > 0) {
+      min_type = 1;
+      min_enc = mc_vals[i];
+      break;
+    }
+  }
+  min_base = i;
+
+  for(; i < max_base; i++) {
     if(dc_vals[i] > 0 && dc_vals[i] < min_enc) {
       min_type = 0;
       min_base = i;
@@ -191,13 +246,14 @@ void get_best_params(int lambda, int message_d, int message_n) {
     }
   }
 
-
-  if(min_type == 0) {
-    printf("Using ORE_MBP_DC\n");
-  } else {
-    printf("Using ORE_MBP_MC\n");
+  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_DC;
+  if(min_type != 0) {
+    // Using ORE_MBP_MC
+    pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_MC;
   }
-  printf("min_enc: %lu, min_base: %d,\n", min_enc, min_base);
+  pp->d = min_base;
+  pp->bitstr_len = nmap[min_base];
+  pp->ct_size = min_enc;
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -458,13 +514,10 @@ void ore_encrypt(ore_ciphertext_t ct, int message, ore_pp_t pp, ore_sk_t sk) {
   ore_mat_clr_clear(pp, met);
 }
 
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int bitstr_len, int base,
-    int L, cmdline_params_t cmdline_params) {
-  flint_randinit_seed(sk->randstate, cmdline_params->seed, 1);
-  pp->flags = ORE_DEFAULT;
-  pp->d = base;
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
+    cmdline_params_t cmdline_params) {
+  flint_randinit_seed_crypto(sk->randstate, "6f22bd4920e15ca0993ae3dd84bccb1e79766e22763e36e70b38bcef5a8e5b7b", 1);
   pp->L = L;
-  pp->bitstr_len = bitstr_len;
 
   if(pp->flags & ORE_MBP_NORMAL) {
     pp->kappa = 2 * pp->bitstr_len;
