@@ -11,6 +11,7 @@
 #define DEFAULT_GAMMA    DEFAULT_KAPPA
 #define DEFAULT_LAMBDA  24
 #define DEFAULT_SEED     0
+#define DEFAULT_SHA_SEED "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 #define DEFAULT_RERAND 0x1UL
 
 static inline void print_help_and_exit(const char *name, const char *extra) {
@@ -28,6 +29,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-f   skip some expensive checks (default: False)\n");
   printf("-z   construct asymmetric map (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
+  printf("-h   SHA256 seed (pass in a hex string)\n");
   if (extra)
     printf("%s\n", extra);
   abort();
@@ -40,6 +42,7 @@ struct _cmdline_params_struct{
   gghlite_flag_t flags;
   uint64_t rerand;
   mp_limb_t seed;
+  char *shaseed;
 };
 
 typedef struct _cmdline_params_struct cmdline_params_t[1];
@@ -62,11 +65,12 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
 	params->gamma  =  DEFAULT_GAMMA;
   params->lambda =  DEFAULT_LAMBDA;
   params->seed   =  DEFAULT_SEED;
+  params->shaseed = DEFAULT_SHA_SEED;
   params->flags  =  GGHLITE_FLAGS_DEFAULT;
   params->rerand =  DEFAULT_RERAND;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:g:s:vpr:dfqz")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:g:s:h:vpr:dfqz")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -79,6 +83,9 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
       break;
     case 's':
       params->seed = (long)atol(optarg);
+      break;
+    case 'h':
+      params->shaseed = optarg;
       break;
     case 'v':
       params->flags |= GGHLITE_FLAGS_VERBOSE;

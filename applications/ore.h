@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <gmp.h>
-#include <gghlite/gghlite-defs.h>
 #include <gghlite/gghlite.h>
+#include <gghlite/gghlite-defs.h>
 #include "common.h"
 
 int NUM_ENCODINGS_GENERATED;
@@ -100,10 +100,13 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 
 
 /* ORE interface */
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
-    cmdline_params_t cmdline_params);
+void ore_init_params(ore_pp_t pp, int d, int bitstr_len, long ct_size,
+    ore_flag_t flags);
+void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size);
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int L, int lambda,
+    gghlite_flag_t ggh_flags, char *shaseed);
 void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk);
-void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);
+int ore_compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);
 
 /* functions dealing with fmpz types and matrix multiplications mod fmpz_t */
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
@@ -154,14 +157,15 @@ void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
 
 /* test functions */
-int int_arrays_equal(int *arr1, int *arr2, int length);
+void run_tests();
+int int_arrays_equal(ulong *arr1, ulong *arr2, int length);
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+int test_ore(int lambda, int mspace_size, int num_messages, int d,
+    int bitstr_len, ore_flag_t flags);
 
 
-/* benchmarking functions */
-void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n);
-
+/* benchmarking info for choosing best params */
 
 int MAX_KAPPA_BENCH = 28;
 long KAPPA_BENCH[] = {

@@ -13,8 +13,6 @@ LDADD = $(top_builddir)/gghlite/libgghlite.la \
 
 LDFLAGS = -no-install
 
-include_HEADERS = ore.h
-
 bin_PROGRAMS = gghlite_params \
                gghlite_instance \
                gghlite_noise_dist \

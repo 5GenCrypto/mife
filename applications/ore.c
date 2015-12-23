@@ -2,19 +2,20 @@
 
 /**
  * TODO:
- * - parse command line params
  * - add tests
- * - add number generation and comparisons
- *
+ * - clean up API to make it easy to generalize for other functions
  *
  */
 
 int main(int argc, char *argv[]) {
+
+  run_tests();
+  exit(0);
+
   cmdline_params_t cmdline_params;
 
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
-  flint_rand_t randstate;
 
 /*
   FILE *fp = fopen("enc_sizes.out", "w"); 
@@ -24,13 +25,31 @@ int main(int argc, char *argv[]) {
 */
 
   int L = 80; // 2^L = # of total messages we can encrypt
+  int lambda = cmdline_params->lambda; // security parameter
+  int num_messages = 10;
+
+  /* message space size will be base_d ^ base_n */
+  int base_d = 10;
+  int base_n = 3;
 
   ore_pp_t pp;
   ore_sk_t sk;
 
-  get_best_params(pp, 80, 10, 3);
-  
-  printf("Estimated ciphertext size for lambda = 80: ");
+  fmpz_t message_space_size;
+  mpfr_t nt, dt, total;
+  mpfr_init(total);
+  mpfr_init_set_ui(dt, base_d, MPFR_RNDN);
+  mpfr_init_set_ui(nt, base_n, MPFR_RNDN);
+  mpfr_pow(total, dt, nt, MPFR_RNDN);  
+  fmpz_init_set_ui(message_space_size, mpfr_get_ui(total, MPFR_RNDN));
+  set_best_params(pp, lambda, total);
+  //ore_init_params(pp, 5, 5, -1, ORE_DEFAULT);
+  mpfr_clear(dt);
+  mpfr_clear(nt);
+  mpfr_clear(total);
+
+  printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
+  printf("Estimated ciphertext size for lambda = %d: ", lambda);
   const char *units[3] = {"KB","MB","GB"};
   double sd = pp->ct_size / 8.0;
   int i;
@@ -41,26 +60,22 @@ int main(int argc, char *argv[]) {
   }
   printf("%6.2f %s\n\n", sd, units[i-1]);
 
-
+  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   T = ggh_walltime(0);
-  ore_setup(pp, sk, L, cmdline_params);
+  ore_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
 
-  //test_matrix_inv(6, randstate, p);
-  //test_dary_conversion();
-
-  fmpz_t num1;
-  fmpz_init(num1);
-  fmpz_set_ui(num1, 992);
-
-  fmpz_t num2;
-  fmpz_init(num2);
-  fmpz_set_ui(num2, 101);
+  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
+  for(int i = 0; i < num_messages; i++) {
+    fmpz_init(messages[i]);
+    fmpz_randm(messages[i], sk->randstate, message_space_size);
+  }
+  fmpz_clear(message_space_size);
 
   NUM_ENCODINGS_GENERATED = 0;
 
   ore_ciphertext_t ct1;
   T = ggh_walltime(0);
-  ore_encrypt(ct1, num1, pp, sk);
+  ore_encrypt(ct1, messages[0], pp, sk);
   printf("3. Time it takes to create a single ciphertext: %8.2f s\n",
     ggh_seconds(ggh_walltime(T)));
   int num_encodings_generated = NUM_ENCODINGS_GENERATED; 
@@ -78,7 +93,7 @@ int main(int argc, char *argv[]) {
     ggh_seconds(ggh_walltime(T)));
 
   ore_ciphertext_t ct2, ct2_read;
-  ore_encrypt(ct2, num2, pp, sk);
+  ore_encrypt(ct2, messages[1], pp, sk);
   fwrite_ore_ciphertext(pp, ct2, "ct2.out");
   ore_ciphertext_clear(pp, ct2);
   fread_ore_ciphertext(pp, ct2_read, "ct2.out");
@@ -88,12 +103,34 @@ int main(int argc, char *argv[]) {
   ore_pp_t pp_read;
   fread_ore_pp(pp_read, "pp.out");
 
-  printf("Comparing %lu with %lu: ", fmpz_get_ui(num1), fmpz_get_ui(num2));
-  fmpz_clear(num1);
-  fmpz_clear(num2);
+  printf("Comparing %lu with %lu: ", fmpz_get_ui(messages[0]),
+      fmpz_get_ui(messages[1]));
+
+  for(int i = 0; i < num_messages; i++) {
+    fmpz_clear(messages[i]);
+  }
+  free(messages);
   
   T = ggh_walltime(0);
-  compare(pp_read, ct1_read, ct2_read);
+  int compare = ore_compare(pp_read, ct1_read, ct2_read);
+
+  if(compare == 0) {
+    printf("Equals\n");
+  }
+
+  if(compare == 1) {
+    printf("Less Than\n");
+  }
+
+  if(compare == 2) {
+    printf("Greater Than\n");
+  }
+
+  if(compare == -1) {
+    printf("Comparison error.\n");
+  }
+
+
 
   printf("4. Time it takes to run comparison: %8.2f s\n",
       ggh_seconds(ggh_walltime(T)));
@@ -124,7 +161,6 @@ void flint_randinit_seed_crypto(flint_rand_t randstate,
   unsigned long seed2 = strtoul(str_seed2, NULL, base);
   free(str_seed1);
   free(str_seed2);
-  printf("The seeds: %ld %ld\n", seed1, seed2);
   flint_randseed(randstate, seed1, seed2);
   if (gmp) {
     mpfr_t mpfr_seed;
@@ -171,14 +207,12 @@ int mc_num_enc(int d, int n) {
 /**
  * The message space size is d^n.
  */
-void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
+void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size) {
   int max_base = 5;
   mpfr_t dt; 
   mpfr_t nt;
-  mpfr_t total;
   mpfr_init(dt);
   mpfr_init(nt);
-  mpfr_init(total);
 
   mpfr_t tmp1;
   mpfr_t tmp2;
@@ -187,10 +221,6 @@ void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
   mpfr_t bt;
   mpfr_init(bt);
 
-  mpfr_set_ui(dt, message_d, MPFR_RNDN);
-  mpfr_set_ui(nt, message_n, MPFR_RNDN);
-  mpfr_pow(total, dt, nt, MPFR_RNDN);  
-
   long dc_vals[max_base];
   long mc_vals[max_base];
   long nmap[max_base];
@@ -198,7 +228,7 @@ void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
   for(int base = 2; base < max_base; base++) {
     // compute minimum n
     mpfr_set_ui(bt, base, MPFR_RNDN);
-    mpfr_log(tmp1, total, MPFR_RNDN);
+    mpfr_log(tmp1, message_space_size, MPFR_RNDN);
     mpfr_log(tmp2, bt, MPFR_RNDN);
     mpfr_div(tmp1, tmp1, tmp2, MPFR_RNDN);
     mpfr_ceil(tmp1, tmp1);
@@ -217,7 +247,6 @@ void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
   mpfr_clear(dt);
   mpfr_clear(bt);
   mpfr_clear(nt);
-  mpfr_clear(total);
   mpfr_clear(tmp1);
   mpfr_clear(tmp2);
 
@@ -253,14 +282,18 @@ void get_best_params(ore_pp_t pp, int lambda, int message_d, int message_n) {
     }
   }
 
-  pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_MC;
-  if(min_type != 0) {
-    // Using ORE_MBP_MC
-    pp->flags = ORE_ALL_RANDOMIZERS | ORE_MBP_MC;
-  }
-  pp->d = min_base;
-  pp->bitstr_len = nmap[min_base];
-  pp->ct_size = min_enc;
+  ore_init_params(pp, min_base, nmap[min_base], min_enc,
+      (min_type == 1) ?
+      (ORE_ALL_RANDOMIZERS | ORE_MBP_DC) : 
+      (ORE_ALL_RANDOMIZERS | ORE_MBP_MC));
+}
+
+void ore_init_params(ore_pp_t pp, int d, int bitstr_len, long ct_size,
+    ore_flag_t flags) {
+  pp->flags = flags;
+  pp->d = d; 
+  pp->bitstr_len = bitstr_len;
+  pp->ct_size = ct_size;
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -522,7 +555,7 @@ void print_ore_mat_clr(ore_pp_t pp, ore_mat_clr_t met) {
     printf("\n\n");
   }
   printf("y_clr matrices: \n");
-  for(int i = 0; i < pp->nx; i++) {
+  for(int i = 0; i < pp->ny; i++) {
     fmpz_mat_print_pretty(met->y_clr[i]);
     printf("\n\n");
   }
@@ -534,14 +567,16 @@ void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk) 
   fmpz_t index, powL, two;
   fmpz_init(index);
   fmpz_init(powL);
-  fmpz_init(two);
+  fmpz_init_set_ui(two, 2);
   fmpz_pow_ui(powL, two, pp->L); // computes powL = 2^L
+  fmpz_set_ui(index, 0);
   fmpz_randm(index, sk->randstate, powL);
   fmpz_clear(powL);
   fmpz_clear(two);
   
   ore_mat_clr_t met;
   set_matrices(met, message, pp, sk);
+
 
   if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
     apply_scalar_randomizers(met, pp, sk);     
@@ -551,9 +586,9 @@ void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk) 
   ore_mat_clr_clear(pp, met);
 }
 
-void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
-    cmdline_params_t cmdline_params) {
-  flint_randinit_seed_crypto(sk->randstate, "6f22bd4920e15ca0993ae3dd84bccb1e79766e22763e36e70b38bcef5a8e5b7b", 1);
+void ore_setup(ore_pp_t pp, ore_sk_t sk, int L, int lambda,
+    gghlite_flag_t ggh_flags, char *shaseed) {
+  flint_randinit_seed_crypto(sk->randstate, shaseed, 1);
   pp->L = L;
 
   if(pp->flags & ORE_MBP_NORMAL) {
@@ -576,10 +611,10 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int L,
 
   T = ggh_walltime(0);
   gghlite_jigsaw_init_gamma(sk->self,
-                      cmdline_params->lambda,
+                      lambda,
                       pp->kappa,
                       pp->gamma,
-                      cmdline_params->flags,
+                      ggh_flags,
                       sk->randstate);
   printf("\n");
   gghlite_params_print(sk->self->params);
@@ -1071,7 +1106,8 @@ void apply_scalar_randomizers(ore_mat_clr_t met, ore_pp_t pp, ore_sk_t sk) {
 void gen_partitioning(int *partitioning, fmpz_t index, int L, int nu) {
   int j = 0;
 
-  ulong bitstring[L];
+  ulong *bitstring = malloc(L * sizeof(ulong));
+  memset(bitstring, 0, L * sizeof(ulong));
   message_to_dary(bitstring, L, index, 2);
 
   for(; j < nu; j++) {
@@ -1084,6 +1120,7 @@ void gen_partitioning(int *partitioning, fmpz_t index, int L, int nu) {
       j++;
     }
   }
+  free(bitstring);
 }
 
 void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
@@ -1281,7 +1318,7 @@ void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
   gghlite_enc_clear(tmp);
 }
 
-void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
+int ore_compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
   gghlite_enc_mat_t tmp;
   gghlite_enc_mat_init(*pp->params_ref, tmp,
       ct1->x_enc[0]->nrows, ct2->y_enc[0]->ncols);
@@ -1302,23 +1339,22 @@ void compare(ore_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
   int equals = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][0]);
   int lessthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][1]);
   int greaterthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][2]);
-  gghlite_enc_mat_zeros_print(pp, tmp);
   gghlite_enc_mat_clear(tmp);
 
-  assert((equals + lessthan + greaterthan) == 1);
-
   if(equals) {
-    printf("EQUALS\n");
+    return 0;
   }
 
   if(lessthan) {
-    printf("LESS THAN\n");
+    return 1;
   }
 
   if(greaterthan) {
-    printf("GREATER THAN\n");
+    return 2;
   }
 
+  // error, should not reach here
+  return -1;
 }
 
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
@@ -1333,7 +1369,7 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
  * Test code
  */
 
-int int_arrays_equal(int *arr1, int *arr2, int length) {
+int int_arrays_equal(ulong *arr1, ulong *arr2, int length) {
   for (int i = 0; i < length; i++) {
     if (arr1[i] != arr2[i])
       return 1;
@@ -1341,20 +1377,22 @@ int int_arrays_equal(int *arr1, int *arr2, int length) {
   return 0;
 }
 
-/*
 void test_dary_conversion() {
   printf("Testing d-ary conversion function...                          ");
-  int dary1[4];
-  int dary2[8];
-  int dary3[4];
-  int correct1[] = {1,0,1,0};
-  int correct2[] = {0,0,0,0,5,4,1,4};
-  int correct3[] = {0,0,0,2};
+  ulong dary1[4];
+  ulong dary2[8];
+  ulong dary3[4];
+  ulong correct1[] = {1,0,1,0};
+  ulong correct2[] = {0,0,0,0,5,4,1,4};
+  ulong correct3[] = {0,0,0,2};
+  fmpz_t num1, num2, num3;
+  fmpz_init_set_ui(num1, 10);
+  fmpz_init_set_ui(num2, 1234);
+  fmpz_init_set_ui(num3, 2);
 
-
-  message_to_dary(dary1, 4, 10, 2);
-  message_to_dary(dary2, 8, 1234, 6);
-  message_to_dary(dary3, 4, 2, 11);
+  message_to_dary(dary1, 4, num1, 2);
+  message_to_dary(dary2, 8, num2, 6);
+  message_to_dary(dary3, 4, num3, 11);
 
 
   int status = 0;
@@ -1370,7 +1408,6 @@ void test_dary_conversion() {
     printf("FAIL\n");	
 
 }
-*/
 
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
   printf("\nTesting matrix_inv function...                                ");
@@ -1583,3 +1620,62 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
     return 1;
 }
 
+int test_ore(int lambda, int mspace_size, int num_messages, int d,
+    int bitstr_len, ore_flag_t flags) {
+  printf("Testing ORE...                          ");
+  int status = 0;
+  int L = 80;
+  ore_pp_t pp;
+  ore_sk_t sk;
+  ore_init_params(pp, d, bitstr_len, -1, flags);
+  
+  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
+  ore_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
+
+  fmpz_t message_space_size;
+  fmpz_init_set_ui(message_space_size, mspace_size);
+
+  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
+  for(int i = 0; i < num_messages; i++) {
+    fmpz_init(messages[i]);
+    fmpz_set_ui(messages[i], i);
+    fmpz_randm(messages[i], sk->randstate, message_space_size);
+    fmpz_print(messages[i]);
+    printf("\n");
+  }
+
+  ore_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(ore_ciphertext_t));
+  for(int i = 0; i < num_messages; i++) {
+    ore_encrypt(ciphertexts[i], messages[i], pp, sk);
+  }
+
+  for(int i = 0; i < num_messages; i++) {
+    for(int j = 0; j < num_messages; j++) {
+      int compare = ore_compare(pp, ciphertexts[i], ciphertexts[j]);
+      int true_compare = fmpz_cmp(messages[i], messages[j]);
+      if(true_compare < 0) {
+        true_compare = 1;
+      } else if(true_compare > 0) {
+        true_compare = 2;
+      }
+      printf("messages #1: %lu, message #2: %lu, compare: %d, true_compare: %d\n",
+          fmpz_get_ui(messages[i]), fmpz_get_ui(messages[j]), compare, true_compare);
+      if(compare != true_compare) {
+        status += 1;
+      }
+    }
+  }
+
+  if(status == 0) {
+    printf("SUCCESS\n");
+  } else {
+    printf("FAIL\n");
+  }
+}
+
+
+void run_tests() {
+  //test_matrix_inv(6, randstate, p);
+  test_dary_conversion();
+  test_ore(20, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL);
+}
