@@ -17,13 +17,6 @@ int main(int argc, char *argv[]) {
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
 
-/*
-  FILE *fp = fopen("enc_sizes.out", "w"); 
-  gghlite_params_test_kappa_enc_size(80, 40, fp);
-  fclose(fp);
-  exit(0);
-*/
-
   int L = 80; // 2^L = # of total messages we can encrypt
   int lambda = cmdline_params->lambda; // security parameter
   int num_messages = 10;
@@ -43,7 +36,6 @@ int main(int argc, char *argv[]) {
   mpfr_pow(total, dt, nt, MPFR_RNDN);  
   fmpz_init_set_ui(message_space_size, mpfr_get_ui(total, MPFR_RNDN));
   set_best_params(pp, lambda, total);
-  //ore_init_params(pp, 5, 5, -1, ORE_DEFAULT);
   mpfr_clear(dt);
   mpfr_clear(nt);
   mpfr_clear(total);
@@ -144,6 +136,13 @@ int main(int argc, char *argv[]) {
   ore_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
+}
+
+void generate_challenge(ore_ciphertext_t *ciphertexts, fmpz_t *messages,
+    ore_pp_t pp, ore_sk_t sk, int num_messages, int d, int n) {
+  int lambda = 80;
+  int L = 80;
+  // TODO
 }
 
 void flint_randinit_seed_crypto(flint_rand_t randstate,
@@ -576,7 +575,7 @@ void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk) 
   
   ore_mat_clr_t met;
   set_matrices(met, message, pp, sk);
-
+  //print_ore_mat_clr(pp, met);
 
   if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
     apply_scalar_randomizers(met, pp, sk);     
@@ -616,21 +615,21 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int L, int lambda,
                       pp->gamma,
                       ggh_flags,
                       sk->randstate);
-  printf("\n");
-  gghlite_params_print(sk->self->params);
-  printf("\n---\n\n");
 
   pp->params_ref = &(sk->self->params);
 
+  /*
   printf("Supporting at most 2^%d plaintexts, each in base %d,\n", pp->L,
       pp->d);
   printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
-
+*/
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
 
+  /*
   printf("1. GGH InstGen wall time:                 %8.2f s\n",
       ggh_seconds(ggh_walltime(T)));
+  */
 
   T = ggh_walltime(0);
 
@@ -680,8 +679,10 @@ void ore_setup(ore_pp_t pp, ore_sk_t sk, int L, int lambda,
 
   free(dims);
 
+  /*
   printf("2. Time it takes to generate the ORE secret key:    %8.2f s\n",
       ggh_seconds(ggh_walltime(T)));
+  */
 }
 
 // message >= 0, d >= 2
@@ -812,7 +813,7 @@ void ore_mc_clrmat_init_YREST(fmpz_mat_t m, int input, int d) {
 
 
 /**
- * Creates the first matrix in the degree-compressed version of ORE.
+ * Creates the first x-matrix in the degree-compressed version of ORE.
  *
  * This matrix has a single row (so it's actually a vector), and d columns, 
  * which each represent the bit that is being read.
@@ -829,7 +830,7 @@ void ore_dc_clrmat_init_FIRST(fmpz_mat_t m, int input, int d) {
 }
 
 /**
- * Creates the second matrix in the degree-compressed version of ORE.
+ * Creates the first y-matrix in the degree-compressed version of ORE.
  *
  * We use columns [0,d-1] to represent the bit being read, column d to represent 
  * '<', and d+1 to represent '>'.
@@ -869,17 +870,19 @@ void ore_dc_clrmat_init_SECOND(fmpz_mat_t m, int input1, int input2, int d) {
  * @param input1 A number in [0,d-1]
  * @param input2 A number in [0,d-1]
  * @param d The base
+ * @param type Either X_TYPE or Y_TYPE
  */
-void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d) {
+void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d,
+    int type) {
   fmpz_mat_init(m, d+2, d+2);
   fmpz_mat_zero(m);
   
   for(int i = 0; i < d; i++) {
     int j = -1;
     if(i < input1) {
-      j = d;
+      j = (type == X_TYPE) ? d+1 : d;
     } else if(i > input1) {
-      j = d+1;
+      j = (type == X_TYPE) ? d : d+1;
     } else { // i == input1
       j = input2;
     }
@@ -897,8 +900,9 @@ void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d) {
  * @param m The matrix
  * @param input A number in [0,d-1]
  * @param d The base
+ * @param type Either X_TYPE or Y_TYPE
  */
-void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d) {
+void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d, int type) {
   fmpz_mat_init(m, d+2, 3);
   fmpz_mat_zero(m);
   
@@ -911,10 +915,10 @@ void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d) {
     } else if(i == input) {
       j = 0;
     } else if(i < input) {
-      j = 1;
+      j = (type == X_TYPE) ? 2 : 1;
     } else {
       assert(i > input);
-      j = 2;
+      j = (type == X_TYPE) ? 1 : 2;
     }
     fmpz_set_ui(fmpz_mat_entry(m, i, j), NONZERO_VAL);
   }
@@ -1028,10 +1032,11 @@ void set_matrices(ore_mat_clr_t met, fmpz_t message, ore_pp_t pp,
       if(bc == 0) {
         ore_dc_clrmat_init_FIRST(met->x_clr[k], met->dary_repr[bc], pp->d);
       } else if(bc == pp->bitstr_len - 1) {
-        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d);
+        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d,
+            X_TYPE);
       } else {
         ore_dc_clrmat_init_MIDDLE(met->x_clr[k], met->dary_repr[bc],
-            met->dary_repr[bc+1], pp->d);
+            met->dary_repr[bc+1], pp->d, X_TYPE);
         bc++;
       }
     }
@@ -1045,10 +1050,11 @@ void set_matrices(ore_mat_clr_t met, fmpz_t message, ore_pp_t pp,
         ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
             pp->d);
       } else if((pp->bitstr_len % 2 == 1) && (k == pp->ny-1)) {
-        ore_dc_clrmat_init_LAST(met->y_clr[k], met->dary_repr[bc], pp->d);
+        ore_dc_clrmat_init_LAST(met->y_clr[k], met->dary_repr[bc], pp->d,
+            Y_TYPE);
       } else {
         ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
-            met->dary_repr[bc+1], pp->d);
+            met->dary_repr[bc+1], pp->d, Y_TYPE);
         bc++;
       }
     }
@@ -1621,7 +1627,7 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
 }
 
 int test_ore(int lambda, int mspace_size, int num_messages, int d,
-    int bitstr_len, ore_flag_t flags) {
+    int bitstr_len, ore_flag_t flags, int verbose) {
   printf("Testing ORE...                          ");
   int status = 0;
   int L = 80;
@@ -1629,7 +1635,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   ore_sk_t sk;
   ore_init_params(pp, d, bitstr_len, -1, flags);
   
-  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
+  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
   ore_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
 
   fmpz_t message_space_size;
@@ -1638,10 +1644,11 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   for(int i = 0; i < num_messages; i++) {
     fmpz_init(messages[i]);
-    fmpz_set_ui(messages[i], i);
     fmpz_randm(messages[i], sk->randstate, message_space_size);
-    fmpz_print(messages[i]);
-    printf("\n");
+    if(verbose) {
+      fmpz_print(messages[i]);
+      printf("\n");
+    }
   }
 
   ore_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(ore_ciphertext_t));
@@ -1658,8 +1665,13 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
       } else if(true_compare > 0) {
         true_compare = 2;
       }
-      printf("messages #1: %lu, message #2: %lu, compare: %d, true_compare: %d\n",
-          fmpz_get_ui(messages[i]), fmpz_get_ui(messages[j]), compare, true_compare);
+      if(verbose) {
+        printf(
+          "messages #1: %lu, message #2: %lu, compare: %d, true_compare: %d\n",
+          fmpz_get_ui(messages[i]), fmpz_get_ui(messages[j]),
+          compare, true_compare
+        );
+      }
       if(compare != true_compare) {
         status += 1;
       }
@@ -1677,5 +1689,12 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 void run_tests() {
   //test_matrix_inv(6, randstate, p);
   test_dary_conversion();
-  test_ore(20, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL);
+  test_ore(5, 1000, 10, 4, 6, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL, 0);
+  test_ore(5, 1000, 10, 4, 6, ORE_ALL_RANDOMIZERS | ORE_MBP_DC, 0);
+  test_ore(5, 1000, 10, 4, 6, ORE_ALL_RANDOMIZERS | ORE_MBP_MC, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_DC, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_MC, 0);
+
+
 }

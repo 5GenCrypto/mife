@@ -162,7 +162,7 @@ int int_arrays_equal(ulong *arr1, ulong *arr2, int length);
 void test_dary_conversion();
 int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 int test_ore(int lambda, int mspace_size, int num_messages, int d,
-    int bitstr_len, ore_flag_t flags);
+    int bitstr_len, ore_flag_t flags, int verbose);
 
 
 /* benchmarking info for choosing best params */
