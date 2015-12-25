@@ -10,6 +10,7 @@
 #include "common.h"
 
 int NUM_ENCODINGS_GENERATED;
+int PRINT_ENCODING_PROGRESS;
 uint64_t T;
 
 /* these are used for get_matrix_bit() */
@@ -82,6 +83,7 @@ struct _ore_pp_struct {
   int gamma; // should be gammax + gammay
   int kappa; // the kappa for gghlite (degree of multilinearity)
   int numR; // number of kilian matrices. should be kappa-1
+  int num_enc; // number of encodings per ciphertext
   ore_flag_t flags;
   fmpz_t p; // the prime, the order of the field
   gghlite_params_t *params_ref; // gghlite's public parameters, by reference
@@ -102,7 +104,7 @@ typedef struct _ore_sk_struct ore_sk_t[1];
 /* ORE interface */
 void ore_init_params(ore_pp_t pp, int d, int bitstr_len, long ct_size,
     ore_flag_t flags);
-void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size);
+void set_best_params(ore_pp_t pp, int lambda, fmpz_t message_space_size);
 void ore_setup(ore_pp_t pp, ore_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed);
 void ore_encrypt(ore_ciphertext_t ct, fmpz_t message, ore_pp_t pp, ore_sk_t sk);
@@ -118,8 +120,10 @@ void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
 void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
     int nrows, int ncols);
 void gghlite_enc_mat_clear(gghlite_enc_mat_t m);
+void fmpz_init_exp(fmpz_t exp, int base, int n);
 
 /* functions dealing with ORE challenge generation */
+void challenge_gen(int argc, char *argv[]);
 void ore_clear_pp_read(ore_pp_t pp);
 void ore_clear_pp(ore_pp_t pp);
 void ore_clear_sk(ore_sk_t sk);
@@ -131,12 +135,16 @@ int get_matrix_bit_normal_mbp(int input, int i, int j, int type);
 void set_matrices(ore_mat_clr_t met, fmpz_t message, ore_pp_t pp,
     ore_sk_t sk);
 void gen_partitioning(int *partitioning, fmpz_t index, int L, int nu);
-void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group);
+void mat_encode(ore_pp_t pp, ore_sk_t sk, gghlite_enc_mat_t enc,
+    fmpz_mat_t m, int *group);
 void gghlite_enc_mat_zeros_print(ore_pp_t pp, gghlite_enc_mat_t m);
 void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, fmpz_t index,
     ore_pp_t pp, ore_sk_t sk);
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);
+void flint_randinit_seed_crypto(flint_rand_t randstate,
+    char *seed, int gmp);
+
 
 /* functions dealing with file reading and writing for encodings */
 #define gghlite_enc_fprint fmpz_mod_poly_fprint 

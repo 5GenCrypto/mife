@@ -30,6 +30,7 @@ static inline void print_help_and_exit(const char *name, const char *extra) {
   printf("-z   construct asymmetric map (default: False)\n");
   printf("-s   seed (default: %d)\n",DEFAULT_SEED);
   printf("-h   SHA256 seed (pass in a hex string)\n");
+  printf("-c   Challenge generation (specify a message index to encrypt)\n");
   if (extra)
     printf("%s\n", extra);
   abort();
@@ -43,6 +44,7 @@ struct _cmdline_params_struct{
   uint64_t rerand;
   mp_limb_t seed;
   char *shaseed;
+  int challenge_index;
 };
 
 typedef struct _cmdline_params_struct cmdline_params_t[1];
@@ -68,9 +70,10 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
   params->shaseed = DEFAULT_SHA_SEED;
   params->flags  =  GGHLITE_FLAGS_DEFAULT;
   params->rerand =  DEFAULT_RERAND;
+  params->challenge_index = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "l:k:g:s:h:vpr:dfqz")) != -1) {
+  while ((c = getopt(argc, argv, "l:k:g:s:h:c:vpr:dfqz")) != -1) {
     switch(c) {
     case 'l':
       params->lambda = (long)atol(optarg);
@@ -86,6 +89,9 @@ static inline void parse_cmdline(cmdline_params_t params, int argc, char *argv[]
       break;
     case 'h':
       params->shaseed = optarg;
+      break;
+    case 'c':
+      params->challenge_index = (int) atoi(optarg);
       break;
     case 'v':
       params->flags |= GGHLITE_FLAGS_VERBOSE;

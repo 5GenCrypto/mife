@@ -4,12 +4,17 @@
  * TODO:
  * - add tests
  * - clean up API to make it easy to generalize for other functions
+ * - function for plugging in other functions besides ORE
+ *
  *
  */
 
 int main(int argc, char *argv[]) {
 
-  run_tests();
+//  run_tests();
+//  exit(0);
+  
+  challenge_gen(argc, argv);
   exit(0);
 
   cmdline_params_t cmdline_params;
@@ -17,30 +22,73 @@ int main(int argc, char *argv[]) {
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
 
-  int L = 80; // 2^L = # of total messages we can encrypt
-  int lambda = cmdline_params->lambda; // security parameter
-  int num_messages = 10;
+  int lambda = 80;
+  int num_messages = 20;
 
   /* message space size will be base_d ^ base_n */
   int base_d = 10;
-  int base_n = 3;
+  int base_n = 10;
 
   ore_pp_t pp;
   ore_sk_t sk;
 
   fmpz_t message_space_size;
-  mpfr_t nt, dt, total;
-  mpfr_init(total);
-  mpfr_init_set_ui(dt, base_d, MPFR_RNDN);
-  mpfr_init_set_ui(nt, base_n, MPFR_RNDN);
-  mpfr_pow(total, dt, nt, MPFR_RNDN);  
-  fmpz_init_set_ui(message_space_size, mpfr_get_ui(total, MPFR_RNDN));
-  set_best_params(pp, lambda, total);
-  mpfr_clear(dt);
-  mpfr_clear(nt);
-  mpfr_clear(total);
+  fmpz_init_exp(message_space_size, base_d, base_n);
+  set_best_params(pp, lambda, message_space_size);
 
   printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
+
+  /* Generate the messages first with a copied randstate */
+  flint_rand_t gen_randstate;
+  flint_randinit_seed_crypto(gen_randstate, cmdline_params->shaseed, 0);
+  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
+  printf("The plaintexts:\n");
+  for(int i = 0; i < num_messages; i++) {
+    fmpz_init(messages[i]);
+    fmpz_randm(messages[i], gen_randstate, message_space_size);
+    printf("%lu\n", fmpz_get_ui(messages[i]));
+  }
+  fmpz_clear(message_space_size);
+  flint_randclear(gen_randstate);
+  printf("\n");
+}
+
+void challenge_gen(int argc, char *argv[]) {
+  cmdline_params_t cmdline_params;
+
+  const char *name =  "Order Revealing Encryption";
+  parse_cmdline(cmdline_params, argc, argv, name, NULL);
+
+  int L = 80; // 2^L = # of total messages we can encrypt
+  int lambda = cmdline_params->lambda; // security parameter
+  int num_messages = 20;
+
+  /* message space size will be base_d ^ base_n */
+  int base_d = 10;
+  int base_n = 10;
+
+  ore_pp_t pp;
+  ore_sk_t sk;
+
+  fmpz_t message_space_size;
+  fmpz_init_exp(message_space_size, base_d, base_n);
+  set_best_params(pp, lambda, message_space_size);
+
+  printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
+
+  /* Read in the messages */
+  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
+  FILE *fp = fopen("plaintexts.secret", "r");
+  for(int i = 0; i < num_messages; i++) {
+    unsigned long m;
+    fscanf(fp, "%lu\n", &m) > 0;
+    fmpz_init_set_ui(messages[i], m);
+    printf("%lu\n", fmpz_get_ui(messages[i]));
+  }
+  fclose(fp);
+  fmpz_clear(message_space_size);
+
+
   printf("Estimated ciphertext size for lambda = %d: ", lambda);
   const char *units[3] = {"KB","MB","GB"};
   double sd = pp->ct_size / 8.0;
@@ -56,56 +104,51 @@ int main(int argc, char *argv[]) {
   T = ggh_walltime(0);
   ore_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
 
-  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
-  for(int i = 0; i < num_messages; i++) {
-    fmpz_init(messages[i]);
-    fmpz_randm(messages[i], sk->randstate, message_space_size);
+  int ci = cmdline_params->challenge_index;
+ 
+  PRINT_ENCODING_PROGRESS = 1;
+  ore_ciphertext_t *ciphertexts =
+    malloc(num_messages * sizeof(ore_ciphertext_t));
+  for(int i = 0; i < num_messages; i++) { 
+    if(ci == 0 || i == ci-1) {
+      printf("Encrypting message %d\n", i+1);
+      NUM_ENCODINGS_GENERATED = 0;
+      T = ggh_walltime(0);
+      ore_encrypt(ciphertexts[i], messages[i], pp, sk);
+      char *str = malloc(10 * sizeof(char));
+      sprintf(str, "ct%d.out", i+1);
+      fwrite_ore_ciphertext(pp, ciphertexts[i], str);
+      free(str);
+      ore_ciphertext_clear(pp, ciphertexts[i]);
+
+    }
   }
-  fmpz_clear(message_space_size);
+  PRINT_ENCODING_PROGRESS = 0;
 
-  NUM_ENCODINGS_GENERATED = 0;
-
-  ore_ciphertext_t ct1;
-  T = ggh_walltime(0);
-  ore_encrypt(ct1, messages[0], pp, sk);
-  printf("3. Time it takes to create a single ciphertext: %8.2f s\n",
-    ggh_seconds(ggh_walltime(T)));
-  int num_encodings_generated = NUM_ENCODINGS_GENERATED; 
-
-  T = ggh_walltime(0);
+  /*
   fwrite_ore_ciphertext(pp, ct1, "ct1.out");
-  printf("Time it takes to write the ciphertext to a file: %8.2f s\n",
-    ggh_seconds(ggh_walltime(T)));
   ore_ciphertext_clear(pp, ct1);
-
   ore_ciphertext_t ct1_read;
-  T = ggh_walltime(0);
   fread_ore_ciphertext(pp, ct1_read, "ct1.out");
-  printf("Time it takes to read a ciphertext from a file: %8.2f s\n",
-    ggh_seconds(ggh_walltime(T)));
 
   ore_ciphertext_t ct2, ct2_read;
   ore_encrypt(ct2, messages[1], pp, sk);
   fwrite_ore_ciphertext(pp, ct2, "ct2.out");
   ore_ciphertext_clear(pp, ct2);
   fread_ore_ciphertext(pp, ct2_read, "ct2.out");
-
-  fwrite_ore_pp(pp, "pp.out");
-  ore_clear_pp(pp);
-  ore_pp_t pp_read;
-  fread_ore_pp(pp_read, "pp.out");
-
-  printf("Comparing %lu with %lu: ", fmpz_get_ui(messages[0]),
-      fmpz_get_ui(messages[1]));
-
-  for(int i = 0; i < num_messages; i++) {
-    fmpz_clear(messages[i]);
-  }
-  free(messages);
+*/
   
-  T = ggh_walltime(0);
-  int compare = ore_compare(pp_read, ct1_read, ct2_read);
+  fwrite_ore_pp(pp, "pp.out");
 
+  free(ciphertexts);
+  free(messages);
+
+  ore_clear_pp(pp);
+  ore_clear_sk(sk);
+  mpfr_free_cache();
+  flint_cleanup();
+
+/*
   if(compare == 0) {
     printf("Equals\n");
   }
@@ -121,28 +164,49 @@ int main(int argc, char *argv[]) {
   if(compare == -1) {
     printf("Comparison error.\n");
   }
+*/
 
+}
 
-
-  printf("4. Time it takes to run comparison: %8.2f s\n",
-      ggh_seconds(ggh_walltime(T)));
-
-  printf("Number of encodings generated per ciphertext: %d\n",
-      num_encodings_generated);
-
-  ore_ciphertext_clear(pp, ct1_read);
-  ore_ciphertext_clear(pp, ct2_read);
-  ore_clear_pp_read(pp_read);
-  ore_clear_sk(sk);
-  mpfr_free_cache();
-  flint_cleanup();
+/**
+ * sets exp = base^n, where exp is an mpfr_t
+ */
+void fmpz_init_exp(fmpz_t exp, int base, int n) {
+  fmpz_init(exp);
+  fmpz_t tmp;
+  fmpz_init_set_ui(tmp, base);
+  fmpz_pow_ui(exp, tmp, n);
+  fmpz_clear(tmp);
 }
 
 void generate_challenge(ore_ciphertext_t *ciphertexts, fmpz_t *messages,
-    ore_pp_t pp, ore_sk_t sk, int num_messages, int d, int n) {
+    ore_pp_t pp, ore_sk_t sk, int num_messages, int base_d, int base_n) {
   int lambda = 80;
   int L = 80;
-  // TODO
+
+  // determine total message space size
+  fmpz_t message_space_size;
+  mpfr_t nt, dt, total;
+  mpfr_init(total);
+  mpfr_init_set_ui(dt, base_d, MPFR_RNDN);
+  mpfr_init_set_ui(nt, base_n, MPFR_RNDN);
+  mpfr_pow(total, dt, nt, MPFR_RNDN);  
+  set_best_params(pp, lambda, message_space_size);
+  mpfr_clear(dt);
+  mpfr_clear(nt);
+  mpfr_clear(total);
+
+  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
+  ore_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
+
+  for(int i = 0; i < num_messages; i++) {
+    fmpz_randm(messages[i], sk->randstate, message_space_size);
+  }
+
+  for(int i = 0; i < num_messages; i++) {
+    ore_encrypt(ciphertexts[i], messages[i], pp, sk);
+  }
+
 }
 
 void flint_randinit_seed_crypto(flint_rand_t randstate,
@@ -206,13 +270,12 @@ int mc_num_enc(int d, int n) {
 /**
  * The message space size is d^n.
  */
-void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size) {
+void set_best_params(ore_pp_t pp, int lambda, fmpz_t message_space_size) {
   int max_base = 5;
-  mpfr_t dt; 
-  mpfr_t nt;
-  mpfr_init(dt);
-  mpfr_init(nt);
 
+  mpfr_t total;
+  mpfr_init_set_ui(total, fmpz_get_ui(message_space_size), MPFR_RNDN);
+  
   mpfr_t tmp1;
   mpfr_t tmp2;
   mpfr_init(tmp1);
@@ -220,14 +283,14 @@ void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size) {
   mpfr_t bt;
   mpfr_init(bt);
 
-  long dc_vals[max_base];
-  long mc_vals[max_base];
-  long nmap[max_base];
+  long dc_vals[max_base+1];
+  long mc_vals[max_base+1];
+  long nmap[max_base+1];
 
-  for(int base = 2; base < max_base; base++) {
+  for(int base = 2; base <= max_base; base++) {
     // compute minimum n
     mpfr_set_ui(bt, base, MPFR_RNDN);
-    mpfr_log(tmp1, message_space_size, MPFR_RNDN);
+    mpfr_log(tmp1, total, MPFR_RNDN);
     mpfr_log(tmp2, bt, MPFR_RNDN);
     mpfr_div(tmp1, tmp1, tmp2, MPFR_RNDN);
     mpfr_ceil(tmp1, tmp1);
@@ -243,18 +306,17 @@ void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size) {
     mc_vals[base] = mc_enc * mc_enc_size(n);
   }
 
-  mpfr_clear(dt);
   mpfr_clear(bt);
-  mpfr_clear(nt);
   mpfr_clear(tmp1);
   mpfr_clear(tmp2);
+  mpfr_clear(total);
 
   long first_positive_val = 0;
   long min_enc = dc_vals[5]; 
   int min_type = 0;
   int min_base;
   int i = 2;
-  for(; i < max_base; i++) {
+  for(; i <= max_base; i++) {
     if(dc_vals[i] > 0) {
       min_type = 0;
       min_enc = dc_vals[i];
@@ -268,7 +330,7 @@ void set_best_params(ore_pp_t pp, int lambda, mpfr_t message_space_size) {
   }
   min_base = i;
 
-  for(; i < max_base; i++) {
+  for(; i <= max_base; i++) {
     if(dc_vals[i] > 0 && dc_vals[i] < min_enc) {
       min_type = 0;
       min_base = i;
@@ -293,6 +355,11 @@ void ore_init_params(ore_pp_t pp, int d, int bitstr_len, long ct_size,
   pp->d = d; 
   pp->bitstr_len = bitstr_len;
   pp->ct_size = ct_size;
+  if(pp->flags & ORE_MBP_DC) {
+    pp->num_enc = dc_num_enc(pp->d, pp->bitstr_len);
+  } else if(pp->flags & ORE_MBP_MC) {
+    pp->num_enc = mc_num_enc(pp->d, pp->bitstr_len);
+  }
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -320,9 +387,6 @@ void gghlite_params_clear_read(gghlite_params_t self) {
 /**
  * 
  * Members of pp that are not currently transferred:
- * pp->flags
- * params->rerand_mask
- * params->flags
  * params->x
  * params->y
  * params->D_sigma_p
@@ -331,7 +395,7 @@ void gghlite_params_clear_read(gghlite_params_t self) {
 void fwrite_ore_pp(ore_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "w");
-  fprintf(fp, "%d %d %d %d %d %d %d %d %d\n",
+  fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d\n",
     pp->bitstr_len,
     pp->d,
     pp->nx,
@@ -340,16 +404,20 @@ void fwrite_ore_pp(ore_pp_t pp, char *filepath) {
     pp->gammax,
     pp->gammay,
     pp->kappa,
-    pp->numR
+    pp->numR,
+    pp->flags,
+    pp->num_enc
   );
   fmpz_fprint(fp, pp->p);
   fprintf(fp, "\n");
-  fprintf(fp, "%zd %zd %zd %ld %ld\n",
+  fprintf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
     (*pp->params_ref)->lambda,
     (*pp->params_ref)->gamma,
     (*pp->params_ref)->kappa,
     (*pp->params_ref)->n,
-    (*pp->params_ref)->ell
+    (*pp->params_ref)->ell,
+    (*pp->params_ref)->rerand_mask,
+    (*pp->params_ref)->flags
   );
   fmpz_fprint(fp, (*pp->params_ref)->q);
   fprintf(fp, "\n");
@@ -381,7 +449,8 @@ void fwrite_ore_pp(ore_pp_t pp, char *filepath) {
 void fread_ore_pp(ore_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "r");
-  fscanf(fp, "%d %d %d %d %d %d %d %d %d\n",
+  int flag_int;
+  fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d\n",
     &pp->bitstr_len,
     &pp->d,
     &pp->nx,
@@ -390,26 +459,34 @@ void fread_ore_pp(ore_pp_t pp, char *filepath) {
     &pp->gammax,
     &pp->gammay,
     &pp->kappa,
-    &pp->numR
+    &pp->numR,
+    &flag_int,
+    &pp->num_enc
   ) > 0;
-
+  pp->flags = flag_int;
   fmpz_init(pp->p);
   fmpz_fread(fp, pp->p);
   fscanf(fp, "\n") == 1;
 
   pp->params_ref = malloc(sizeof(gghlite_params_t));
   size_t lambda, kappa, gamma, n, ell;
-  fscanf(fp, "%zd %zd %zd %ld %ld\n",
+  uint64_t rerand_mask;
+  int gghlite_flag_int;
+  fscanf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
     &lambda,
     &gamma,
     &kappa,
     &n,
-    &ell
+    &ell,
+    &rerand_mask,
+    &gghlite_flag_int
   ) > 0;
   
   gghlite_params_initzero(*pp->params_ref, lambda, kappa, gamma);
   (*pp->params_ref)->n = n;
   (*pp->params_ref)->ell = ell;
+  (*pp->params_ref)->rerand_mask = rerand_mask;
+  (*pp->params_ref)->flags = gghlite_flag_int;
 
   fmpz_fread(fp, (*pp->params_ref)->q);
   fscanf(fp, "\n") == 1;
@@ -1165,7 +1242,8 @@ void gghlite_enc_mat_clear(gghlite_enc_mat_t m) {
 }
 
 
-void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group) {
+void mat_encode(ore_pp_t pp, ore_sk_t sk, gghlite_enc_mat_t enc,
+    fmpz_mat_t m, int *group) {
   gghlite_clr_t e;
   gghlite_clr_init(e);
   for(int i = 0; i < enc->nrows; i++) {
@@ -1174,6 +1252,12 @@ void mat_encode(ore_sk_t sk, gghlite_enc_mat_t enc, fmpz_mat_t m, int *group) {
       gghlite_enc_set_gghlite_clr(enc->m[i][j], sk->self, e, 1, group, 1,
           sk->randstate);
       NUM_ENCODINGS_GENERATED++;
+      if(PRINT_ENCODING_PROGRESS) {
+        printf("Generated encoding %d / %d (Time elapsed: %8.2f s)\n",
+            NUM_ENCODINGS_GENERATED,
+            pp->num_enc,
+            ggh_seconds(ggh_walltime(T)));
+      }
     }
   }
   gghlite_clr_clear(e);
@@ -1273,12 +1357,12 @@ void set_encodings(ore_ciphertext_t ct, ore_mat_clr_t met, fmpz_t index,
   for(int j = 0; j < pp->nx; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->x_enc[j],
         met->x_clr[j]->r, met->x_clr[j]->c);
-    mat_encode(sk, ct->x_enc[j], met->x_clr[j], group_x[j]);
+    mat_encode(pp, sk, ct->x_enc[j], met->x_clr[j], group_x[j]);
   }
   for(int j = 0; j < pp->ny; j++) {
     gghlite_enc_mat_init(sk->self->params, ct->y_enc[j],
         met->y_clr[j]->r, met->y_clr[j]->c);
-    mat_encode(sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
+    mat_encode(pp, sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
   }
   
   // free group arrays
@@ -1678,6 +1762,15 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
     }
   }
 
+  for(int i = 0; i < num_messages; i++) {
+    ore_ciphertext_clear(pp, ciphertexts[i]);
+  }
+  ore_clear_pp_read(pp);
+  ore_clear_sk(sk);
+  
+  free(messages);
+  free(ciphertexts);
+
   if(status == 0) {
     printf("SUCCESS\n");
   } else {
@@ -1695,6 +1788,9 @@ void run_tests() {
   test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_DC, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_MC, 0);
+
+  mpfr_free_cache();
+  flint_cleanup();
 
 
 }
