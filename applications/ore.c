@@ -1,14 +1,5 @@
 #include "ore.h"
 
-/**
- * TODO:
- * - add tests
- * - clean up API to make it easy to generalize for other functions
- * - function for plugging in other functions besides ORE
- *
- *
- */
-
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
@@ -75,8 +66,6 @@ void mife_challenge_gen(int argc, char *argv[]) {
   fmpz_init_exp(message_space_size, base_d, base_n);
   ore_set_best_params(pp, lambda, message_space_size);
 
-  printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
-
   /* Read in the messages */
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   FILE *fp = fopen("plaintexts.secret", "r");
@@ -84,7 +73,6 @@ void mife_challenge_gen(int argc, char *argv[]) {
     unsigned long m;
     CHECK(fscanf(fp, "%lu\n", &m));
     fmpz_init_set_ui(messages[i], m);
-    printf("%lu\n", fmpz_get_ui(messages[i]));
   }
   fclose(fp);
   fmpz_clear(message_space_size);
@@ -100,6 +88,9 @@ void mife_challenge_gen(int argc, char *argv[]) {
     sd = sd/1024;
   }
   printf("%6.2f %s\n\n", sd, units[i-1]);
+
+  mife_mbp_init(pp, 2, &ore_mbp_param, &ore_mbp_kilian, &ore_mbp_ordering,
+     &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   T = ggh_walltime(0);
@@ -126,19 +117,6 @@ void mife_challenge_gen(int argc, char *argv[]) {
   }
   PRINT_ENCODING_PROGRESS = 0;
 
-/*
-  fwrite_ore_ciphertext(pp, ct1, "ct1.out");
-  ore_ciphertext_clear(pp, ct1);
-  ore_ciphertext_t ct1_read;
-  fread_ore_ciphertext(pp, ct1_read, "ct1.out");
-
-  ore_ciphertext_t ct2, ct2_read;
-  mife_encrypt(ct2, messages[1], pp, sk);
-  fwrite_ore_ciphertext(pp, ct2, "ct2.out");
-  ore_ciphertext_clear(pp, ct2);
-  fread_ore_ciphertext(pp, ct2_read, "ct2.out");
-*/
-  
   fwrite_ore_pp(pp, "pp.out");
 
   free(ciphertexts);
@@ -148,25 +126,6 @@ void mife_challenge_gen(int argc, char *argv[]) {
   mife_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
-
-/*
-  if(compare == 0) {
-    printf("Equals\n");
-  }
-
-  if(compare == 1) {
-    printf("Less Than\n");
-  }
-
-  if(compare == 2) {
-    printf("Greater Than\n");
-  }
-
-  if(compare == -1) {
-    printf("Comparison error.\n");
-  }
-*/
-
 }
 
 /**
@@ -343,23 +302,29 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size) {
     }
   }
 
-  mife_init_params(pp, min_base, nmap[min_base], min_enc,
-      (min_type == 1) ?
-      (ORE_ALL_RANDOMIZERS | ORE_MBP_DC) : 
-      (ORE_ALL_RANDOMIZERS | ORE_MBP_MC));
+  if(min_type == 1) {
+    ORE_GLOBAL_FLAGS = ORE_MBP_DC;
+  } else {
+    ORE_GLOBAL_FLAGS = ORE_MBP_MC;
+  }
+
+  mife_init_params(pp, min_base, nmap[min_base], MIFE_DEFAULT);
+
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_DC) {
+    pp->num_enc = dc_num_enc(pp->d, pp->bitstr_len);
+  } else if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
+    pp->num_enc = mc_num_enc(pp->d, pp->bitstr_len);
+  }
+  pp->ct_size = min_enc;
 }
 
-void mife_init_params(mife_pp_t pp, int d, int bitstr_len, long ct_size,
-    ore_flag_t flags) {
+void mife_init_params(mife_pp_t pp, int d, int bitstr_len, mife_flag_t flags) {
   pp->flags = flags;
   pp->d = d; 
   pp->bitstr_len = bitstr_len;
-  pp->ct_size = ct_size;
-  if(pp->flags & ORE_MBP_DC) {
-    pp->num_enc = dc_num_enc(pp->d, pp->bitstr_len);
-  } else if(pp->flags & ORE_MBP_MC) {
-    pp->num_enc = mc_num_enc(pp->d, pp->bitstr_len);
-  }
+  // FIXME get rid of these, they are not useful
+  pp->ct_size = -1;
+  pp->num_enc = -1;
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -653,7 +618,7 @@ void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   mife_mat_clr_t met;
   pp->setfn(met, message, pp, sk);
 
-  if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
+  if(! (pp->flags & MIFE_NO_RANDOMIZERS)) {
     mife_apply_randomizers(met, pp, sk);     
   }
   mife_set_encodings(ct, met, index, pp, sk);
@@ -661,29 +626,32 @@ void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   mife_mat_clr_clear(pp, met);
 }
 
+void mife_mbp_init(
+    mife_pp_t pp,
+    int num_inputs,
+    int (*paramfn)(int, int),
+    void (*kilianfn)(struct _mife_pp_struct *, int *),
+    void (*orderfn)(int, int *, int *),
+    void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
+    int (*parsefn)(char **)
+    ) {
+  pp->num_inputs = num_inputs;
+  pp->paramfn = paramfn;
+  pp->kilianfn = kilianfn;
+  pp->orderfn = orderfn;
+  pp->setfn = setfn;
+  pp->parsefn = parsefn;
+} 
+
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed) {
   flint_randinit_seed_crypto(sk->randstate, shaseed, 1);
 
-  // FIXME these are hardcoded for ORE
-  pp->num_inputs = 2;
-  pp->orderfn = &ore_mbp_ordering;
-  pp->setfn = &ore_mbp_set_matrices;
-  pp->parsefn = &ore_mbp_parse;
-
   pp->n = malloc(pp->num_inputs * sizeof(int));
-  if(pp->flags & ORE_MBP_NORMAL) {
-    pp->n[0] = pp->bitstr_len;
-    pp->n[1] = pp->bitstr_len;
-  } else if(pp->flags & ORE_MBP_DC) {
-    pp->n[0] = pp->bitstr_len / 2 + 1;
-    pp->n[1] = (pp->bitstr_len+1) / 2;
-  } else if(pp->flags & ORE_MBP_MC) {
-    pp->n[0] = pp->bitstr_len;
-    pp->n[1] = pp->bitstr_len;
+  for(int index = 0; index < pp->num_inputs; index++) { 
+    pp->n[index] = pp->paramfn(pp->bitstr_len, index);
   }
-  // ends here
-
+  
   pp->kappa = pp->n[0] + pp->n[1];
   pp->L = L;
 
@@ -723,30 +691,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   pp->numR = pp->kappa - 1;
   sk->numR = pp->numR;
   int *dims = malloc(pp->numR * sizeof(int));
-  assert(dims);
-
-  // set the kilian dimensions
-  if(pp->flags & ORE_MBP_NORMAL) {
-    for(int i = 0; i < pp->numR; i++) {
-      dims[i] = pp->d+3;
-    }
-  } else if(pp->flags & ORE_MBP_DC) {
-    dims[0] = pp->d;
-    for(int i = 1; i < pp->numR; i++) {
-      dims[i] = pp->d+2;
-    }
-  } else if(pp->flags & ORE_MBP_MC) {
-    dims[0] = pp->d;
-    for(int i = 1; i < pp->numR; i++) {
-      if(i % 2 == 1) {
-        dims[i] = 3;
-      } else {
-        dims[i] = pp->d+2;
-      }
-    }
-  } else {
-    assert(0);
-  }
+  pp->kilianfn(pp, dims);
 
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
   sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
@@ -764,11 +709,6 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   }
 
   free(dims);
-
-  /*
-  printf("2. Time it takes to generate the ORE secret key:    %8.2f s\n",
-      ggh_seconds(ggh_walltime(T)));
-  */
 }
 
 // message >= 0, d >= 2
@@ -1083,7 +1023,56 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
       fmpz_mul(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), scalar);
       fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), modp);
     }
-  }	}
+  }
+}
+
+int ore_mbp_param(int bitstr_len, int index) {
+ 
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_NORMAL) {
+    return bitstr_len;
+  }
+
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_DC) {
+    if(index == 0) {
+      return bitstr_len / 2 + 1;
+    }
+    if(index == 1) {
+      return (bitstr_len + 1) / 2;
+    }
+  }
+  
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
+    return bitstr_len;
+  }
+
+  return -1; // error
+}
+
+void ore_mbp_kilian(mife_pp_t pp, int *dims) {
+  // set the kilian dimensions
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_NORMAL) {
+    for(int i = 0; i < pp->numR; i++) {
+      dims[i] = pp->d+3;
+    }
+  } else if(ORE_GLOBAL_FLAGS & ORE_MBP_DC) {
+    dims[0] = pp->d;
+    for(int i = 1; i < pp->numR; i++) {
+      dims[i] = pp->d+2;
+    }
+  } else if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
+    dims[0] = pp->d;
+    for(int i = 1; i < pp->numR; i++) {
+      if(i % 2 == 1) {
+        dims[i] = 3;
+      } else {
+        dims[i] = pp->d+2;
+      }
+    }
+  } else {
+    assert(0);
+  }
+}
+
 
 /* sets the cleartext matrices */
 void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
@@ -1098,7 +1087,7 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     met->clr[i] = malloc(pp->n[i] * sizeof(fmpz_mat_t));
   }
 
-  if(pp->flags & ORE_MBP_NORMAL) {
+  if(ORE_GLOBAL_FLAGS & ORE_MBP_NORMAL) {
     assert(pp->n[0] == pp->n[1]);
     for(int k = 0; k < pp->n[0]; k++) {
       int dim = pp->d+3;
@@ -1117,7 +1106,7 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
         }
       }
     }
-  } else if(pp->flags & ORE_MBP_DC) {
+  } else if(ORE_GLOBAL_FLAGS & ORE_MBP_DC) {
     for(int k = 0, bc = 0; k < pp->n[0]; k++, bc++) {
       if(bc == 0) {
         ore_dc_clrmat_init_FIRST(met->clr[0][k], dary_repr[bc], pp->d);
@@ -1148,7 +1137,7 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
         bc++;
       }
     }
-  } else if(pp->flags & ORE_MBP_MC) {
+  } else if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
     for(int k = 0; k < pp->n[0]; k++) {
       if(k == 0) {
         ore_mc_clrmat_init_XFIRST(met->clr[0][k], dary_repr[k], pp->d);
@@ -1333,7 +1322,7 @@ void mife_set_encodings(ore_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
   }
   free(ptns);
 
-  if(pp->flags & ORE_SIMPLE_PARTITIONS) {
+  if(pp->flags & MIFE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
     for(int i = 0; i < pp->num_inputs; i++) {
       for(int j = 0; j < pp->n[i]; j++) {
@@ -1346,7 +1335,7 @@ void mife_set_encodings(ore_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     }
   }
 
-  if(! (pp->flags & ORE_NO_KILIAN)) {
+  if(! (pp->flags & MIFE_NO_KILIAN)) {
     // apply kilian to the cleartext matrices (overwriting them in the process)
 
     fmpz_mat_t tmp;
@@ -1742,12 +1731,16 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
 int test_ore(int lambda, int mspace_size, int num_messages, int d,
     int bitstr_len, ore_flag_t flags, int verbose) {
   printf("Testing ORE...                          ");
+  ORE_GLOBAL_FLAGS = flags;
   int status = 0;
   int L = 80;
   mife_pp_t pp;
   mife_sk_t sk;
-  mife_init_params(pp, d, bitstr_len, -1, flags);
-  
+  mife_init_params(pp, d, bitstr_len, flags);
+
+  mife_mbp_init(pp, 2, &ore_mbp_param, &ore_mbp_kilian, &ore_mbp_ordering,
+     &ore_mbp_set_matrices, &ore_mbp_parse);
+
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
   mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
 
@@ -1816,12 +1809,12 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 void run_tests() {
   //test_matrix_inv(6, randstate, p);
   test_dary_conversion();
-  test_ore(5, 16, 5, 2, 4, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL, 0);
-  test_ore(5, 16, 5, 2, 4, ORE_ALL_RANDOMIZERS | ORE_MBP_DC, 0);
-  test_ore(5, 16, 5, 2, 4, ORE_ALL_RANDOMIZERS | ORE_MBP_MC, 0);
-  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_NORMAL, 0);
-  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_DC, 0);
-  test_ore(5, 1000, 10, 5, 5, ORE_ALL_RANDOMIZERS | ORE_MBP_MC, 0);
+  test_ore(5, 16, 5, 2, 4, ORE_MBP_NORMAL, 0);
+  test_ore(5, 16, 5, 2, 4, ORE_MBP_DC, 0);
+  test_ore(5, 16, 5, 2, 4, ORE_MBP_MC, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_MBP_NORMAL, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_MBP_DC, 0);
+  test_ore(5, 1000, 10, 5, 5, ORE_MBP_MC, 0);
 
   mpfr_free_cache();
   flint_cleanup();

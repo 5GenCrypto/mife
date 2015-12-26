@@ -18,22 +18,23 @@ uint64_t T;
 #define Y_TYPE 1
 #define NONZERO_VAL 1
 
-
 typedef enum {
   //!< default behaviour
-  ORE_ALL_RANDOMIZERS = 0x00,
+  MIFE_DEFAULT = 0x00,
   
   //!< do not multiply kilian randomizers into the encodings
-  ORE_NO_KILIAN    = 0x01, 
+  MIFE_NO_KILIAN    = 0x01, 
   
   //!< do not multiply the scalar randomizers into the encodings
-  ORE_NO_RANDOMIZERS    = 0x02,
+  MIFE_NO_RANDOMIZERS    = 0x02,
 
   //!< pick a simple partitioning (x[0] is encoded at the universe, all others 
   //are encoded at the empty set.)
-  ORE_SIMPLE_PARTITIONS  = 0x04,
-  
-  //!< the MBP produced is a series of 2n (d+3) x (d+3) matrices
+  MIFE_SIMPLE_PARTITIONS  = 0x04,
+} mife_flag_t;
+
+typedef enum {
+   //!< the MBP produced is a series of 2n (d+3) x (d+3) matrices
   ORE_MBP_NORMAL = 0x08,
 
   //!< the MBP produced is degree-compressed by reading the input as: x0 (y0 y1) 
@@ -44,9 +45,10 @@ typedef enum {
   //compatible with ORE_MBP_DC, though.
   ORE_MBP_MC = 0x20,
 
-  //!, the default behavior
-  ORE_DEFAULT = ORE_ALL_RANDOMIZERS | ORE_MBP_DC,
+  ORE_DEFAULT = ORE_MBP_DC,
 } ore_flag_t;
+
+ore_flag_t ORE_GLOBAL_FLAGS = ORE_DEFAULT;
 
 struct _gghlite_enc_mat_struct {
   int nrows; // number of rows in the matrix
@@ -90,11 +92,13 @@ struct _mife_pp_struct {
   int kappa; // the kappa for gghlite (degree of multilinearity)
   int numR; // number of kilian matrices. should be kappa-1
   int num_enc; // number of encodings per ciphertext
-  ore_flag_t flags;
+  mife_flag_t flags;
   fmpz_t p; // the prime, the order of the field
   gghlite_params_t *params_ref; // gghlite's public parameters, by reference
 
   // MBP function pointers
+  int (*paramfn)(int, int); // for determining number of matrices per input
+  void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn)(int, int *, int *); // function pointer for MBP ordering
   void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t);
   int (*parsefn)(char **); // function pointer for parsing output 
@@ -104,8 +108,16 @@ typedef struct _mife_pp_struct mife_pp_t[1];
 
 
 /* MIFE interface */
-void mife_init_params(mife_pp_t pp, int d, int bitstr_len, long ct_size,
-    ore_flag_t flags);
+void mife_init_params(mife_pp_t pp, int d, int bitstr_len, mife_flag_t flags);
+void mife_mbp_init(
+    mife_pp_t pp,
+    int num_inputs,
+    int (*paramfn)(int, int),
+    void (*kilianfn)(struct _mife_pp_struct *, int *),
+    void (*orderfn)(int, int *, int *),
+    void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
+    int (*parsefn)(char **)
+    );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed);
 void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
@@ -135,6 +147,8 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size);
 void ore_ciphertext_clear(mife_pp_t pp, ore_ciphertext_t ct);
 void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);
+int ore_mbp_param(int bitstr_len, int index);
+void ore_mbp_kilian(mife_pp_t pp, int *dims);
 void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     mife_sk_t sk);
 void ore_mbp_ordering(int index, int *ip, int *jp);
