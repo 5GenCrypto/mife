@@ -57,37 +57,16 @@ struct _gghlite_enc_mat_struct {
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
 
 struct _mife_mat_clr_struct {
-  ulong *dary_repr;
-  fmpz_mat_t *x_clr;
-  fmpz_mat_t *y_clr;
+  fmpz_mat_t **clr;
 };
 
 typedef struct _mife_mat_clr_struct mife_mat_clr_t[1];
 
 struct _ore_ciphertext_struct {
-  gghlite_enc_mat_t *x_enc;
-  gghlite_enc_mat_t *y_enc;
+  gghlite_enc_mat_t **enc;
 };
 
 typedef struct _ore_ciphertext_struct ore_ciphertext_t[1];
-
-struct _mife_pp_struct {
-  long ct_size; // estimated size of a ciphertext based on # of encodings
-  int bitstr_len; // length of the plaintexts in d-ary
-  int d; // the base
-  int nx; // number of x components
-  int ny; // number of y components
-  int L; // log # of plaintexts we can support
-  int gammax; // number of indices needed for the x components
-  int gammay; // number of indices needed for the y components
-  int gamma; // should be gammax + gammay
-  int kappa; // the kappa for gghlite (degree of multilinearity)
-  int numR; // number of kilian matrices. should be kappa-1
-  int num_enc; // number of encodings per ciphertext
-  ore_flag_t flags;
-  fmpz_t p; // the prime, the order of the field
-  gghlite_params_t *params_ref; // gghlite's public parameters, by reference
-};
 
 struct _mife_sk_struct {
   int numR;
@@ -97,8 +76,31 @@ struct _mife_sk_struct {
   flint_rand_t randstate;
 };
 
-typedef struct _mife_pp_struct mife_pp_t[1];
 typedef struct _mife_sk_struct mife_sk_t[1];
+
+struct _mife_pp_struct {
+  int num_inputs; // the arity of the MBP (for comparisons, this is 2).
+  int *n; // of length num_inputs
+  int *gammas; // gamma for each input
+  long ct_size; // estimated size of a ciphertext based on # of encodings
+  int bitstr_len; // length of the plaintexts in d-ary
+  int d; // the base
+  int L; // log # of plaintexts we can support
+  int gamma; // should be sum of gammas[i] 
+  int kappa; // the kappa for gghlite (degree of multilinearity)
+  int numR; // number of kilian matrices. should be kappa-1
+  int num_enc; // number of encodings per ciphertext
+  ore_flag_t flags;
+  fmpz_t p; // the prime, the order of the field
+  gghlite_params_t *params_ref; // gghlite's public parameters, by reference
+
+  // MBP function pointers
+  void (*orderfn)(int, int *, int *); // function pointer for MBP ordering
+  void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t);
+  int (*parsefn)(char **); // function pointer for parsing output 
+};
+
+typedef struct _mife_pp_struct mife_pp_t[1];
 
 
 /* MIFE interface */
@@ -106,8 +108,9 @@ void mife_init_params(mife_pp_t pp, int d, int bitstr_len, long ct_size,
     ore_flag_t flags);
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed);
-void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp, mife_sk_t sk);
-int mife_evaluate(mife_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2);
+void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
+    mife_sk_t sk);
+int mife_evaluate(mife_pp_t pp, ore_ciphertext_t *cts);
 
 /* MIFE internal functions */
 void mife_challenge_gen(int argc, char *argv[]);
@@ -132,8 +135,10 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size);
 void ore_ciphertext_clear(mife_pp_t pp, ore_ciphertext_t ct);
 void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);
-void ore_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
+void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     mife_sk_t sk);
+void ore_mbp_ordering(int index, int *ip, int *jp);
+int ore_mbp_parse(char **m);
 
 /* functions dealing with file reading and writing for encodings */
 #define gghlite_enc_fprint fmpz_mod_poly_fprint 

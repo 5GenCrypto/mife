@@ -9,6 +9,8 @@
  *
  */
 
+#define CHECK(x) if(x < 0) { assert(0); }
+
 int main(int argc, char *argv[]) {
 
   run_tests();
@@ -30,7 +32,6 @@ int main(int argc, char *argv[]) {
   int base_n = 10;
 
   mife_pp_t pp;
-  mife_sk_t sk;
 
   fmpz_t message_space_size;
   fmpz_init_exp(message_space_size, base_d, base_n);
@@ -81,7 +82,7 @@ void mife_challenge_gen(int argc, char *argv[]) {
   FILE *fp = fopen("plaintexts.secret", "r");
   for(int i = 0; i < num_messages; i++) {
     unsigned long m;
-    fscanf(fp, "%lu\n", &m) > 0;
+    CHECK(fscanf(fp, "%lu\n", &m));
     fmpz_init_set_ui(messages[i], m);
     printf("%lu\n", fmpz_get_ui(messages[i]));
   }
@@ -125,7 +126,7 @@ void mife_challenge_gen(int argc, char *argv[]) {
   }
   PRINT_ENCODING_PROGRESS = 0;
 
-  /*
+/*
   fwrite_ore_ciphertext(pp, ct1, "ct1.out");
   ore_ciphertext_clear(pp, ct1);
   ore_ciphertext_t ct1_read;
@@ -311,7 +312,6 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size) {
   mpfr_clear(tmp2);
   mpfr_clear(total);
 
-  long first_positive_val = 0;
   long min_enc = dc_vals[5]; 
   int min_type = 0;
   int min_base;
@@ -395,19 +395,24 @@ void gghlite_params_clear_read(gghlite_params_t self) {
 void fwrite_ore_pp(mife_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "w");
-  fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d\n",
+  fprintf(fp, "%d %d %d %d %d %d %d %d\n",
+    pp->num_inputs,
     pp->bitstr_len,
     pp->d,
-    pp->nx,
-    pp->ny,
     pp->L,
-    pp->gammax,
-    pp->gammay,
     pp->kappa,
     pp->numR,
     pp->flags,
     pp->num_enc
   );
+  for(int i = 0; i < pp->num_inputs; i++) {
+    fprintf(fp, "%d ", pp->n[i]);
+  }
+  fprintf(fp, "\n");
+  for(int i = 0; i < pp->num_inputs; i++) {
+    fprintf(fp, "%d ", pp->gammas[i]);
+  }
+  fprintf(fp, "\n");
   fmpz_fprint(fp, pp->p);
   fprintf(fp, "\n");
   fprintf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
@@ -450,29 +455,34 @@ void fread_ore_pp(mife_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "r");
   int flag_int;
-  fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d\n",
+  CHECK(fscanf(fp, "%d %d %d %d %d %d %d %d\n",
+    &pp->num_inputs,
     &pp->bitstr_len,
     &pp->d,
-    &pp->nx,
-    &pp->ny,
     &pp->L,
-    &pp->gammax,
-    &pp->gammay,
     &pp->kappa,
     &pp->numR,
     &flag_int,
     &pp->num_enc
-  ) > 0;
+  ));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    CHECK(fscanf(fp, "%d ", &pp->n[i]));
+  }
+  CHECK(fscanf(fp, "\n"));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    CHECK(fscanf(fp, "%d ", &pp->gammas[i]));
+  }
+  CHECK(fscanf(fp, "\n"));
   pp->flags = flag_int;
   fmpz_init(pp->p);
   fmpz_fread(fp, pp->p);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
 
   pp->params_ref = malloc(sizeof(gghlite_params_t));
   size_t lambda, kappa, gamma, n, ell;
   uint64_t rerand_mask;
   int gghlite_flag_int;
-  fscanf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
+  CHECK(fscanf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
     &lambda,
     &gamma,
     &kappa,
@@ -480,7 +490,7 @@ void fread_ore_pp(mife_pp_t pp, char *filepath) {
     &ell,
     &rerand_mask,
     &gghlite_flag_int
-  ) > 0;
+  ));
   
   gghlite_params_initzero(*pp->params_ref, lambda, kappa, gamma);
   (*pp->params_ref)->n = n;
@@ -489,19 +499,19 @@ void fread_ore_pp(mife_pp_t pp, char *filepath) {
   (*pp->params_ref)->flags = gghlite_flag_int;
 
   fmpz_fread(fp, (*pp->params_ref)->q);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->sigma, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->sigma_p, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->sigma_s, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->ell_b, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->ell_g, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   mpfr_inp_str((*pp->params_ref)->xi, fp, mpfr_base, MPFR_RNDN);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   
   gghlite_enc_init((*pp->params_ref)->pzt, *pp->params_ref);
   gghlite_enc_init((*pp->params_ref)->ntt->w, *pp->params_ref);
@@ -510,25 +520,24 @@ void fread_ore_pp(mife_pp_t pp, char *filepath) {
   gghlite_enc_init((*pp->params_ref)->ntt->phi_inv, *pp->params_ref);
 
   gghlite_enc_fread(fp, (*pp->params_ref)->pzt);
-  fscanf(fp, "\n") == 1;
-  fscanf(fp, "%zd\n", &(*pp->params_ref)->ntt->n) == 1;
+  CHECK(fscanf(fp, "\n"));
+  CHECK(fscanf(fp, "%zd\n", &(*pp->params_ref)->ntt->n));
   gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w_inv);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi);
-  fscanf(fp, "\n") == 1;
+  CHECK(fscanf(fp, "\n"));
   gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi_inv);
   fclose(fp);
 }
 
 void fwrite_ore_ciphertext(mife_pp_t pp, ore_ciphertext_t ct, char *filepath) {
   FILE *fp = fopen(filepath, "w");
-  for(int i = 0; i < pp->nx; i++) {
-    fwrite_gghlite_enc_mat(pp, ct->x_enc[i], fp);
-  }
-  for(int i = 0; i < pp->ny; i++) {
-    fwrite_gghlite_enc_mat(pp, ct->y_enc[i], fp);
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int j = 0; j < pp->n[i]; j++) {
+      fwrite_gghlite_enc_mat(pp, ct->enc[i][j], fp);
+    }
   }
   fclose(fp);
 }
@@ -546,14 +555,13 @@ void fwrite_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
 
 void fread_ore_ciphertext(mife_pp_t pp, ore_ciphertext_t ct, char *filepath) {
   FILE *fp = fopen(filepath, "r");
-  ct->x_enc = malloc(pp->nx * sizeof(gghlite_enc_mat_t));
-  ct->y_enc = malloc(pp->ny * sizeof(gghlite_enc_mat_t));
-  assert(ct->x_enc && ct->y_enc);
-  for(int i = 0; i < pp->nx; i++) {
-    fread_gghlite_enc_mat(pp, ct->x_enc[i], fp);
-  }
-  for(int i = 0; i < pp->ny; i++) {
-    fread_gghlite_enc_mat(pp, ct->y_enc[i], fp);
+
+  ct->enc = malloc(pp->num_inputs * sizeof(gghlite_enc_mat_t *));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    ct->enc[i] = malloc(pp->n[i] * sizeof(gghlite_enc_mat_t));
+    for(int j = 0; j < pp->n[i]; j++) {
+      fread_gghlite_enc_mat(pp, ct->enc[i][j], fp);
+    }
   }
   fclose(fp);
 }
@@ -571,29 +579,30 @@ void fread_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
       gghlite_enc_init(m->m[i][j], *pp->params_ref);
       int check3 = gghlite_enc_fread(fp, m->m[i][j]);
       assert(check3 == 1);
-      fscanf(fp, "\n") == 1;
+      CHECK(fscanf(fp, "\n"));
     }
   }
 }
 
 void ore_ciphertext_clear(mife_pp_t pp, ore_ciphertext_t ct) {
-  for(int i = 0; i < pp->nx; i++) {
-    gghlite_enc_mat_clear(ct->x_enc[i]);
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int j = 0; j < pp->n[i]; j++) {
+      gghlite_enc_mat_clear(ct->enc[i][j]);
+    }
+    free(ct->enc[i]);
   }
-  for(int i = 0; i < pp->ny; i++) {
-    gghlite_enc_mat_clear(ct->y_enc[i]);
-  }
-  free(ct->x_enc);
-  free(ct->y_enc);
+  free(ct->enc);
 }
 
 void mife_clear_pp_read(mife_pp_t pp) {
-  fmpz_clear(pp->p);
+  mife_clear_pp(pp);
   gghlite_params_clear_read(*pp->params_ref);
 }
 
 void mife_clear_pp(mife_pp_t pp) {
   fmpz_clear(pp->p);
+  free(pp->n);
+  free(pp->gammas);
 }
 
 void mife_clear_sk(mife_sk_t sk) {
@@ -608,37 +617,28 @@ void mife_clear_sk(mife_sk_t sk) {
 }
 
 void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met) {
-  free(met->dary_repr);
-  for(int i = 0; i < pp->nx; i++) {
-    fmpz_mat_clear(met->x_clr[i]);
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int j = 0; j < pp->n[i]; j++) {
+      fmpz_mat_clear(met->clr[i][j]);
+    }
+    free(met->clr[i]);
   }
-  free(met->x_clr);
-  for(int i = 0; i < pp->ny; i++) {
-    fmpz_mat_clear(met->y_clr[i]);
-  }
-  free(met->y_clr);
+  free(met->clr);
 }
 
 void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) {
-  printf("dary_repr: ");
-  for(int i = 0; i < pp->bitstr_len; i++) {
-    printf("%lu ", met->dary_repr[i]);
-  }
-  printf("\n");
-  printf("x_clr matrices: \n");
-  for(int i = 0; i < pp->nx; i++) {
-    fmpz_mat_print_pretty(met->x_clr[i]);
-    printf("\n\n");
-  }
-  printf("y_clr matrices: \n");
-  for(int i = 0; i < pp->ny; i++) {
-    fmpz_mat_print_pretty(met->y_clr[i]);
-    printf("\n\n");
+  for(int i = 0; i < pp->num_inputs; i++) {
+    printf("clr[%d] matrices: \n", i);
+    for(int j = 0; j < pp->n[i]; j++) {
+      fmpz_mat_print_pretty(met->clr[i][j]);
+      printf("\n\n");
+    }
   }
   printf("\n");
 }
 
-void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp, mife_sk_t sk) {
+void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
+    mife_sk_t sk) {
   // compute a random index in the range [0,2^L]
   fmpz_t index, powL, two;
   fmpz_init(index);
@@ -651,8 +651,7 @@ void mife_encrypt(ore_ciphertext_t ct, fmpz_t message, mife_pp_t pp, mife_sk_t s
   fmpz_clear(two);
   
   mife_mat_clr_t met;
-  ore_set_matrices(met, message, pp, sk);
-  //print_mife_mat_clr(pp, met);
+  pp->setfn(met, message, pp, sk);
 
   if(! (pp->flags & ORE_NO_RANDOMIZERS)) {
     mife_apply_randomizers(met, pp, sk);     
@@ -666,23 +665,34 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed) {
   flint_randinit_seed_crypto(sk->randstate, shaseed, 1);
 
-  if(pp->flags & ORE_MBP_NORMAL) {
-    pp->nx = pp->bitstr_len;
-    pp->ny = pp->bitstr_len;
-  } else if(pp->flags & ORE_MBP_DC) {
-    pp->nx = pp->bitstr_len / 2 + 1;
-    pp->ny = (pp->bitstr_len+1) / 2;
-  } else if(pp->flags & ORE_MBP_MC) {
-    pp->nx = pp->bitstr_len;
-    pp->ny = pp->bitstr_len;
-  }
+  // FIXME these are hardcoded for ORE
+  pp->num_inputs = 2;
+  pp->orderfn = &ore_mbp_ordering;
+  pp->setfn = &ore_mbp_set_matrices;
+  pp->parsefn = &ore_mbp_parse;
 
-  pp->kappa = pp->nx + pp->ny;
+  pp->n = malloc(pp->num_inputs * sizeof(int));
+  if(pp->flags & ORE_MBP_NORMAL) {
+    pp->n[0] = pp->bitstr_len;
+    pp->n[1] = pp->bitstr_len;
+  } else if(pp->flags & ORE_MBP_DC) {
+    pp->n[0] = pp->bitstr_len / 2 + 1;
+    pp->n[1] = (pp->bitstr_len+1) / 2;
+  } else if(pp->flags & ORE_MBP_MC) {
+    pp->n[0] = pp->bitstr_len;
+    pp->n[1] = pp->bitstr_len;
+  }
+  // ends here
+
+  pp->kappa = pp->n[0] + pp->n[1];
   pp->L = L;
 
-  pp->gammax = 1 + (pp->nx-1) * (pp->L+1);
-  pp->gammay = 1 + (pp->ny-1) * (pp->L+1);
-  pp->gamma = pp->gammax + pp->gammay;
+  pp->gamma = 0;
+  pp->gammas = malloc(pp->num_inputs * sizeof(int));
+  for(int i = 0 ; i < pp->num_inputs; i++) {
+    pp->gammas[i] = 1 + (pp->n[i]-1) * (pp->L+1);
+    pp->gamma += pp->gammas[i];
+  }
 
   T = ggh_walltime(0);
   gghlite_jigsaw_init_gamma(sk->self,
@@ -1019,7 +1029,7 @@ void ore_dc_clrmat_init_SECONDANDLAST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_zero(m);
   
   for(int i = 0; i < d; i++) {
-    int j;
+    int j = -1;
     if(i == input) {
       j = 0;
     } else if(i < input) {
@@ -1075,101 +1085,99 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
     }
   }	}
 
-/* sets the cleartext matrices x_clr and y_clr */
-void ore_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
+/* sets the cleartext matrices */
+void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     mife_sk_t sk) {
-  met->dary_repr = malloc(pp->bitstr_len * sizeof(ulong));
-  message_to_dary(met->dary_repr, pp->bitstr_len, message, pp->d);
+  ulong *dary_repr = malloc(pp->bitstr_len * sizeof(ulong));
+  message_to_dary(dary_repr, pp->bitstr_len, message, pp->d);
 
-  met->x_clr = malloc(pp->nx * sizeof(fmpz_mat_t));
-  met->y_clr = malloc(pp->ny * sizeof(fmpz_mat_t));
+  assert(pp->num_inputs == 2);
+
+  met->clr = malloc(pp->num_inputs * sizeof(fmpz_mat_t *));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    met->clr[i] = malloc(pp->n[i] * sizeof(fmpz_mat_t));
+  }
 
   if(pp->flags & ORE_MBP_NORMAL) {
-    assert(pp->nx == pp->ny);
-    for (int k = 0; k < pp->nx; k++) {
+    assert(pp->n[0] == pp->n[1]);
+    for(int k = 0; k < pp->n[0]; k++) {
       int dim = pp->d+3;
-      fmpz_mat_init(met->x_clr[k], dim, dim);
-      fmpz_mat_init(met->y_clr[k], dim, dim);
+      for(int i = 0; i < pp->num_inputs; i++) {
+        fmpz_mat_init(met->clr[i][k], dim, dim);
+      }
 
-      for (int i = 0; i < dim; i++) {
+      for(int i = 0; i < dim; i++) {
         for(int j = 0; j < dim; j++) {
-          int x_digit = ore_get_matrix_bit_normal_mbp(met->dary_repr[k],
+          int x_digit = ore_get_matrix_bit_normal_mbp(dary_repr[k],
               i, j, X_TYPE);
-          int y_digit = ore_get_matrix_bit_normal_mbp(met->dary_repr[k],
+          int y_digit = ore_get_matrix_bit_normal_mbp(dary_repr[k],
               i, j, Y_TYPE);
-          fmpz_set_ui(fmpz_mat_entry(met->x_clr[k], i, j), x_digit);
-          fmpz_set_ui(fmpz_mat_entry(met->y_clr[k], i, j), y_digit);
+          fmpz_set_ui(fmpz_mat_entry(met->clr[0][k], i, j), x_digit);
+          fmpz_set_ui(fmpz_mat_entry(met->clr[1][k], i, j), y_digit);
         }
       }
     }
   } else if(pp->flags & ORE_MBP_DC) {
-
-    for(int k = 0, bc = 0; k < pp->nx; k++, bc++) {
+    for(int k = 0, bc = 0; k < pp->n[0]; k++, bc++) {
       if(bc == 0) {
-        ore_dc_clrmat_init_FIRST(met->x_clr[k], met->dary_repr[bc], pp->d);
+        ore_dc_clrmat_init_FIRST(met->clr[0][k], dary_repr[bc], pp->d);
       } else if(bc == pp->bitstr_len - 1) {
-        ore_dc_clrmat_init_LAST(met->x_clr[k], met->dary_repr[bc], pp->d,
+        ore_dc_clrmat_init_LAST(met->clr[0][k], dary_repr[bc], pp->d,
             X_TYPE);
       } else {
-        ore_dc_clrmat_init_MIDDLE(met->x_clr[k], met->dary_repr[bc],
-            met->dary_repr[bc+1], pp->d, X_TYPE);
+        ore_dc_clrmat_init_MIDDLE(met->clr[0][k], dary_repr[bc],
+            dary_repr[bc+1], pp->d, X_TYPE);
         bc++;
       }
     }
     
-    for(int k = 0, bc = 0; k < pp->ny; k++, bc++) {
-      if(k == 0 && pp->ny > 1) {
-        ore_dc_clrmat_init_SECOND(met->y_clr[k], met->dary_repr[bc],
-            met->dary_repr[bc+1], pp->d);
+    for(int k = 0, bc = 0; k < pp->n[1]; k++, bc++) {
+      if(k == 0 && pp->n[1] > 1) {
+        ore_dc_clrmat_init_SECOND(met->clr[1][k], dary_repr[bc],
+            dary_repr[bc+1], pp->d);
         bc++;
-      } else if(k == 0 && pp->ny == 1) {
-        ore_dc_clrmat_init_SECONDANDLAST(met->y_clr[k], met->dary_repr[bc],
+      } else if(k == 0 && pp->n[1] == 1) {
+        ore_dc_clrmat_init_SECONDANDLAST(met->clr[1][k], dary_repr[bc],
             pp->d);
-      } else if((pp->bitstr_len % 2 == 1) && (k == pp->ny-1)) {
-        ore_dc_clrmat_init_LAST(met->y_clr[k], met->dary_repr[bc], pp->d,
+      } else if((pp->bitstr_len % 2 == 1) && (k == pp->n[1]-1)) {
+        ore_dc_clrmat_init_LAST(met->clr[1][k], dary_repr[bc], pp->d,
             Y_TYPE);
       } else {
-        ore_dc_clrmat_init_MIDDLE(met->y_clr[k], met->dary_repr[bc],
-            met->dary_repr[bc+1], pp->d, Y_TYPE);
+        ore_dc_clrmat_init_MIDDLE(met->clr[1][k], dary_repr[bc],
+            dary_repr[bc+1], pp->d, Y_TYPE);
         bc++;
       }
     }
   } else if(pp->flags & ORE_MBP_MC) {
-    for(int k = 0; k < pp->nx; k++) {
+    for(int k = 0; k < pp->n[0]; k++) {
       if(k == 0) {
-        ore_mc_clrmat_init_XFIRST(met->x_clr[k], met->dary_repr[k], pp->d);
+        ore_mc_clrmat_init_XFIRST(met->clr[0][k], dary_repr[k], pp->d);
       } else {
-        ore_mc_clrmat_init_XREST(met->x_clr[k], met->dary_repr[k], pp->d);
+        ore_mc_clrmat_init_XREST(met->clr[0][k], dary_repr[k], pp->d);
       }
     }
-    for(int k = 0; k < pp->ny; k++) {
+    for(int k = 0; k < pp->n[1]; k++) {
       if(k == 0) {
-        ore_mc_clrmat_init_YFIRST(met->y_clr[k], met->dary_repr[k], pp->d);
+        ore_mc_clrmat_init_YFIRST(met->clr[1][k], dary_repr[k], pp->d);
       } else {
-        ore_mc_clrmat_init_YREST(met->y_clr[k], met->dary_repr[k], pp->d);
+        ore_mc_clrmat_init_YREST(met->clr[1][k], dary_repr[k], pp->d);
       }
     }
   } else {
     assert(0);
   }
-    
+  free(dary_repr);    
 }
 
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk) {
-  for(int k = 0; k < pp->nx; k++) {
-    fmpz_t x_rand;
-    fmpz_init(x_rand);
-    fmpz_randm(x_rand, sk->randstate, pp->p);
-    fmpz_mat_scalar_mul_modp(met->x_clr[k], x_rand, pp->p);
-    fmpz_clear(x_rand);
-  }
-
-  for(int k = 0; k < pp->ny; k++) {
-    fmpz_t y_rand;
-    fmpz_init(y_rand);
-    fmpz_randm(y_rand, sk->randstate, pp->p);
-    fmpz_mat_scalar_mul_modp(met->y_clr[k], y_rand, pp->p);
-    fmpz_clear(y_rand);
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int k = 0; k < pp->n[i]; k++) {
+      fmpz_t rand;
+      fmpz_init(rand);
+      fmpz_randm(rand, sk->randstate, pp->p);
+      fmpz_mat_scalar_mul_modp(met->clr[i][k], rand, pp->p);
+      fmpz_clear(rand);
+    }
   }
 }
 
@@ -1272,107 +1280,127 @@ void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m) {
   }
 }
 
+
+// index ranges from [0, kappa - 1]
+void ore_mbp_ordering(int index, int *ip, int *jp) {
+  *ip = index % 2;
+  *jp = index / 2;
+}
+
+int ore_mbp_parse(char **m) {
+  if(m[0][0] + m[0][1] + m[0][2] != 1)
+    return -1;
+
+  for(int i = 0; i < 3; i++) {
+    if(m[0][i] == 1)
+      return i;
+  }
+
+  return -1;
+}
+
 void mife_set_encodings(ore_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk) {
 
-  int *ptnx = malloc(pp->gammax * sizeof(int));
-  int *ptny = malloc(pp->gammay * sizeof(int));
-  mife_gen_partitioning(ptnx, index, pp->L, pp->nx);
-  mife_gen_partitioning(ptny, index, pp->L, pp->ny);
-
+  int **ptns = malloc(pp->num_inputs * sizeof(int *));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    ptns[i] = malloc(pp->gammas[i] * sizeof(int));
+    mife_gen_partitioning(ptns[i], index, pp->L, pp->n[i]);
+  }
 
   /* construct the partitions in the group array form */
-  int **group_x = malloc(pp->nx * sizeof(int *));
-  int **group_y = malloc(pp->ny * sizeof(int *));
-  for(int j = 0; j < pp->nx; j++) {
-    group_x[j] = malloc(pp->gamma * sizeof(int));
-    memset(group_x[j], 0, pp->gamma * sizeof(int));
-    for(int k = 0; k < pp->gammax; k++) {
-      if(ptnx[k] == j) {
-        group_x[j][k] = 1;
+  int ***groups = malloc(pp->num_inputs * sizeof(int **));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    int gamma_offset = 0;
+    for(int h = 0; h < i; h++) {
+      gamma_offset += pp->gammas[h];
+    }
+
+    groups[i] = malloc(pp->n[i] * sizeof(int *));
+    for(int j = 0; j < pp->n[i]; j++) {
+      groups[i][j] = malloc(pp->gamma * sizeof(int));
+      memset(groups[i][j], 0, pp->gamma * sizeof(int));
+      for(int k = 0; k < pp->gammas[i]; k++) {
+        if(ptns[i][k] == j) {
+          groups[i][j][k + i * pp->gammas[0]] = 1;
+        }
       }
     }
   }
 
-  for(int j = 0; j < pp->ny; j++) {
-    group_y[j] = malloc(pp->gamma * sizeof(int));
-    memset(group_y[j], 0, pp->gamma * sizeof(int));
-    for(int k = 0; k < pp->gammay; k++) {
-      if(ptny[k] == j) {
-        group_y[j][k + pp->gammax] = 1;
-      }
-    }
+  for(int i = 0; i < pp->num_inputs; i++) {
+    free(ptns[i]);
   }
-
-  free(ptnx);
-  free(ptny);
+  free(ptns);
 
   if(pp->flags & ORE_SIMPLE_PARTITIONS) {
     // override group arrays with trivial partitioning
-    for(int j = 0; j < pp->nx; j++) {
-      memset(group_x[j], 0, pp->gamma * sizeof(int));
+    for(int i = 0; i < pp->num_inputs; i++) {
+      for(int j = 0; j < pp->n[i]; j++) {
+        memset(groups[i][j], 0, pp->gamma * sizeof(int));
+      }
     }
-    for(int j = 0; j < pp->ny; j++) {
-      memset(group_y[j], 0, pp->gamma * sizeof(int));
-    }
+    
     for(int k = 0; k < pp->gamma; k++) {
-      group_x[0][k] = 1;
+      groups[0][0][k] = 1;
     }
   }
 
   if(! (pp->flags & ORE_NO_KILIAN)) {
     // apply kilian to the cleartext matrices (overwriting them in the process)
-    fmpz_mat_t tmp;
-    fmpz_mat_init(tmp, met->x_clr[0]->r, sk->R[0]->c);
-    fmpz_mat_mul(tmp, met->x_clr[0], sk->R[0]);
-    fmpz_mat_set(met->x_clr[0], tmp);
-    fmpz_mat_clear(tmp);
-   
-    for(int j = 1; j < pp->nx; j++) {
-      fmpz_mat_init(tmp, sk->R_inv[2 * j - 1]->r, met->x_clr[j]->c);
-      fmpz_mat_mul(tmp, sk->R_inv[2 * j - 1], met->x_clr[j]);
-      if(2 * j < pp->numR) {
-        fmpz_mat_mul(tmp, tmp, sk->R[2 * j]);
-      }
-      fmpz_mat_set(met->x_clr[j], tmp);
-      fmpz_mat_clear(tmp);
-    }
 
-    for(int j = 0; j < pp->ny; j++) {
-      fmpz_mat_init(tmp, sk->R_inv[2 * j]->r, met->y_clr[j]->c);
-      fmpz_mat_mul(tmp, sk->R_inv[2 * j], met->y_clr[j]);
-      if(2 * j + 1 < pp->numR) {
-        fmpz_mat_mul(tmp, tmp, sk->R[2 * j + 1]);
+    fmpz_mat_t tmp;
+
+    for(int index = 0; index < pp->kappa; index++) {
+      int i, j;
+      pp->orderfn(index, &i, &j);
+
+      // first one
+      if(index == 0) {
+        fmpz_mat_init(tmp, met->clr[i][j]->r, sk->R[0]->c);
+        fmpz_mat_mul(tmp, met->clr[i][j], sk->R[0]);
+        fmpz_mat_set(met->clr[i][j], tmp);
+        fmpz_mat_clear(tmp);
+        continue;
       }
-      fmpz_mat_set(met->y_clr[j], tmp);
+
+      // last one
+      if(index == pp->kappa - 1) {
+        fmpz_mat_init(tmp, sk->R_inv[pp->numR-1]->r, met->clr[i][j]->c);
+        fmpz_mat_mul(tmp, sk->R_inv[pp->numR-1], met->clr[i][j]);
+        fmpz_mat_set(met->clr[i][j], tmp);
+        fmpz_mat_clear(tmp);
+        continue;
+      }
+      
+      // all others
+      fmpz_mat_init(tmp, sk->R_inv[index-1]->r, met->clr[i][j]->c);
+      fmpz_mat_mul(tmp, sk->R_inv[index-1], met->clr[i][j]);
+      fmpz_mat_mul(tmp, tmp, sk->R[index]);
+      fmpz_mat_set(met->clr[i][j], tmp);
       fmpz_mat_clear(tmp);
     }
   }
 
   // encode
-  ct->x_enc = malloc(pp->nx * sizeof(gghlite_enc_mat_t));
-  ct->y_enc = malloc(pp->ny * sizeof(gghlite_enc_mat_t));
-  assert(ct->x_enc && ct->y_enc);
-  for(int j = 0; j < pp->nx; j++) {
-    gghlite_enc_mat_init(sk->self->params, ct->x_enc[j],
-        met->x_clr[j]->r, met->x_clr[j]->c);
-    mife_mat_encode(pp, sk, ct->x_enc[j], met->x_clr[j], group_x[j]);
-  }
-  for(int j = 0; j < pp->ny; j++) {
-    gghlite_enc_mat_init(sk->self->params, ct->y_enc[j],
-        met->y_clr[j]->r, met->y_clr[j]->c);
-    mife_mat_encode(pp, sk, ct->y_enc[j], met->y_clr[j], group_y[j]);
+  ct->enc = malloc(pp->num_inputs * sizeof(gghlite_enc_mat_t *));
+  for(int i = 0; i < pp->num_inputs; i++) {
+    ct->enc[i] = malloc(pp->n[i] * sizeof(gghlite_enc_mat_t));
+    for(int j = 0; j < pp->n[i]; j++) {
+      gghlite_enc_mat_init(sk->self->params, ct->enc[i][j],
+          met->clr[i][j]->r, met->clr[i][j]->c);
+      mife_mat_encode(pp, sk, ct->enc[i][j], met->clr[i][j], groups[i][j]);
+    }
   }
   
   // free group arrays
-  for(int j = 0; j < pp->nx; j++) {
-    free(group_x[j]);
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int j = 0; j < pp->n[i]; j++) {
+      free(groups[i][j]);
+    }
+    free(groups[i]);
   }
-  free(group_x);
-  for(int j = 0; j < pp->ny; j++) {
-    free(group_y[j]);
-  }
-  free(group_y);
+  free(groups);
 }
 
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
@@ -1407,43 +1435,44 @@ void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
   gghlite_enc_clear(tmp);
 }
 
-int mife_evaluate(mife_pp_t pp, ore_ciphertext_t ct1, ore_ciphertext_t ct2) {
+int mife_evaluate(mife_pp_t pp, ore_ciphertext_t *cts) {
   gghlite_enc_mat_t tmp;
-  gghlite_enc_mat_init(*pp->params_ref, tmp,
-      ct1->x_enc[0]->nrows, ct2->y_enc[0]->ncols);
-  gghlite_enc_mat_mul(*pp->params_ref, tmp, ct1->x_enc[0], ct2->y_enc[0]);
 
-  for(int i = 0, xc = 1, yc = 1; i < pp->nx + pp->ny - 2; i++) {
-    if(i % 2 == 0) {
-      // multiply tmp by x
-      gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, ct1->x_enc[xc]);
-      xc++;
-    } else {
-      // multiply tmp by y
-      gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, ct2->y_enc[yc]);
-      yc++;
+  for(int index = 1; index < pp->kappa; index++) {
+    int i, j;
+    pp->orderfn(index, &i, &j);
+    
+    if(index == 1) {
+      // multiply the 0th index with the 1st index
+      int i0, j0;
+      pp->orderfn(0, &i0, &j0);
+      gghlite_enc_mat_init(*pp->params_ref, tmp,
+        cts[i0]->enc[i0][j0]->nrows, cts[i]->enc[i][j]->ncols);
+      gghlite_enc_mat_mul(*pp->params_ref, tmp,
+        cts[i0]->enc[i0][j0], cts[i]->enc[i][j]);
+      continue;
     }
-  } 
-	
-  int equals = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][0]);
-  int lessthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][1]);
-  int greaterthan = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[0][2]);
+
+    gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
+  }
+
+  char **result = malloc(tmp->nrows * sizeof(char *));
+  for(int i = 0; i < tmp->nrows; i++) {
+    result[i] = malloc(tmp->ncols * sizeof(char));
+    for(int j = 0; j < tmp->ncols; j++) {
+      result[i][j] = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[i][j]);
+    }
+  }
   gghlite_enc_mat_clear(tmp);
 
-  if(equals) {
-    return 0;
-  }
+  int ret = pp->parsefn(result);
 
-  if(lessthan) {
-    return 1;
+  for(int i = 0; i < tmp->nrows; i++) {
+    free(result[i]);
   }
+  free(result);
 
-  if(greaterthan) {
-    return 2;
-  }
-
-  // error, should not reach here
-  return -1;
+  return ret;
 }
 
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {
@@ -1532,6 +1561,7 @@ int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
   fmpz_mat_clear(inv);
   fmpz_mat_clear(prod);
   fmpz_mat_clear(identity);
+  return status;
 }
 
 /**
@@ -1741,7 +1771,11 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   for(int i = 0; i < num_messages; i++) {
     for(int j = 0; j < num_messages; j++) {
-      int compare = mife_evaluate(pp, ciphertexts[i], ciphertexts[j]);
+      ore_ciphertext_t *cts = malloc(2 * sizeof(ore_ciphertext_t));
+      memcpy(cts[0], ciphertexts[i], sizeof(ore_ciphertext_t));
+      memcpy(cts[1], ciphertexts[j], sizeof(ore_ciphertext_t));
+
+      int compare = mife_evaluate(pp, cts);
       int true_compare = fmpz_cmp(messages[i], messages[j]);
       if(true_compare < 0) {
         true_compare = 1;
@@ -1775,6 +1809,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   } else {
     printf("FAIL\n");
   }
+  return status;
 }
 
 
