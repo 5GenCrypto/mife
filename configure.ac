@@ -42,7 +42,7 @@ if test "x$enable_heuristics" = x"yes"; then
    AC_DEFINE(GGHLITE_HEURISTICS,1,[Define whether to enable performance improvements])
 fi
 
-AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile applications/ore_dir/Makefile])
+AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile applications/ore_dir/Makefile mife/Makefile])
 
 AC_CONFIG_SUBDIRS([dgs])
 

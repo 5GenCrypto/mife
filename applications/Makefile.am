@@ -7,6 +7,7 @@ AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint
 LDADD = $(top_builddir)/gghlite/libgghlite.la \
 	$(top_builddir)/dgs/libdgs.la \
 	$(top_builddir)/oz/liboz.la \
+	$(top_builddir)/mife/libmife.la \
         $(top_builddir)/dgsl/libdgsl.la \
 	-L$(top_builddir)/flint -lflint \
         -lgmp -lmpfr -lm
