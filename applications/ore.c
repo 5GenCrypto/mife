@@ -4,12 +4,13 @@
 
 int main(int argc, char *argv[]) {
 
-  run_tests();
-  exit(0);
-  
-  mife_challenge_gen(argc, argv);
-  exit(0);
+  //run_tests();
+  ore_challenge_gen(argc, argv);
+  //generate_plaintexts(argc, argv);
 
+}
+
+void generate_plaintexts(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
   const char *name =  "Order Revealing Encryption";
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
   printf("\n");
 }
 
-void mife_challenge_gen(int argc, char *argv[]) {
+void ore_challenge_gen(int argc, char *argv[]) {
   cmdline_params_t cmdline_params;
 
   const char *name =  "Order Revealing Encryption";
@@ -126,36 +127,6 @@ void mife_challenge_gen(int argc, char *argv[]) {
   mife_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
-}
-
-void generate_challenge(mife_ciphertext_t *ciphertexts, fmpz_t *messages,
-    mife_pp_t pp, mife_sk_t sk, int num_messages, int base_d, int base_n) {
-  int lambda = 80;
-  int L = 80;
-
-  // determine total message space size
-  fmpz_t message_space_size;
-  mpfr_t nt, dt, total;
-  mpfr_init(total);
-  mpfr_init_set_ui(dt, base_d, MPFR_RNDN);
-  mpfr_init_set_ui(nt, base_n, MPFR_RNDN);
-  mpfr_pow(total, dt, nt, MPFR_RNDN);  
-  ore_set_best_params(pp, lambda, message_space_size);
-  mpfr_clear(dt);
-  mpfr_clear(nt);
-  mpfr_clear(total);
-
-  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
-  mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
-
-  for(int i = 0; i < num_messages; i++) {
-    fmpz_randm(messages[i], sk->randstate, message_space_size);
-  }
-
-  for(int i = 0; i < num_messages; i++) {
-    mife_encrypt(ciphertexts[i], messages[i], pp, sk);
-  }
-
 }
 
 long dc_enc_size(int n) {
@@ -787,7 +758,6 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
 
 void run_tests() {
-  //test_matrix_inv(6, randstate, p);
   test_dary_conversion();
   test_ore(5, 16, 5, 2, 4, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 4, ORE_MBP_DC, 0);

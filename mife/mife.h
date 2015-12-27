@@ -102,7 +102,6 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 
 /* MIFE internal functions */
-void mife_challenge_gen(int argc, char *argv[]);
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk);
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk);
@@ -148,5 +147,10 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
 void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
+
+/* test functions */
+int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+int int_arrays_equal(ulong *arr1, ulong *arr2, int length);
+void test_dary_conversion();
 
 #endif /* _MIFE_H_ */

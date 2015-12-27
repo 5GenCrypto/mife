@@ -33,6 +33,8 @@ typedef enum {
 ore_flag_t ORE_GLOBAL_FLAGS = ORE_DEFAULT;
 
 /* functions dealing with ORE challenge generation */
+void generate_plaintexts(int argc, char *argv[]);
+void ore_challenge_gen(int argc, char *argv[]);
 void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);
 int ore_mbp_param(int bitstr_len, int index);
@@ -44,10 +46,6 @@ int ore_mbp_parse(char **m);
 
 /* test functions */
 void run_tests();
-int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
-int int_arrays_equal(ulong *arr1, ulong *arr2, int length);
-void test_dary_conversion();
-int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
 int test_ore(int lambda, int mspace_size, int num_messages, int d,
     int bitstr_len, ore_flag_t flags, int verbose);
 
