@@ -338,7 +338,9 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   fmpz_init_set_ui(two, 2);
   fmpz_pow_ui(powL, two, pp->L); // computes powL = 2^L
   fmpz_set_ui(index, 0);
+  printf("about to use randomness in encrypt\n");
   fmpz_randm(index, sk->randstate, powL);
+  printf("just used randomness in encrypt\n");
   fmpz_clear(powL);
   fmpz_clear(two);
   

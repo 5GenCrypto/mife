@@ -1,11 +1,29 @@
+/**
+ * do the following to generate a seed:
+ * $ cat /dev/urandom | head -c 1024 | sha256sum | head -c 32 && echo
+ *
+ */
+
 #include "ore.h"
+#include <aesrand/aesrand.h>
 
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
+  aes_randstate_t state;
+  aesrand_init(state);
+
+  for(int i = 0; i < 20; i++) {
+    mpz_t p, c;
+    mpz_init(p);
+    mpz_init(c);
+    mpz_set_ui(c, 2980948);
+    mpz_urandomm_aes(p, state, c);
+    gmp_printf("%Zd\n", p);
+  }
 
   //run_tests();
-  ore_challenge_gen(argc, argv);
+  //ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
 
 }
@@ -693,7 +711,9 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
      &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
+  printf("about to run mife setup\n");
   mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
+  printf("just ran mife setup\n");
 
   fmpz_t message_space_size;
   fmpz_init_set_ui(message_space_size, mspace_size);

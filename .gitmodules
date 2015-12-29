@@ -3,7 +3,7 @@
 	url = https://bitbucket.org/malb/dgs.git
 [submodule "flint"]
 	path = flint
-	url = https://github.com/wbhart/flint2.git
+  url = https://github.com/wbhart/flint2.git
 [submodule "applications/ore_dir/jsmn"]
 	path = applications/ore_dir/jsmn
   url = https://github.com/zserge/jsmn.git

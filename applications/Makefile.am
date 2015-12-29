@@ -4,13 +4,14 @@ AM_CFLAGS = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -fopenmp -Wall -
 
 AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint
 
-LDADD = $(top_builddir)/gghlite/libgghlite.la \
+LDADD = $(top_builddir)/aesrand/libaesrand.la \
+	$(top_builddir)/mife/libmife.la \
 	$(top_builddir)/dgs/libdgs.la \
 	$(top_builddir)/oz/liboz.la \
-	$(top_builddir)/mife/libmife.la \
+	$(top_builddir)/gghlite/libgghlite.la \
         $(top_builddir)/dgsl/libdgsl.la \
 	-L$(top_builddir)/flint -lflint \
-        -lgmp -lmpfr -lm
+        -lgmp -lmpfr -lm -lssl -lcrypto
 
 LDFLAGS = -no-install
 
