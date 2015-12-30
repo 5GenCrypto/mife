@@ -9,8 +9,8 @@ int main(int argc, char *argv[]) {
 
   print_header(name, cmdline_params);
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, cmdline_params->seed, 1);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, cmdline_params->shaseed);
 
   uint64_t t = ggh_walltime(0);
   uint64_t t_total = ggh_walltime(0);
@@ -49,11 +49,11 @@ int main(int argc, char *argv[]) {
   // hence avoid this costly step most of the time by doing it only twice and by then computing the
   // remaining elements from those two elements using cheap operations. The reported times still
   // refer to the expensive step for fairness.
-  fmpz_randm(a[0], randstate, p);
+  fmpz_randm_aes(a[0], randstate, p);
   fmpz_mul(acc, acc, a[0]);
   fmpz_mod(acc, acc, p);
 
-  fmpz_randm(a[1], randstate, p);
+  fmpz_randm_aes(a[1], randstate, p);
   fmpz_mul(acc, acc, a[1]);
   fmpz_mod(acc, acc, p);
 
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
          status==0,
          ggh_seconds(t_gen), ggh_seconds(t_enc), ggh_seconds(t_mul), ggh_seconds(t_total));
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   mpfr_free_cache();
   flint_cleanup();
   return status;

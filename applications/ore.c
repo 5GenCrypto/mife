@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
   aes_randclear(state);
   */
 
-  run_tests();
-  //ore_challenge_gen(argc, argv);
+  //run_tests();
+  ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
 
 }

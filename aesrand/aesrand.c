@@ -6,7 +6,7 @@ void aes_randinit(aes_randstate_t state) {
   state->ctx = EVP_CIPHER_CTX_new();
   state->key = "12345678901234567890123456789012";
   state->iv = "000000000000";
-  EVP_EncryptInit_ex (state->ctx, EVP_aes_256_gcm(), NULL, state->key,
+  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
       state->iv);
 }
 

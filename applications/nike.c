@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
          cmdline_params->seed);
   printf("#############################################all logs are base two##\n\n");
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, cmdline_params->seed, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
 
   if (verbose)
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
   free(b);
   gghlite_params_clear(params);
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   mpfr_free_cache();
   flint_cleanup();
   return ret;

@@ -1,6 +1,3 @@
-[submodule "dgs"]
-	path = dgs
-	url = https://bitbucket.org/malb/dgs.git
 [submodule "flint"]
 	path = flint
   url = https://github.com/wbhart/flint2.git
