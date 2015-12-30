@@ -88,6 +88,10 @@ void ore_challenge_gen(int argc, char *argv[]) {
   /* Read in the messages */
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   FILE *fp = fopen("plaintexts.secret", "r");
+  if(!fp) {
+    printf("ERROR: Could not find file plaintexts.secret\n");
+    exit(1);
+  }
   for(int i = 0; i < num_messages; i++) {
     unsigned long m;
     CHECK(fscanf(fp, "%lu\n", &m));
@@ -145,6 +149,7 @@ void ore_challenge_gen(int argc, char *argv[]) {
   mife_clear_sk(sk);
   mpfr_free_cache();
   flint_cleanup();
+  printf("\nSUCCESS\n");
 }
 
 long dc_enc_size(int n) {
