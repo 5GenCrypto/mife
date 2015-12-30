@@ -2,6 +2,8 @@
  * do the following to generate a seed:
  * $ cat /dev/urandom | head -c 1024 | sha256sum | head -c 32 && echo
  *
+ * And then use -h ${seed}
+ *
  */
 
 #include "ore.h"
@@ -9,19 +11,6 @@
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
-  /*
-  aes_randstate_t state;
-  aes_randinit(state);
-
-  for(int i = 0; i < 50; i++) {
-    mpfr_t rop;
-    mpfr_init(rop);
-    mpfr_urandomb_aes(rop, state);
-    mpfr_printf("%.53Rf\n", rop);
-  }
-  aes_randclear(state);
-  */
-
   //run_tests();
   ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
@@ -101,7 +90,7 @@ void ore_challenge_gen(int argc, char *argv[]) {
   fmpz_clear(message_space_size);
 
 
-  printf("Estimated ciphertext size for lambda = %d: ", lambda);
+  printf("Estimated ciphertext size for lambda = 80: ");
   const char *units[3] = {"KB","MB","GB"};
   double sd = pp->ct_size / 8.0;
   int i;
@@ -116,8 +105,9 @@ void ore_challenge_gen(int argc, char *argv[]) {
      &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
-  T = ggh_walltime(0);
+  reset_T();
   mife_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
+  printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
   int ci = cmdline_params->challenge_index;
  
@@ -128,7 +118,7 @@ void ore_challenge_gen(int argc, char *argv[]) {
     if(ci == 0 || i == ci-1) {
       printf("Encrypting message %d\n", i+1);
       NUM_ENCODINGS_GENERATED = 0;
-      T = ggh_walltime(0);
+      reset_T();
       mife_encrypt(ciphertexts[i], messages[i], pp, sk);
       char *str = malloc(10 * sizeof(char));
       sprintf(str, "ct%d.out", i+1);

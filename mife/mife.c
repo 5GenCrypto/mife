@@ -357,7 +357,6 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     pp->gamma += pp->gammas[i];
   }
 
-  T = ggh_walltime(0);
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
                       pp->kappa,
@@ -367,20 +366,12 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   pp->params_ref = &(sk->self->params);
 
-  /*
   printf("Supporting at most 2^%d plaintexts, each in base %d,\n", pp->L,
       pp->d);
   printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
-*/
+  
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
-
-  /*
-  printf("1. GGH InstGen wall time:                 %8.2f s\n",
-      ggh_seconds(ggh_walltime(T)));
-  */
-
-  T = ggh_walltime(0);
 
   // set the kilian randomizers in sk
   pp->numR = pp->kappa - 1;
@@ -532,7 +523,7 @@ void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
         printf("Generated encoding %d / %d (Time elapsed: %8.2f s)\n",
             NUM_ENCODINGS_GENERATED,
             pp->num_enc,
-            ggh_seconds(ggh_walltime(T)));
+            get_T());
       }
     }
   }
@@ -988,3 +979,12 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
 
     return 1;
 }
+
+void reset_T() {
+  T = ggh_walltime(0);
+}
+
+float get_T() {
+  return ggh_seconds(ggh_walltime(T));
+}
+

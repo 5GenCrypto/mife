@@ -24,7 +24,7 @@ struct _aes_randstate_struct {
 typedef struct _aes_randstate_struct aes_randstate_t[1];
 
 void aes_randinit(aes_randstate_t state);
-void aes_randinit_seed(aes_randstate_t randstate, char *seed);
+void aes_randinit_seed(aes_randstate_t state, char *seed);
 void aes_randclear(aes_randstate_t state);
 
 void fmpz_mod_poly_randtest_aes(fmpz_mod_poly_t f, aes_randstate_t state,

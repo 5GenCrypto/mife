@@ -102,6 +102,8 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 
 /* MIFE internal functions */
+void reset_T();
+float get_T();
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk);
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk);

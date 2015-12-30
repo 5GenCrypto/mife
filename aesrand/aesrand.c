@@ -10,40 +10,11 @@ void aes_randinit(aes_randstate_t state) {
       state->iv);
 }
 
-void aes_randinit_seed(aes_randstate_t randstate, char *seed) {
-  aes_randinit(randstate);
-  /*
-  FIXME: renable this at some point to choose seeds.
-
-  flint_randinit(randstate);
-  int cutoff = sizeof(long)  * 2;
-  int base = 16;
-  char *str_seed1 = malloc(sizeof(char) * (cutoff+1));
-  char *str_seed2 = malloc(sizeof(char) * (cutoff+1));
-  strncpy(str_seed1, seed, (cutoff+1));
-  strncpy(str_seed2, seed+32, (cutoff+1));
-  str_seed1[cutoff] = 0x0;
-  str_seed2[cutoff] = 0x0;
-  unsigned long seed1 = strtoul(str_seed1, NULL, base);
-  unsigned long seed2 = strtoul(str_seed2, NULL, base);
-  free(str_seed1);
-  free(str_seed2);
-  flint_randseed(randstate, seed1, seed2);
-  if (gmp) {
-    mpfr_t mpfr_seed;
-    mpfr_init(mpfr_seed);
-    mpfr_ui_pow_ui(mpfr_seed, 2, 64, MPFR_RNDN);
-    mpfr_mul_2ui(mpfr_seed, mpfr_seed, seed1, MPFR_RNDN);
-    mpfr_add_ui(mpfr_seed, mpfr_seed, seed2, MPFR_RNDN);
-    mpz_t mpz_seed;
-    mpz_init(mpz_seed);
-    mpfr_get_z(mpz_seed, mpfr_seed, MPFR_RNDN);
-    _flint_rand_init_gmp(randstate);
-    gmp_randseed(randstate->gmp_state, mpz_seed);
-    mpfr_clear(mpfr_seed);
-    mpz_clear(mpz_seed);
-  }
-  */
+void aes_randinit_seed(aes_randstate_t state, char *seed) {
+  aes_randinit(state);
+  state->key = seed;
+  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
+      state->iv);
 }
 
 void aes_randclear(aes_randstate_t state) {
