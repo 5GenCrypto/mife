@@ -1,6 +1,6 @@
 #include <gghlite/gghlite.h>
 
-int test_instgen_symm(const size_t lambda, const size_t kappa, const uint64_t rerand, flint_rand_t randstate) {
+int test_instgen_symm(const size_t lambda, const size_t kappa, const uint64_t rerand, aes_randstate_t randstate) {
 
   printf("symm: 1, λ: %4zu, κ: %2zu, rerand: 0x%016zx", lambda, kappa, rerand);
 
@@ -53,7 +53,7 @@ int test_instgen_symm(const size_t lambda, const size_t kappa, const uint64_t re
 }
 
 
-int test_instgen_asymm(const size_t lambda, const size_t kappa, const uint64_t rerand, flint_rand_t randstate) {
+int test_instgen_asymm(const size_t lambda, const size_t kappa, const uint64_t rerand, aes_randstate_t randstate) {
 
   printf("symm: 0, λ: %4zu, κ: %2zu, rerand: 0x%016zx", lambda, kappa, rerand);
 
@@ -107,8 +107,8 @@ int test_instgen_asymm(const size_t lambda, const size_t kappa, const uint64_t r
 
 int main(int argc, char *argv[]) {
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   int status = 0;
 
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   status += test_instgen_asymm(20, 4, 0x0, randstate);
   status += test_instgen_asymm(20, 4, 0x1, randstate);
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
   mpfr_free_cache();
   return status;

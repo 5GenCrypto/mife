@@ -30,8 +30,8 @@ int main(int argc, char *argv[]) {
   assert(argc==2);
   const long n = atol(argv[1]);
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337+1, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   mpfr_t sigma;
   mpfr_init2(sigma, 80);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_oz_ideal_norm(p, g, n, 0);
 
   fmpz_t a;  fmpz_init(a);
-  fmpz_randm(a, randstate, p);
+  fmpz_randm_aes(a, randstate, p);
 
   for(size_t i=11; i<=log2(n)+1; i++) {
     bench_rem(g, a, n,  1ULL<<i);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_clear(g);
   mpfr_clear(sigma);
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
   return 0;
 }

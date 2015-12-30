@@ -2,7 +2,7 @@
 #include <oz/util.h>
 #include <math.h>
 
-int test_nmod_poly_oz_ideal_norm(slong n, flint_rand_t state) {
+int test_nmod_poly_oz_ideal_norm(slong n, aes_randstate_t state) {
   nmod_poly_t f;
   nmod_poly_t g;
 
@@ -13,9 +13,9 @@ int test_nmod_poly_oz_ideal_norm(slong n, flint_rand_t state) {
   nmod_poly_set_coeff_ui(g, 0, 1);
   nmod_poly_set_coeff_ui(g, n, 1);
 
-  nmod_poly_randtest(f, state, n);
+  nmod_poly_randtest_aes(f, state, n);
   while(!nmod_poly_get_coeff_ui(f, n-1))
-      nmod_poly_randtest(f, state, n);
+      nmod_poly_randtest_aes(f, state, n);
 
   uint64_t t0 = oz_walltime(0);
   mp_limb_t r0 = nmod_poly_resultant(f, g);
@@ -39,15 +39,15 @@ int test_nmod_poly_oz_ideal_norm(slong n, flint_rand_t state) {
   return !r;
 }
 
-int test_fmpz_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) {
+int test_fmpz_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, aes_randstate_t state) {
   fmpz_poly_t f;
   fmpz_poly_t g;
   fmpz_poly_init(f);
   fmpz_poly_init_oz_modulus(g, n);
 
-  fmpz_poly_randtest(f, state, n, bits);
+  fmpz_poly_randtest_aes(f, state, n, bits);
   while(!fmpz_poly_get_coeff_ptr(f, n-1))
-      fmpz_poly_randtest(f, state, n, bits);
+      fmpz_poly_randtest_aes(f, state, n, bits);
 
   fmpz_t r0, r1, r2;
   fmpz_init(r0);
@@ -88,15 +88,15 @@ int test_fmpz_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) 
   return !r;
 }
 
-int test_fmpq_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) {
+int test_fmpq_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, aes_randstate_t state) {
   fmpq_poly_t f;
   fmpq_poly_t g;
   fmpq_poly_init(f);
   fmpq_poly_init_oz_modulus(g, n);
 
-  fmpq_poly_randtest(f, state, n, bits);
+  fmpq_poly_randtest_aes(f, state, n, bits);
   while(fmpq_poly_degree(f) != n-1)
-      fmpq_poly_randtest(f, state, n, bits);
+      fmpq_poly_randtest_aes(f, state, n, bits);
 
   fmpq_t r0, r1, r2;
   fmpq_init(r0);
@@ -143,8 +143,8 @@ int test_fmpq_poly_oz_ideal_norm(slong n, mp_bitcnt_t bits, flint_rand_t state) 
 
 int main(int argc, char *argv[]) {
 
-  flint_rand_t state;
-  flint_randinit(state);
+  aes_randstate_t state;
+  aes_randinit(state);
 
   int status = 0;
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     status += test_nmod_poly_oz_ideal_norm(n[i],state);
   }
 
-  flint_randclear(state);
+  aes_randclear(state);
   flint_cleanup();
   return status;
 }

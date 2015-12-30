@@ -8,7 +8,7 @@ void _gghlite_zero(gghlite_sk_t self) {
   memset(self, 0, sizeof(struct _gghlite_sk_struct));
 }
 
-void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate) {
+void _gghlite_sk_sample_a(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->D_g);
 
   size_t bound = 0;
@@ -70,7 +70,7 @@ void _gghlite_sk_set_D_g(gghlite_sk_t self) {
   self->t_D_g = ggh_walltime(self->t_D_g);
 }
 
-void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
+void _gghlite_sk_sample_b(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->params);
   assert(self->params->n);
   assert(self->D_g);
@@ -123,8 +123,8 @@ void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate) {
                    k+1, fail[0], fail[1], fail[2]);
 
         uint64_t t = ggh_walltime(0);
-        _dgsl_rot_mp_call_inlattice_multiplier(self->b[i][k][0], self->D_g, randstate->gmp_state);
-        _dgsl_rot_mp_call_inlattice_multiplier(self->b[i][k][1], self->D_g, randstate->gmp_state);
+        _dgsl_rot_mp_call_inlattice_multiplier(self->b[i][k][0], self->D_g, randstate);
+        _dgsl_rot_mp_call_inlattice_multiplier(self->b[i][k][1], self->D_g, randstate);
         self->t_sample += ggh_walltime(t);
 
         t = ggh_walltime(0);
@@ -198,7 +198,7 @@ void _gghlite_sk_set_x(gghlite_sk_t self) {
   fmpz_mod_poly_clear(acc);
 }
 
-void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate) {
+void _gghlite_sk_sample_g(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->params);
   assert(self->params->n);
 
@@ -355,7 +355,7 @@ void _gghlite_sk_set_pzt(gghlite_sk_t self) {
   fmpz_mod_poly_clear(g_inv);
 }
 
-void _gghlite_sk_sample_h(gghlite_sk_t self, flint_rand_t randstate) {
+void _gghlite_sk_sample_h(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->params);
   assert(self->params->n);
   assert(fmpz_cmp_ui(self->params->q,0)>0);
@@ -389,7 +389,7 @@ void _gghlite_sk_sample_h(gghlite_sk_t self, flint_rand_t randstate) {
   mpfr_clear(sqrt_q);
 }
 
-void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate) {
+void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->params);
   assert(self->params->n);
   assert(fmpz_cmp_ui(self->params->q, 0)>0);
@@ -399,7 +399,7 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate) {
   for(size_t i=0; i<bound; i++) {
     fmpz_mod_poly_init(self->z[i], self->params->q);
 
-    fmpz_mod_poly_randtest(self->z[i], randstate, self->params->n);
+    fmpz_mod_poly_randtest_aes(self->z[i], randstate, self->params->n);
     fmpz_mod_poly_oz_ntt_enc(self->z[i], self->z[i], self->params->ntt);
 
     fmpz_mod_poly_init(self->z_inv[i], self->params->q);
@@ -408,7 +408,7 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate) {
   self->t_sample +=  ggh_walltime(t);
 }
 
-void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
+void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(self->params->lambda);
   assert(self->params->kappa);
 	assert(self->params->gamma);
@@ -454,7 +454,7 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate) {
 
 void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
 		const size_t gamma,
-                  const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate) {
+                  const uint64_t rerand_mask, const gghlite_flag_t flags, aes_randstate_t randstate) {
   _gghlite_zero(self);
   gghlite_params_init_gamma(self->params, lambda, kappa, gamma, rerand_mask, flags);
   gghlite_sk_init(self, randstate);

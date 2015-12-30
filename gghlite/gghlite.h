@@ -85,7 +85,7 @@ static inline void gghlite_jigsaw_params_init(gghlite_params_t self, size_t lamb
    @ingroup params
 */
 
-void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate);
+void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate);
 
 /**
    @brief Initialise a new GGHLite instance.
@@ -102,7 +102,7 @@ void gghlite_sk_init(gghlite_sk_t self, flint_rand_t randstate);
 */
 
 void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa, const size_t gamma,
-                  const uint64_t rerand_mask, const gghlite_flag_t flags, flint_rand_t randstate);
+                  const uint64_t rerand_mask, const gghlite_flag_t flags, aes_randstate_t randstate);
 
 
 /**
@@ -119,13 +119,13 @@ void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa, co
 */
 
 static inline void gghlite_jigsaw_init_gamma(gghlite_sk_t self, size_t lambda, size_t kappa, size_t gamma,
-                                       gghlite_flag_t flags, flint_rand_t randstate) {
+                                       gghlite_flag_t flags, aes_randstate_t randstate) {
   gghlite_init(self, lambda, kappa, gamma, 0x0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV,
                randstate);
 }
 
 static inline void gghlite_jigsaw_init(gghlite_sk_t self, size_t lambda, size_t kappa,
-                                       gghlite_flag_t flags, flint_rand_t randstate) {
+                                       gghlite_flag_t flags, aes_randstate_t randstate) {
 	gghlite_jigsaw_init_gamma(self, lambda, kappa, kappa, flags, randstate);
 }
 
@@ -284,7 +284,7 @@ void gghlite_enc_init(gghlite_enc_t op, const gghlite_params_t self);
 */
 
 void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
-                        size_t k, size_t i, flint_rand_t randstate);
+                        size_t k, size_t i, aes_randstate_t randstate);
 
 /**
    @brief Raise encoding at level $k$ to level $l$ and re-randomise if requested.
@@ -306,7 +306,7 @@ void gghlite_enc_rerand(gghlite_enc_t rop, const gghlite_params_t self, const gg
 
 void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const gghlite_enc_t op,
                        size_t l, size_t k, size_t i,
-                       int rerand, flint_rand_t randstate);
+                       int rerand, aes_randstate_t randstate);
 
 /**
    @brief Raise an encoding at level $0$ to level $l$ in group $G_0$.
@@ -324,7 +324,7 @@ void gghlite_enc_raise(gghlite_enc_t rop, const gghlite_params_t self, const ggh
 */
 
 static inline void gghlite_enc_raise0(gghlite_enc_t rop, gghlite_params_t self, gghlite_enc_t op,
-                                      size_t l, flint_rand_t randstate) {
+                                      size_t l, aes_randstate_t randstate) {
 
   // TODO: fix have_rerand API
   int rerand = (gghlite_params_have_rerand(self, l-1)) ? 1 : 0;
@@ -349,7 +349,7 @@ static inline void gghlite_enc_raise0(gghlite_enc_t rop, gghlite_params_t self, 
 
 static inline void gghlite_enc_set_ui(gghlite_enc_t op, unsigned long c, const gghlite_params_t self,
                                       const size_t k, const size_t i, const int rerand,
-                                      flint_rand_t randstate) {
+                                      aes_randstate_t randstate) {
   fmpz_mod_poly_oz_ntt_set_ui(op, c, self->n);
   if(k>0)
     gghlite_enc_raise(op, self, op, k, 0, i, rerand, randstate);
@@ -390,7 +390,7 @@ static inline void gghlite_enc_set_ui0(gghlite_enc_t op, unsigned long c, const 
    @ingroup encodings
 */
 
-void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size_t i, flint_rand_t randstate);
+void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size_t i, aes_randstate_t randstate);
 
 /**
    @brief Encode $f$ at level-$k$ in group $G_i$.
@@ -411,7 +411,7 @@ void gghlite_enc_sample(gghlite_enc_t rop, gghlite_params_t self, size_t k, size
 
 void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
                                  const size_t k, int *group, const int rerand,
-                                 flint_rand_t randstate);
+                                 aes_randstate_t randstate);
 
 
 /**
@@ -429,7 +429,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 */
 
 static inline void gghlite_enc_set_gghlite_clr0(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
-                                                flint_rand_t randstate) {
+                                                aes_randstate_t randstate) {
 	int *group = malloc(self->params->gamma * sizeof(int));
 	memset(group, 0, self->params->gamma * sizeof(int));
 	group[0] = 1;

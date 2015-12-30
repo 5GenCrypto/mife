@@ -9,7 +9,7 @@
 #include "dgsl.h"
 #include "gso.h"
 
-int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, aes_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = fmpz_mat_ncols(self->B);
@@ -27,7 +27,7 @@ int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t sta
   return 0;
 }
 
-int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, aes_randstate_t state) {
   assert(rop); assert(self);
 
   const long m = fmpz_mat_nrows(self->B);
@@ -50,7 +50,7 @@ int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t st
   return 0;
 }
 
-int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, gmp_randstate_t state) {
+int dgsl_mp_call_coset(fmpz *rop, const dgsl_mp_t *self, aes_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = fmpz_mat_ncols(self->B);
@@ -363,7 +363,7 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
 }
 
 
-int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = self->n;
@@ -384,7 +384,7 @@ int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_r
   return 0;
 }
 
-int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_randstate_t state) {
   assert(rop); assert(self);
 
   const long n = self->n;
@@ -417,7 +417,7 @@ int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, 
   return 0;
 }
 
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, aes_randstate_t state) {
   const long n = self->n;
   fmpq_poly_t x;
   fmpq_poly_init(x);
@@ -437,7 +437,7 @@ int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_rands
   return 0;
 }
 
-int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, gmp_randstate_t state) {
+int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, aes_randstate_t state) {
   fmpz_poly_t t;  fmpz_poly_init(t);
   fmpz_poly_set(t, c);
   fmpq_poly_t tq; fmpq_poly_init(tq); // == 0
@@ -450,7 +450,7 @@ int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, 
   return 0;
 }
 
-int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, gmp_randstate_t state) {
+int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, aes_randstate_t state) {
   fmpq_poly_t x;
   fmpq_poly_init(x);
   fmpq_poly_sample_D1(x, self->n, self->prec, state);
@@ -471,7 +471,7 @@ int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *se
 
 }
 
-int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t *self, aes_randstate_t state) {
   const long n = self->n;
   fmpq_poly_t x;
   fmpq_poly_init(x);
@@ -484,7 +484,7 @@ int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t rop, const dgsl_rot_mp_t 
   return 0;
 }
 
-int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state) {
+int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop, const dgsl_rot_mp_t *self, aes_randstate_t state) {
   _dgsl_rot_mp_call_inlattice_multiplier(rop, self, state);
   fmpz_poly_oz_mul(rop, self->B, rop, self->n);
   return 0;
@@ -520,7 +520,7 @@ void dgsl_rot_mp_clear(dgsl_rot_mp_t *self) {
   free(self);
 }
 
-void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, gmp_randstate_t randstate) {
+void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, aes_randstate_t randstate) {
   mpfr_t xi;  mpfr_init2(xi, mpfr_get_prec(r_f));
   mpf_t xi_f; mpf_init2(xi_f, mpfr_get_prec(r_f));
   mpq_t xi_q; mpq_init(xi_q);
@@ -548,7 +548,7 @@ void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const m
   mpfr_clear(xi);
 }
 
-void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, gmp_randstate_t state) {
+void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, aes_randstate_t state) {
   mpfr_t u1; mpfr_init2(u1, prec);
   mpfr_t u2; mpfr_init2(u2, prec);
   mpfr_t z1; mpfr_init2(z1, prec);
@@ -566,8 +566,8 @@ void fmpq_poly_sample_D1(fmpq_poly_t f, int n, mpfr_prec_t prec, gmp_randstate_t
   assert(n%2==0);
 
   for(long i=0; i<n; i+=2) {
-    mpfr_urandomb(u1, state);
-    mpfr_urandomb(u2, state);
+    mpfr_urandomb_aes(u1, state);
+    mpfr_urandomb_aes(u2, state);
     mpfr_log(u1, u1, MPFR_RNDN);
     mpfr_mul_si(u1, u1, -2, MPFR_RNDN);
     mpfr_sqrt(u1, u1, MPFR_RNDN);

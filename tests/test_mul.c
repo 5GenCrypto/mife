@@ -2,12 +2,12 @@
 #include <oz/util.h>
 #include <oz/flint-addons.h>
 
-int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t state) {
+int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, aes_randstate_t state) {
 
   fmpz_t q;
   fmpz_init(q);
   fmpz_zero(q);
-  fmpz_randbits(q, state, bits);
+  fmpz_randbits_aes(q, state, bits);
   fmpz_abs(q, q);
   fmpz_fdiv_q_2exp(q, q, n_flog(n,2)+1);
   fmpz_mul_2exp(q, q, n_flog(n,2)+1);
@@ -21,13 +21,13 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
   fmpz_mod_poly_t f1;  fmpz_mod_poly_init(f1, q);
   fmpz_mod_poly_t g;  fmpz_mod_poly_init_oz_modulus(g, q, n);
 
-  fmpz_mod_poly_randtest(f0, state, n);
+  fmpz_mod_poly_randtest_aes(f0, state, n);
   while (fmpz_mod_poly_degree(f0) < n-1)
-    fmpz_mod_poly_randtest(f0, state, n);
+    fmpz_mod_poly_randtest_aes(f0, state, n);
 
-  fmpz_mod_poly_randtest(f1, state, n);
+  fmpz_mod_poly_randtest_aes(f1, state, n);
   while (fmpz_mod_poly_degree(f1) < n-1)
-    fmpz_mod_poly_randtest(f1, state, n);
+    fmpz_mod_poly_randtest_aes(f1, state, n);
 
   fmpz_mod_poly_t r0, r1;
   fmpz_mod_poly_init(r0, q);
@@ -67,7 +67,7 @@ int test_fmpz_mod_poly_oz_mul_fftnwc(long n, mp_bitcnt_t bits, flint_rand_t stat
   return !r;
 }
 
-int test_fmpz_mod_poly_oz_mul(long n, long q_, flint_rand_t state) {
+int test_fmpz_mod_poly_oz_mul(long n, long q_, aes_randstate_t state) {
   fmpz_t q;
   fmpz_init(q);
   fmpz_set_si(q, q_);
@@ -76,13 +76,13 @@ int test_fmpz_mod_poly_oz_mul(long n, long q_, flint_rand_t state) {
   fmpz_mod_poly_t f1;  fmpz_mod_poly_init(f1, q);
   fmpz_mod_poly_t g;  fmpz_mod_poly_init_oz_modulus(g, q, n);
 
-  fmpz_mod_poly_randtest(f0, state, n);
+  fmpz_mod_poly_randtest_aes(f0, state, n);
   while (fmpz_mod_poly_degree(f0) < n-1)
-    fmpz_mod_poly_randtest(f0, state, n);
+    fmpz_mod_poly_randtest_aes(f0, state, n);
 
-  fmpz_mod_poly_randtest(f1, state, n);
+  fmpz_mod_poly_randtest_aes(f1, state, n);
   while (fmpz_mod_poly_degree(f1) < n-1)
-    fmpz_mod_poly_randtest(f1, state, n);
+    fmpz_mod_poly_randtest_aes(f1, state, n);
 
   fmpz_mod_poly_t r0, r1;
   fmpz_mod_poly_init(r0, q);
@@ -120,8 +120,8 @@ int test_fmpz_mod_poly_oz_mul(long n, long q_, flint_rand_t state) {
 
 int main(int argc, char *argv[]) {
 
-  flint_rand_t state;
-  flint_randinit(state);
+  aes_randstate_t state;
+  aes_randinit(state);
 
   int status = 0;
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       status += test_fmpz_mod_poly_oz_mul(n, q, state);
     }
   }
-  flint_randclear(state);
+  aes_randclear(state);
   flint_cleanup();
   return status;
 }

@@ -7,8 +7,8 @@ int main(int argc, char *argv[]) {
   const long n = atol(argv[1]);
   const long m = atol(argv[2]);
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   fmpz_poly_t g;
   fmpz_poly_init(g);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   free(primes);
   mpfr_clear(sigma);
   fmpz_poly_clear(g);
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
   return 0;
 }

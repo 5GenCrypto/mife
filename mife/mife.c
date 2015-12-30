@@ -13,38 +13,6 @@ void fmpz_init_exp(fmpz_t exp, int base, int n) {
   fmpz_clear(tmp);
 }
 
-void flint_randinit_seed_crypto(flint_rand_t randstate,
-    char *seed, int gmp) {
-  flint_randinit(randstate);
-  int cutoff = sizeof(long)  * 2;
-  int base = 16;
-  char *str_seed1 = malloc(sizeof(char) * (cutoff+1));
-  char *str_seed2 = malloc(sizeof(char) * (cutoff+1));
-  strncpy(str_seed1, seed, (cutoff+1));
-  strncpy(str_seed2, seed+32, (cutoff+1));
-  str_seed1[cutoff] = 0x0;
-  str_seed2[cutoff] = 0x0;
-  unsigned long seed1 = strtoul(str_seed1, NULL, base);
-  unsigned long seed2 = strtoul(str_seed2, NULL, base);
-  free(str_seed1);
-  free(str_seed2);
-  flint_randseed(randstate, seed1, seed2);
-  if (gmp) {
-    mpfr_t mpfr_seed;
-    mpfr_init(mpfr_seed);
-    mpfr_ui_pow_ui(mpfr_seed, 2, 64, MPFR_RNDN);
-    mpfr_mul_2ui(mpfr_seed, mpfr_seed, seed1, MPFR_RNDN);
-    mpfr_add_ui(mpfr_seed, mpfr_seed, seed2, MPFR_RNDN);
-    mpz_t mpz_seed;
-    mpz_init(mpz_seed);
-    mpfr_get_z(mpz_seed, mpfr_seed, MPFR_RNDN);
-    _flint_rand_init_gmp(randstate);
-    gmp_randseed(randstate->gmp_state, mpz_seed);
-    mpfr_clear(mpfr_seed);
-    mpz_clear(mpz_seed);
-  }
-}
-
 void mife_init_params(mife_pp_t pp, int d, int bitstr_len, mife_flag_t flags) {
   pp->flags = flags;
   pp->d = d; 
@@ -305,7 +273,7 @@ void mife_clear_sk(mife_sk_t sk) {
   }
   free(sk->R);
   free(sk->R_inv);
-  flint_randclear(sk->randstate);
+  aes_randclear(sk->randstate);
 }
 
 void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met) {
@@ -338,9 +306,7 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   fmpz_init_set_ui(two, 2);
   fmpz_pow_ui(powL, two, pp->L); // computes powL = 2^L
   fmpz_set_ui(index, 0);
-  printf("about to use randomness in encrypt\n");
-  fmpz_randm(index, sk->randstate, powL);
-  printf("just used randomness in encrypt\n");
+  fmpz_randm_aes(index, sk->randstate, powL);
   fmpz_clear(powL);
   fmpz_clear(two);
   
@@ -374,7 +340,7 @@ void mife_mbp_init(
 
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed) {
-  flint_randinit_seed_crypto(sk->randstate, shaseed, 1);
+  aes_randinit_seed(sk->randstate, shaseed);
 
   pp->n = malloc(pp->num_inputs * sizeof(int));
   for(int index = 0; index < pp->num_inputs; index++) { 
@@ -429,7 +395,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
       for(int j = 0; j < dims[k]; j++) {
-        fmpz_randm(fmpz_mat_entry(sk->R[k], i, j), sk->randstate, pp->p);
+        fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), sk->randstate, pp->p);
       }
     }
 	
@@ -454,7 +420,7 @@ void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk) {
     for(int k = 0; k < pp->n[i]; k++) {
       fmpz_t rand;
       fmpz_init(rand);
-      fmpz_randm(rand, sk->randstate, pp->p);
+      fmpz_randm_aes(rand, sk->randstate, pp->p);
       fmpz_mat_scalar_mul_modp(met->clr[i][k], rand, pp->p);
       fmpz_clear(rand);
     }
@@ -811,14 +777,14 @@ void test_dary_conversion() {
 
 }
 
-int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp) {
+int test_matrix_inv(int n, aes_randstate_t randstate, fmpz_t modp) {
   printf("\nTesting matrix_inv function...                                ");
   fmpz_mat_t a;
   fmpz_mat_init(a, n, n);
 
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
-      fmpz_randm(fmpz_mat_entry(a, i, j), randstate, modp);
+      fmpz_randm_aes(fmpz_mat_entry(a, i, j), randstate, modp);
     }
   }
 

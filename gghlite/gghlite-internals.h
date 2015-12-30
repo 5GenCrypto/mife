@@ -237,19 +237,19 @@ static inline void _gghlite_params_get_q_mpfr(mpfr_t q, const gghlite_params_t s
 
 void _gghlite_params_set_ell(gghlite_params_t self);
 
-void _gghlite_sk_sample_g(gghlite_sk_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_g(gghlite_sk_t self, aes_randstate_t randstate);
 
 /**
    @brief Sample $z_i$ and $z_i^{-1}$.
  */
 
-void _gghlite_sk_sample_z(gghlite_sk_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate);
 
-void _gghlite_sk_sample_h(gghlite_sk_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_h(gghlite_sk_t self, aes_randstate_t randstate);
 
-void _gghlite_sk_sample_b(gghlite_sk_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_b(gghlite_sk_t self, aes_randstate_t randstate);
 
-void _gghlite_sk_sample_a(gghlite_sk_t self, flint_rand_t randstate);
+void _gghlite_sk_sample_a(gghlite_sk_t self, aes_randstate_t randstate);
 
 void _gghlite_sk_set_pzt(gghlite_sk_t self);
 

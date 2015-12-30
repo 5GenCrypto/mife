@@ -11,8 +11,8 @@ int main(int argc, char *argv[]) {
 
   print_header("GGHLite Noise Distribution", params);
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, params->seed, 1);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, params->shaseed);
 
 
   gghlite_sk_t self;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   gghlite_sk_clear(self, 1);
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
   mpfr_free_cache();
 }

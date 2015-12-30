@@ -11,8 +11,8 @@ int main(int argc, char *argv[]) {
   if (params->flags & GGHLITE_FLAGS_PRIME_G)
     ggh_die("Setting GGHLITE_FLAGS_PRIME_G defeats the purpose of this application.");
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, params->seed, 1);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, params->shaseed);
 
   gghlite_sk_t self;
   gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);

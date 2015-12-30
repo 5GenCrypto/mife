@@ -52,7 +52,7 @@ struct _mife_sk_struct {
   gghlite_sk_t self;
   fmpz_mat_t *R;
   fmpz_mat_t *R_inv;
-  flint_rand_t randstate;
+  aes_randstate_t randstate;
 };
 
 typedef struct _mife_sk_struct mife_sk_t[1];
@@ -115,8 +115,6 @@ void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
 void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m);
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);
-void flint_randinit_seed_crypto(flint_rand_t randstate,
-    char *seed, int gmp);
 void mife_ciphertext_clear(mife_pp_t pp, mife_ciphertext_t ct);
 void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d);
 
@@ -149,7 +147,7 @@ void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
 /* test functions */
-int test_matrix_inv(int n, flint_rand_t randstate, fmpz_t modp);
+int test_matrix_inv(int n, aes_randstate_t randstate, fmpz_t modp);
 int int_arrays_equal(ulong *arr1, ulong *arr2, int length);
 void test_dary_conversion();
 

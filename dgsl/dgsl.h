@@ -10,6 +10,8 @@
 #include <oz/oz.h>
 #include "gso.h"
 
+#include <aesrand/aesrand.h>
+
 /**
    Sampling algorithms
 */
@@ -33,7 +35,7 @@ typedef struct _dgsl_rot_mp_t{
   mpfr_t sigma;      //< Gaussian parameter
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
 
-  int (*call) (fmpz_poly_t rop,  const struct _dgsl_rot_mp_t *self, gmp_randstate_t state); //< call this function
+  int (*call) (fmpz_poly_t rop,  const struct _dgsl_rot_mp_t *self, aes_randstate_t state); //< call this function
 
   long   r;
   mpfr_t r_f;
@@ -51,7 +53,7 @@ typedef struct _dgsl_mp_t{
   fmpz *c_z; //< center
   mpfr_t sigma; //< Gaussian parameter
   dgs_disc_gauss_mp_t **D; //< storage for internal samplers
-  int (*call)(fmpz *rop,  const struct _dgsl_mp_t *self, gmp_randstate_t state); //< call this function
+  int (*call)(fmpz *rop,  const struct _dgsl_mp_t *self, aes_randstate_t state); //< call this function
 
 } dgsl_mp_t;
 
@@ -71,43 +73,43 @@ dgsl_rot_mp_t *dgsl_rot_mp_init(const long n, const fmpz_poly_t B, mpfr_t sigma,
    @brief Sample a fresh element from $D_{L,σ}$.
 */
 
-int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
+int dgsl_mp_call_inlattice(fmpz *rop,  const dgsl_mp_t *self, aes_randstate_t state);
 
 /**
    @brief Sample a fresh element from $D_{L,σ}$ using the GPV sampler.
 */
 
-int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_gpv_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_randstate_t state);
 
 /**
    @brief Sample $r$ such that $r⋅B$ is  an element following $D_{L,σ}$.
 */
 
-int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t r,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int _dgsl_rot_mp_call_inlattice_multiplier(fmpz_poly_t r,  const dgsl_rot_mp_t *self, aes_randstate_t state);
 
 /**
    @brief Sample a fresh element from $D_{L,σ}$.
 */
 
-int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_inlattice(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_randstate_t state);
 
 /**
    @brief Sample a fresh element from $D_{L+1,σ}$.
 */
 
-int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_plus1(fmpz_poly_t rop, const dgsl_rot_mp_t *self, aes_randstate_t state);
 
 /**
    @brief Sample a fresh element from $D_{L+c,σ}$.
 */
 
-int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, gmp_randstate_t state);
+int dgsl_rot_mp_call_plus_fmpz_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpz_poly_t c, aes_randstate_t state);
 
 /**
    @brief Sample a fresh element from $D_{L,σ,c}$.
 */
 
-int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, gmp_randstate_t state);
+int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *self, const fmpq_poly_t c, aes_randstate_t state);
 
 /**
    Return a fresh sample when B is the identity
@@ -117,7 +119,7 @@ int dgsl_rot_mp_call_recenter_fmpq_poly(fmpz_poly_t rop, const dgsl_rot_mp_t *se
    @param state entropy source
 */
 
-int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t state);
+int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, aes_randstate_t state);
 
 /**
    Return a fresh sample when B is the identity
@@ -127,36 +129,36 @@ int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, gmp_randstate_t sta
    @param state entropy source
 */
 
-int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, gmp_randstate_t state);
+int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_randstate_t state);
 
 void dgsl_mp_clear(dgsl_mp_t *self);
 
 void dgsl_rot_mp_clear(dgsl_rot_mp_t *self);
 
-static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, dgsl_rot_mp_t *D, flint_rand_t randstate) {
+static inline void fmpz_mod_poly_sample_D(fmpz_mod_poly_t f, dgsl_rot_mp_t *D, aes_randstate_t randstate) {
   assert(D);
-  assert(randstate->gmp_init);
+  assert(randstate->aes_init);
 
   fmpz_poly_t tmp;
   fmpz_poly_init(tmp);
   fmpz_poly_set_fmpz_mod_poly(tmp, f);
-  D->call(tmp, D, randstate->gmp_state);
+  D->call(tmp, D, randstate);
   fmpz_mod_poly_set_fmpz_poly(f, tmp);
   fmpz_poly_clear(tmp);
 }
 
-static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_rand_t randstate) {
-  assert(D); assert(randstate->gmp_init);
-  D->call(f, D, randstate->gmp_state);
+static inline void fmpz_poly_sample_D(fmpz_poly_t f, dgsl_rot_mp_t *D, aes_randstate_t randstate) {
+  assert(D); assert(randstate->aes_init);
+  D->call(f, D, randstate);
 }
 
-static inline void fmpz_poly_sample_D_plus1(fmpz_poly_t f, dgsl_rot_mp_t *D, flint_rand_t randstate) {
-  assert(D); assert(randstate->gmp_init);
+static inline void fmpz_poly_sample_D_plus1(fmpz_poly_t f, dgsl_rot_mp_t *D, aes_randstate_t randstate) {
+  assert(D); assert(randstate->aes_init);
   assert(D->call == dgsl_rot_mp_call_inlattice);
-  dgsl_rot_mp_call_plus1(f, D, randstate->gmp_state);
+  dgsl_rot_mp_call_plus1(f, D, randstate);
 }
 
-static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
+static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_t sigma, aes_randstate_t randstate) {
   fmpz_poly_t I;
   fmpz_poly_init(I);
   fmpz_poly_one(I);
@@ -168,7 +170,7 @@ static inline void fmpz_mod_poly_sample_sigma(fmpz_mod_poly_t f, long len, mpfr_
   fmpz_poly_clear(I);
 }
 
-static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, flint_rand_t randstate) {
+static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma, aes_randstate_t randstate) {
   fmpz_poly_t I;
   fmpz_poly_init(I);
   fmpz_poly_one(I);
@@ -183,8 +185,8 @@ static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma,
 void _dgsl_rot_mp_sqrt_sigma_2(fmpq_poly_t rop, const fmpz_poly_t g, const mpfr_t sigma,
                               const int r, const long n, const mpfr_prec_t prec, const oz_flag_t flags);
 
-void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, gmp_randstate_t randstate);
+void fmpz_poly_disc_gauss_rounding(fmpz_poly_t rop, const fmpq_poly_t x, const mpfr_t r_f, aes_randstate_t randstate);
 
-void fmpq_poly_sample_D1(fmpq_poly_t f, const int n, const mpfr_prec_t prec, gmp_randstate_t state);
+void fmpq_poly_sample_D1(fmpq_poly_t f, const int n, const mpfr_prec_t prec, aes_randstate_t state);
 
 #endif

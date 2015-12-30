@@ -12,8 +12,8 @@ int main(int argc, char *argv[]) {
   const long m    = atol(argv[2]);
   const long prec = atol(argv[3]);
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   mpfr_t sigma;
   mpfr_init2(sigma, prec);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_init(f);
   uint64_t t_sample = oz_walltime(0);
   for(int i=0; i<m; i++) {
-    D->call(f, D, randstate->gmp_state);
+    D->call(f, D, randstate);
   }
   t_sample = oz_walltime(t_sample);
   fmpz_poly_clear(f);
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   fmpz_poly_clear(g);
   mpfr_clear(sigma_p);
   mpfr_clear(sigma);
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
 
   mpfr_free_cache();

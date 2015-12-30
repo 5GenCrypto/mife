@@ -1,3 +1,8 @@
+/**
+ * This file needs to be updated with using aes_randstate_t instead of 
+ * flint_rand_t.
+ */
+
 #include <flint/fmpz_mat.h>
 #include <flint/fmpz_poly.h>
 #include <oz/flint-addons.h>
@@ -5,7 +10,7 @@
 #include <dgsl/gso.h>
 #include <math.h>
 
-int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long c, size_t ntrials, flint_rand_t state) {
+int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long c, size_t ntrials, aes_randstate_t state) {
   assert(nrows>0);
   assert(ncols>0);
   assert(bits>0);
@@ -13,7 +18,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
   assert(ntrials>0);
   fmpz_mat_t B;
   fmpz_mat_init(B, nrows, ncols);
-  fmpz_mat_randtest(B, state, bits);
+  fmpz_mat_randtest_aes(B, state, bits);
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
@@ -33,7 +38,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
   mpfr_init_set_ui(acc, 0, MPFR_RNDN);
 
   for(size_t i=0; i<ntrials; i++) {
-    D->call(v, D, state->gmp_state);
+    D->call(v, D, state);
     _fmpz_vec_eucl_norm_mpfr(tmp, v, ncols, MPFR_RNDN);
     mpfr_add(acc, acc, tmp, MPFR_RNDN);
   }
@@ -62,7 +67,7 @@ int test_dist_coset(long nrows, long ncols, mp_bitcnt_t bits, double sigma, long
     return 1;
 }
 
-double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
+double *dist_norms(dgsl_mp_t *D, size_t ntrials, aes_randstate_t state) {
 
   const size_t n = fmpz_mat_ncols(D->B);
 
@@ -76,7 +81,7 @@ double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
   fmpz_init(tmp_z);
 
   for(size_t i=0; i<ntrials; i++) {
-    D->call(v, D, state->gmp_state);
+    D->call(v, D, state);
     _fmpz_vec_eucl_norm_mpfr(tmp, v, n, MPFR_RNDN);
     norms[0] += mpfr_get_d(tmp, MPFR_RNDN);
     for (size_t j=0; j<n; j++) {
@@ -98,7 +103,7 @@ double *dist_norms(dgsl_mp_t *D, size_t ntrials, flint_rand_t state) {
   return norms;
 }
 
-int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, size_t ntrials, flint_rand_t state) {
+int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, size_t ntrials, aes_randstate_t state) {
   assert(nrows>0);
   assert(ncols>0);
   assert(bits>0);
@@ -107,8 +112,8 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
 
   fmpz_mat_t B;
   fmpz_mat_init(B, nrows, ncols);
-  fmpz_mat_randrank(B, state, nrows, bits);
-  fmpz_mat_randops(B, state, 100);
+  fmpz_mat_randrank_aes(B, state, nrows, bits);
+  fmpz_mat_randops_aes(B, state, 100);
 
   mpfr_t sigma_;
   mpfr_init_set_d(sigma_, sigma, MPFR_RNDN);
@@ -128,7 +133,7 @@ int test_dist_inlattice(long nrows, long ncols, mp_bitcnt_t bits, double sigma, 
   return 0;
 }
 
-int test_dist_identity(long nrows, long ncols, double sigma, size_t ntrials, flint_rand_t state) {
+int test_dist_identity(long nrows, long ncols, double sigma, size_t ntrials, aes_randstate_t state) {
   assert(nrows>0);
   assert(ncols>0);
   assert(sigma>0);
@@ -155,7 +160,7 @@ int test_dist_identity(long nrows, long ncols, double sigma, size_t ntrials, fli
   return 0;
 }
 
-double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, const fmpz_poly_t c, flint_rand_t state) {
+double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, const fmpz_poly_t c, aes_randstate_t state) {
 
   const size_t n = D->n;
 
@@ -171,11 +176,11 @@ double *dist_rot_norms(dgsl_rot_mp_t *D, size_t ntrials, const fmpz_poly_t c, fl
 
   for(size_t i=0; i<ntrials; i++) {
     if (fmpz_poly_is_zero(c))
-      D->call(v, D, state->gmp_state);
+      D->call(v, D, state);
     else if(fmpz_poly_is_one(c))
-      dgsl_rot_mp_call_plus1(v, D, state->gmp_state);
+      dgsl_rot_mp_call_plus1(v, D, state);
     else
-      dgsl_rot_mp_call_plus_fmpz_poly(v, D, c, state->gmp_state);
+      dgsl_rot_mp_call_plus_fmpz_poly(v, D, c, state);
 
     fmpz_poly_2norm_mpfr(tmp, v, MPFR_RNDN);
     norms[0] += mpfr_get_d(tmp, MPFR_RNDN);
@@ -214,7 +219,7 @@ double max_min_norm_ratio(double *norms, long n, double *min, double *max) {
   return ratio;
 }
 
-int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, flint_rand_t state) {
+int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, aes_randstate_t state) {
   assert(ncols>0);
   assert(sigma>0);
   assert(ntrials>0);
@@ -248,7 +253,7 @@ int test_dist_rot_identity(long ncols, double sigma, size_t ntrials, flint_rand_
     return 1;
 }
 
-int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntrials, flint_rand_t state, int gpv) {
+int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntrials, aes_randstate_t state, int gpv) {
   assert(ncols>0);
   assert(sigma>0);
   assert(ntrials>0);
@@ -295,7 +300,7 @@ int test_dist_rot_inlattice(long ncols, double sigma, double sigma_p, size_t ntr
     return 1;
 }
 
-int test_dist_rot_plus1(long ncols, double sigma, double sigma_p, size_t ntrials, flint_rand_t state) {
+int test_dist_rot_plus1(long ncols, double sigma, double sigma_p, size_t ntrials, aes_randstate_t state) {
   assert(ncols>0);
   assert(sigma>0);
   assert(ntrials>0);
@@ -341,7 +346,7 @@ int test_dist_rot_plus1(long ncols, double sigma, double sigma_p, size_t ntrials
 }
 
 
-int test_dist_rot_plus2(long ncols, double sigma, double sigma_p, size_t ntrials, flint_rand_t state) {
+int test_dist_rot_plus2(long ncols, double sigma, double sigma_p, size_t ntrials, aes_randstate_t state) {
   assert(ncols>0);
   assert(sigma>0);
   assert(ntrials>0);
@@ -433,8 +438,8 @@ int test_dgsl_run(int status) {
 int main(int argc, char *argv[]) {
   int status = 0;
 
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   status += test_dgsl_run( test_dist_identity(  16,  16,    100000.0, 1<<10, randstate) );
   status += test_dgsl_run( test_dist_identity(  32,  32,  10000000.0, 1<<10, randstate) );

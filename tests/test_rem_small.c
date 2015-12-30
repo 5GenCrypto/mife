@@ -4,7 +4,7 @@
 #include <mpfr.h>
 #include <math.h>
 
-int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand_t state) {
+int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, aes_randstate_t state) {
 
   /** make it **/
   mpfr_t sigma;
@@ -63,8 +63,8 @@ int test_fmpz_poly_oz_rem_small(const long n, const mp_bitcnt_t bits, flint_rand
 
 
 int main(int argc, char *argv[]) {
-  flint_rand_t state;
-  flint_randinit_seed(state, 0x1337, 1);
+  aes_randstate_t state;
+  aes_randinit(state);
 
   int status = 0;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     for(mp_bitcnt_t bits=2; bits<=(mp_bitcnt_t)2*n[i]; bits=2*bits)
       status += test_fmpz_poly_oz_rem_small(n[i], bits, state);
 
-  flint_randclear(state);
+  aes_randclear(state);
   flint_cleanup();
   return status;
 }

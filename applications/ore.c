@@ -5,24 +5,24 @@
  */
 
 #include "ore.h"
-#include <aesrand/aesrand.h>
 
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
+  /*
   aes_randstate_t state;
-  aesrand_init(state);
+  aes_randinit(state);
 
-  for(int i = 0; i < 20; i++) {
-    mpz_t p, c;
-    mpz_init(p);
-    mpz_init(c);
-    mpz_set_ui(c, 2980948);
-    mpz_urandomm_aes(p, state, c);
-    gmp_printf("%Zd\n", p);
+  for(int i = 0; i < 50; i++) {
+    mpfr_t rop;
+    mpfr_init(rop);
+    mpfr_urandomb_aes(rop, state);
+    mpfr_printf("%.53Rf\n", rop);
   }
+  aes_randclear(state);
+  */
 
-  //run_tests();
+  run_tests();
   //ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
 
@@ -50,17 +50,17 @@ void generate_plaintexts(int argc, char *argv[]) {
   printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
 
   /* Generate the messages first with a copied randstate */
-  flint_rand_t gen_randstate;
-  flint_randinit_seed_crypto(gen_randstate, cmdline_params->shaseed, 0);
+  aes_randstate_t gen_randstate;
+  aes_randinit_seed(gen_randstate, cmdline_params->shaseed);
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   printf("The plaintexts:\n");
   for(int i = 0; i < num_messages; i++) {
     fmpz_init(messages[i]);
-    fmpz_randm(messages[i], gen_randstate, message_space_size);
+    fmpz_randm_aes(messages[i], gen_randstate, message_space_size);
     printf("%lu\n", fmpz_get_ui(messages[i]));
   }
   fmpz_clear(message_space_size);
-  flint_randclear(gen_randstate);
+  aes_randclear(gen_randstate);
   printf("\n");
 }
 
@@ -711,9 +711,9 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
      &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
-  printf("about to run mife setup\n");
+  printf("beginning setup: \n");
   mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
-  printf("just ran mife setup\n");
+  printf("finished setup\n");
 
   fmpz_t message_space_size;
   fmpz_init_set_ui(message_space_size, mspace_size);
@@ -721,7 +721,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   for(int i = 0; i < num_messages; i++) {
     fmpz_init(messages[i]);
-    fmpz_randm(messages[i], sk->randstate, message_space_size);
+    fmpz_randm_aes(messages[i], sk->randstate, message_space_size);
     if(verbose) {
       fmpz_print(messages[i]);
       printf("\n");

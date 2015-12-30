@@ -1,8 +1,9 @@
 #include <oz/oz.h>
 #include <oz/util.h>
 #include <oz/flint-addons.h>
+#include <aesrand/aesrand.h>
 
-int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
+int test_fmpz_mod_poly_oz_invert(long n, long q_, aes_randstate_t state) {
   fmpz_t q;
   fmpz_init(q);
   fmpz_set_si(q, q_);
@@ -10,9 +11,9 @@ int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
   fmpz_mod_poly_t f;  fmpz_mod_poly_init(f, q);
   fmpz_mod_poly_t g;  fmpz_mod_poly_init_oz_modulus(g, q, n);
 
-  fmpz_mod_poly_randtest(f, state, n);
+  fmpz_mod_poly_randtest_aes(f, state, n);
   while (fmpz_mod_poly_degree(f) < n-1)
-    fmpz_mod_poly_randtest(f, state, n);
+    fmpz_mod_poly_randtest_aes(f, state, n);
 
   fmpz_mod_poly_t r0, r1;
   fmpz_mod_poly_init(r0, q);
@@ -47,7 +48,7 @@ int test_fmpz_mod_poly_oz_invert(long n, long q_, flint_rand_t state) {
   return !r;
 }
 
-int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
+int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, aes_randstate_t state) {
   fmpq_poly_t f;  fmpq_poly_init(f);
   fmpq_poly_t g;  fmpq_poly_init_oz_modulus(g, n);
 
@@ -92,8 +93,8 @@ int test_fmpq_poly_oz_invert(long n, mp_bitcnt_t bits, flint_rand_t state) {
 
 int main(int argc, char *argv[]) {
 
-  flint_rand_t state;
-  flint_randinit(state);
+  aes_randstate_t state;
+  aes_randinit(state);
 
   int status = 0;
 
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
     for(mp_bitcnt_t bits=1; bits < n[i]; bits=2*bits)
       status += test_fmpq_poly_oz_invert(n[i], bits, state);
 
-  flint_randclear(state);
+  aes_randclear(state);
   flint_cleanup();
   return status;
 }

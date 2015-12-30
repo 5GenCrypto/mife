@@ -6,12 +6,13 @@
 /**
  * Testing the flexibility of large index sets with a smaller kappa
  */
-int test_jigsaw_indices(const size_t lambda, const size_t kappa, const size_t gamma, flint_rand_t randstate) {
+int test_jigsaw_indices(const size_t lambda, const size_t kappa, const size_t gamma, aes_randstate_t randstate) {
 
 	printf("lambda: %d, kappa: %d, gamma: %d", (int) lambda, (int) kappa, (int) gamma);
 
   gghlite_sk_t self;
   gghlite_flag_t flags = GGHLITE_FLAGS_QUIET;
+
   gghlite_jigsaw_init_gamma(self, lambda, kappa, gamma, flags, randstate);
 
   fmpz_t p; fmpz_init(p);
@@ -29,7 +30,7 @@ int test_jigsaw_indices(const size_t lambda, const size_t kappa, const size_t ga
 
   for(size_t k=0; k<kappa; k++) {
     fmpz_init(a[k]);
-    fmpz_randm(a[k], randstate, p);
+    fmpz_randm_aes(a[k], randstate, p);
     fmpz_mul(acc, acc, a[k]);
     fmpz_mod(acc, acc, p);
   }
@@ -95,7 +96,7 @@ int test_jigsaw_indices(const size_t lambda, const size_t kappa, const size_t ga
   return status;
 }
 
-int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_rand_t randstate) {
+int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, aes_randstate_t randstate) {
 
   printf("λ: %4zu, κ: %2zu, symmetric: %d …", lambda, kappa, symmetric);
 
@@ -116,7 +117,7 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
 
   for(size_t k=0; k<kappa; k++) {
     fmpz_init(a[k]);
-    fmpz_randm(a[k], randstate, p);
+    fmpz_randm_aes(a[k], randstate, p);
     fmpz_mul(acc, acc, a[k]);
     fmpz_mod(acc, acc, p);
   }
@@ -181,8 +182,8 @@ int test_jigsaw(const size_t lambda, const size_t kappa, int symmetric, flint_ra
 
 
 int main(int argc, char *argv[]) {
-  flint_rand_t randstate;
-  flint_randinit_seed(randstate, 0x1337, 1);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
 
   int status = 0;
 
@@ -199,7 +200,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  flint_randclear(randstate);
+  aes_randclear(randstate);
   flint_cleanup();
   mpfr_free_cache();
   return status;
