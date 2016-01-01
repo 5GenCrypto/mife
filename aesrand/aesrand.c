@@ -1,24 +1,26 @@
 #include "aesrand.h"
 
+int X = 0;
+int Y = 0;
+
 void aes_randinit(aes_randstate_t state) {
-  state->aes_init = 1;
-  state->ctr = 0;
-  state->ctx = EVP_CIPHER_CTX_new();
-  state->key = "12345678901234567890123456789012";
-  state->iv = "000000000000";
-  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
-      state->iv);
+  char *default_seed = "12345678901234567890123456789012";
+  aes_randinit_seed(state, default_seed);
 }
 
 void aes_randinit_seed(aes_randstate_t state, char *seed) {
-  aes_randinit(state);
+  state->aes_init = 1;
+  state->ctr = 0;
   state->key = seed;
+  state->iv = "000000000000";
+  state->ctx = EVP_CIPHER_CTX_new();
   EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
       state->iv);
 }
 
 void aes_randclear(aes_randstate_t state) {
   EVP_CIPHER_CTX_cleanup(state->ctx);
+  free(state->ctx);
 }
 
 void fmpz_mod_poly_randtest_aes(fmpz_mod_poly_t f, aes_randstate_t state,
@@ -63,6 +65,8 @@ void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
   mpfr_div(rop, num, denom, MPFR_RNDN);
   mpz_clear(mpz_num);
   mpz_clear(mpz_denom);
+  mpfr_clear(num);
+  mpfr_clear(denom);
 }
 
 void mpz_urandomm_aes(mpz_t rop, aes_randstate_t state, const mpz_t n) {
@@ -123,7 +127,8 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
 
   mpz_inp_raw(rop, fp);
   //gmp_printf("%Zd\n", p);
- 
+
+  fclose(fp); 
   free(in);
   free(output);
   free(buf); 
