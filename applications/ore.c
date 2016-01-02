@@ -12,8 +12,8 @@
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
-  run_tests();
-  //ore_challenge_gen(argc, argv);
+  //run_tests();
+  ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
 
 }
