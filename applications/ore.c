@@ -798,7 +798,7 @@ void test_rand() {
 }
 
 void run_tests() {
-  //test_rand();
+  test_rand();
   test_dary_conversion();
   test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);

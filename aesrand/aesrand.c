@@ -89,10 +89,12 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   int outlen = 0;
 
   while(outlen < nb) {
+    int buflen = 0;
     for(int i = 0; i < nb; i++) {
       in[i] = state->ctr++;
     }
-    EVP_EncryptUpdate(state->ctx, output+outlen, &outlen, in, nb);
+    EVP_EncryptUpdate(state->ctx, output+outlen, &buflen, in, nb);
+    outlen += buflen;
   }
 
   outlen = nb; // we will only use nb bytes
