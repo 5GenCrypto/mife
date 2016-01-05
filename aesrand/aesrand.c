@@ -84,25 +84,26 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   int nb = n/8+1; // number of bytes
 
   unsigned char *in = malloc(nb);
-  for(int i = 0; i < nb; i++) {
-    in[i] = state->ctr++;
-  }
-
-  unsigned char *output = malloc(nb);
-  int outlen, bytelen;
-  EVP_EncryptUpdate(state->ctx, output, &outlen, in, nb);
-
-  if(outlen != nb) {
-    printf("ERROR: with randomness being generated.\n");
-  }
   
-  bytelen = outlen;
-  int true_len = bytelen + 4;
+  unsigned char *output = malloc(2 * (nb + EVP_MAX_IV_LENGTH));
+  int outlen = 0;
+
+  while(outlen < nb) {
+    for(int i = 0; i < nb; i++) {
+      in[i] = state->ctr++;
+    }
+    EVP_EncryptUpdate(state->ctx, output+outlen, &outlen, in, nb);
+  }
+
+  outlen = nb; // we will only use nb bytes
+  
+  int true_len = outlen + 4;
+  int bytelen = outlen;
 
   unsigned char *buf = malloc(true_len);
   memset(buf, 0, true_len);
   memcpy(buf+4, output, outlen);
-  buf[4] >>= ((nb*8) - (unsigned int) n);
+  buf[4] >>= ((outlen*8) - (unsigned int) n);
     
   for(int i = 3; i >= 0; i--) {
     buf[i] = (unsigned char) (bytelen % (1 << 8));

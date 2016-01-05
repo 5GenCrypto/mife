@@ -110,6 +110,8 @@ void ore_challenge_gen(int argc, char *argv[]) {
   mife_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
+  fwrite_mife_pp(pp, "pp.out");
+
   int ci = cmdline_params->challenge_index;
  
   PRINT_ENCODING_PROGRESS = 1;
@@ -130,8 +132,6 @@ void ore_challenge_gen(int argc, char *argv[]) {
     }
   }
   PRINT_ENCODING_PROGRESS = 0;
-
-  fwrite_mife_pp(pp, "pp.out");
 
   free(ciphertexts);
   free(messages);
