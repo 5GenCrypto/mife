@@ -60,7 +60,7 @@ void ore_challenge_gen(int argc, char *argv[]) {
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
 
-  int L = 80; // 2^L = # of total messages we can encrypt
+  int L = 2; // 2^L = # of total messages we can encrypt
   int lambda = cmdline_params->lambda; // security parameter
   int num_messages = 20;
 
@@ -734,7 +734,19 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
       memcpy(cts[1], ciphertexts[j], sizeof(mife_ciphertext_t));
 
       int compare = mife_evaluate(pp, cts);
-      int true_compare = fmpz_cmp(messages[i], messages[j]);
+      fmpz_t modi, modj, true_mspace_size, fmpzd;
+      fmpz_init(modi);
+      fmpz_init(modj);
+      fmpz_init(true_mspace_size);
+      fmpz_init_set_ui(fmpzd, d);
+      fmpz_pow_ui(true_mspace_size, fmpzd, bitstr_len);
+      fmpz_mod(modi, messages[i], true_mspace_size);
+      fmpz_mod(modj, messages[j], true_mspace_size);
+      int true_compare = fmpz_cmp(modi, modj);
+      fmpz_clear(modi);
+      fmpz_clear(modj);
+      fmpz_clear(true_mspace_size);
+      fmpz_clear(fmpzd);
       if(true_compare < 0) {
         true_compare = 1;
       } else if(true_compare > 0) {
@@ -788,19 +800,12 @@ void test_rand() {
 void run_tests() {
   //test_rand();
   test_dary_conversion();
-  //test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
- 
-
-  // FIXME test fails on test_ore(5, 16, 5, 2, 1, ORE_MBP_DC, 1);
-  // FIXME test fails on test_ore(5, 16, 5, 2, 2, ORE_MBP_DC, 1);
-  // FIXME test fails on test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 1);
-  test_ore(5, 16, 2, 2, 4, ORE_MBP_DC, 1);
-  /*
+  test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
+  test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);
   test_ore(5, 16, 5, 2, 4, ORE_MBP_MC, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_NORMAL, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_DC, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_MC, 0);
-  */
 
   mpfr_free_cache();
   flint_cleanup();
