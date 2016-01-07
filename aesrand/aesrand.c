@@ -3,6 +3,8 @@
 int X = 0;
 int Y = 0;
 
+int VERBOSE = 0;
+
 void aes_randinit(aes_randstate_t state) {
   char *default_seed = "12345678901234567890123456789012";
   aes_randinit_seed(state, default_seed);
@@ -12,15 +14,11 @@ void aes_randinit_seed(aes_randstate_t state, char *seed) {
   state->aes_init = 1;
   state->ctr = 0;
   state->key = seed;
-  state->iv = "000000000000";
-  state->ctx = EVP_CIPHER_CTX_new();
-  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
-      state->iv);
+  state->iv = malloc(12);
 }
 
 void aes_randclear(aes_randstate_t state) {
-  EVP_CIPHER_CTX_cleanup(state->ctx);
-  free(state->ctx);
+  free(state->iv);
 }
 
 void fmpz_mod_poly_randtest_aes(fmpz_mod_poly_t f, aes_randstate_t state,
@@ -49,6 +47,7 @@ void fmpz_randm_aes(fmpz_t f, aes_randstate_t state, const fmpz_t m) {
 }
 
 void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
+  //printf("calling the mpfr randomness function which is weird...\n");
   unsigned long size = mpfr_get_prec(rop);
 
   mpfr_t num, denom;
@@ -56,9 +55,14 @@ void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
   mpz_init(mpz_num);
   mpz_init(mpz_denom);
 
+  //printf("size: %lu\n", size);
+  //VERBOSE = 1;
   mpz_urandomb_aes(mpz_num, state, size);
+  //VERBOSE = 0;
   mpfr_init_set_z(num, mpz_num, MPFR_RNDN);
 
+  //mpfr_printf("mpz_print for mpz_num: %Zd\n", mpz_num);
+  //mpfr_printf("mpfr_printf for num: %Zd\n", num);
   mpz_ui_pow_ui(mpz_denom, 2, size);
   mpfr_init_set_z(denom, mpz_denom, MPFR_RNDN);
 
@@ -67,6 +71,7 @@ void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
   mpz_clear(mpz_denom);
   mpfr_clear(num);
   mpfr_clear(denom);
+  //mpfr_printf("mpfr_printf: %.128Rf\n", rop);
 }
 
 void mpz_urandomm_aes(mpz_t rop, aes_randstate_t state, const mpz_t n) {
@@ -80,33 +85,70 @@ void mpz_urandomm_aes(mpz_t rop, aes_randstate_t state, const mpz_t n) {
   }
 }
 
+
+void gen_random_bytes(unsigned char *buf, mp_bitcnt_t n) {
+  unsigned long p = 0;
+
+  for( ; p < n; p++) {
+    buf[p] = (unsigned char) (rand() % 256);
+  }
+  /*
+  while(p < n) {
+    unsigned long num_get = (n-p > 256) ? 256 : n-p;
+    syscall(SYS_getrandom, buf+p, num_get, 0);
+    p += num_get;
+  }*/
+
+}
+
 void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
-  int nb = n/8+1; // number of bytes
+  mp_bitcnt_t nb = n/8+1; // number of bytes
+  int TRY_MAX = 1000000000; // number of times to attempt getting good randomness
+  //printf("nb: %lu\n", nb);
 
-  unsigned char *in = malloc(nb);
-  
+  memcpy(state->iv, &state->ctr, sizeof(state->ctr)); 
+
+  state->ctx = EVP_CIPHER_CTX_new();
+  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
+      state->iv);
+
   unsigned char *output = malloc(2 * (nb + EVP_MAX_IV_LENGTH));
-  int outlen = 0;
+  mp_bitcnt_t outlen = 0;
+  int halt_count = 0;
 
-  while(outlen < nb) {
+  while(outlen < nb && halt_count < TRY_MAX) {
     int buflen = 0;
-    for(int i = 0; i < nb; i++) {
-      in[i] = state->ctr++;
-    }
-    EVP_EncryptUpdate(state->ctx, output+outlen, &buflen, in, nb);
+    EVP_EncryptUpdate(state->ctx, output+outlen, &buflen,
+        (unsigned char *) &state->ctr, sizeof(unsigned long));
+    state->ctr++;
     outlen += buflen;
+    halt_count++;
+  }
+  int final_len = 0;
+  EVP_EncryptFinal(state->ctx, output+outlen, &final_len);
+  outlen += final_len;
+
+  if(halt_count == TRY_MAX) {
+    printf("ERROR: randomness being generated is not perfect.\n");
   }
 
-  outlen = nb; // we will only use nb bytes
+  if(outlen > nb) {
+    outlen = nb; // we will only use nb bytes
+  }
+
+/*  
+  outlen = nb;
+  gen_random_bytes(output, nb);
+*/
   
-  int true_len = outlen + 4;
-  int bytelen = outlen;
+  mp_bitcnt_t true_len = outlen + 4;
+  mp_bitcnt_t bytelen = outlen;
 
   unsigned char *buf = malloc(true_len);
   memset(buf, 0, true_len);
   memcpy(buf+4, output, outlen);
   buf[4] >>= ((outlen*8) - (unsigned int) n);
-    
+
   for(int i = 3; i >= 0; i--) {
     buf[i] = (unsigned char) (bytelen % (1 << 8));
     bytelen /= (1 << 8);
@@ -120,20 +162,22 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
     buf_ptr += sprintf(buf_ptr, "%02x ", buf[i]);
   }
   printf("%s\n", printbuf);
-*/
-  
+*/  
   // this generates a random n-bit number.
-  FILE *fp = fmemopen(buf, outlen+4, "rb");
+  FILE *fp = fmemopen(buf, true_len, "rb");
   if(!fp) {
     printf("Error in generating randomness.\n");
   }
 
   mpz_inp_raw(rop, fp);
-  //gmp_printf("%Zd\n", p);
+  //mpfr_printf("rop: %Zd\n", rop);
 
   fclose(fp); 
-  free(in);
   free(output);
   free(buf); 
+
+  EVP_CIPHER_CTX_cleanup(state->ctx);
+  free(state->ctx);
+
 }
 

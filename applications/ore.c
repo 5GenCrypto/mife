@@ -7,7 +7,6 @@
  */
 
 #include "ore.h"
-#include <openssl/engine.h>
 
 #define CHECK(x) if(x < 0) { assert(0); }
 
@@ -61,7 +60,7 @@ void ore_challenge_gen(int argc, char *argv[]) {
   const char *name =  "Order Revealing Encryption";
   parse_cmdline(cmdline_params, argc, argv, name, NULL);
 
-  int L = 2; // 2^L = # of total messages we can encrypt
+  int L = 80; // 2^L = # of total messages we can encrypt
   int lambda = cmdline_params->lambda; // security parameter
   int num_messages = 20;
 
@@ -243,7 +242,8 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size) {
     }
   }
 
-  if(min_type == 1) {
+  printf("min_type: %d\n", min_type);
+  if(min_type == 0) {
     ORE_GLOBAL_FLAGS = ORE_MBP_DC;
   } else {
     ORE_GLOBAL_FLAGS = ORE_MBP_MC;
@@ -545,8 +545,9 @@ int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type) {
 }
 
 int ore_mbp_param(int bitstr_len, int index) {
- 
+  printf("calling param\n"); 
   if(ORE_GLOBAL_FLAGS & ORE_MBP_NORMAL) {
+    printf("a\n");
     return bitstr_len;
   }
 
@@ -560,6 +561,7 @@ int ore_mbp_param(int bitstr_len, int index) {
   }
   
   if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
+    printf("b\n");
     return bitstr_len;
   }
 
@@ -792,9 +794,11 @@ void test_rand() {
   fmpz_init(a);
   fmpz_init_set_ui(b, 100008);
   fmpz_randm_aes(a, gen_randstate, b);
+  fmpz_print(a); printf("\n");
   fmpz_randm_aes(a, gen_randstate, b);
+  fmpz_print(a); printf("\n");
   fmpz_randm_aes(a, gen_randstate, b);
-  fmpz_print(a);
+  fmpz_print(a); printf("\n");
   aes_randclear(gen_randstate);
 }
 

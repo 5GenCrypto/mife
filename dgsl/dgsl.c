@@ -10,6 +10,7 @@
 #include "gso.h"
 
 int dgsl_mp_call_identity(fmpz *rop,  const dgsl_mp_t *self, aes_randstate_t state) {
+
   assert(rop); assert(self);
 
   const long n = fmpz_mat_ncols(self->B);

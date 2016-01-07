@@ -262,9 +262,11 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, aes_randstate_t randstate) {
     else {
       /** we first check for probable prime factors */
       prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->params->n, primes_p);
-      if (prime_pass)
-        /* if that passes we exclude small prime factors, regardless of how probable they are */
+      if (prime_pass) {
+        /* if that passes we exclude small prime factors, regardless of how 
+         * probable they are */
         prime_pass = fmpz_poly_oz_ideal_not_prime_factors(self->g, self->params->n, primes_s);
+      }
     }
     self->t_is_prime += ggh_walltime(t);
     if (!prime_pass) {

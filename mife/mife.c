@@ -357,6 +357,8 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     pp->gamma += pp->gammas[i];
   }
 
+  printf("kappa: %d\n", pp->kappa);
+
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
                       pp->kappa,

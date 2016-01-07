@@ -55,6 +55,7 @@ dgs_disc_gauss_sigma2p_t *dgs_disc_gauss_sigma2p_init() {
 }
 
 void dgs_disc_gauss_sigma2p_mp_call(mpz_t rop, dgs_disc_gauss_sigma2p_t *self, aes_randstate_t state) {
+
   while(1) {
     if (!dgs_bern_uniform_call(self->B, state)) {
       mpz_set_ui(rop, 0);
@@ -79,6 +80,7 @@ void dgs_disc_gauss_sigma2p_mp_call(mpz_t rop, dgs_disc_gauss_sigma2p_t *self, a
 }
 
 long dgs_disc_gauss_sigma2p_dp_call(dgs_disc_gauss_sigma2p_t *self) {
+
   while(1) {
     if (!dgs_bern_uniform_call_libc(self->B)) {
       return 0;
@@ -379,6 +381,7 @@ void dgs_disc_gauss_mp_call_uniform_online(mpz_t rop, dgs_disc_gauss_mp_t *self,
 
 void dgs_disc_gauss_mp_call_uniform_logtable(mpz_t rop, dgs_disc_gauss_mp_t *self, aes_randstate_t state) {
   do {
+
     mpz_urandomm_aes(self->x, state, self->two_upper_bound_minus_one);
     mpz_sub(self->x, self->x, self->upper_bound_minus_one);
     mpz_mul(self->x2, self->x, self->x);
