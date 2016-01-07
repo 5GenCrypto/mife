@@ -11,7 +11,7 @@
 #define CHECK(x) if(x < 0) { assert(0); }
 
 int main(int argc, char *argv[]) {
-  printf("Last change from 7PM on 1/4/2016\n");
+  printf("Last change from 2AM on 1/7/2016\n");
   //run_tests();
   ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
