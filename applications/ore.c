@@ -12,10 +12,24 @@
 
 int main(int argc, char *argv[]) {
   printf("Last change from 2AM on 1/7/2016\n");
-  //run_tests();
-  ore_challenge_gen(argc, argv);
+  run_tests();
+  //ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
 
+}
+
+int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
+  mife_pp_t pp;
+  mife_ciphertext_t *cts = malloc(2 * sizeof(mife_ciphertext_t));
+  fread_mife_pp(pp, pp_file);
+  fread_mife_ciphertext(pp, cts[0], ct1_file);
+  fread_mife_ciphertext(pp, cts[1], ct2_file);
+  int ret = mife_evaluate(pp, cts);
+  mife_ciphertext_clear(pp, cts[0]);
+  mife_ciphertext_clear(pp, cts[1]);
+  free(cts);
+  mife_clear_pp_read(pp);
+  return ret;
 }
 
 void generate_plaintexts(int argc, char *argv[]) {
@@ -712,6 +726,11 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
   mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
 
+  fwrite_mife_pp(pp, "pp_test.out");
+  //mife_clear_pp(pp);
+  mife_pp_t pp2;
+  fread_mife_pp(pp2, "pp_test.out");
+
   fmpz_t message_space_size;
   fmpz_init_set_ui(message_space_size, mspace_size);
 
@@ -736,7 +755,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
       memcpy(cts[0], ciphertexts[i], sizeof(mife_ciphertext_t));
       memcpy(cts[1], ciphertexts[j], sizeof(mife_ciphertext_t));
 
-      int compare = mife_evaluate(pp, cts);
+      int compare = mife_evaluate(pp2, cts);
       fmpz_t modi, modj, true_mspace_size, fmpzd;
       fmpz_init(modi);
       fmpz_init(modj);
@@ -770,12 +789,12 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   }
 
   for(int i = 0; i < num_messages; i++) {
-    mife_ciphertext_clear(pp, ciphertexts[i]);
+    mife_ciphertext_clear(pp2, ciphertexts[i]);
   }
   free(ciphertexts);
   free(messages);
 
-  mife_clear_pp(pp);
+  mife_clear_pp_read(pp2);
   mife_clear_sk(sk);
   
   if(status == 0) {
@@ -803,7 +822,15 @@ void test_rand() {
 }
 
 void run_tests() {
+  fmpz_t p;
+  fmpz_init_set_ui(p, 19);
+  aes_randstate_t randstate;
+  aes_randinit(randstate);
+  test_matrix_inv(30, randstate, p);
+  aes_randclear(randstate);
+  
   test_rand();
+
   test_dary_conversion();
   test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);

@@ -1,5 +1,7 @@
 #include "aesrand.h"
 
+#define AES_ALGORITHM EVP_aes_128_gcm()
+
 int X = 0;
 int Y = 0;
 
@@ -14,7 +16,8 @@ void aes_randinit_seed(aes_randstate_t state, char *seed) {
   state->aes_init = 1;
   state->ctr = 0;
   state->key = seed;
-  state->iv = malloc(12);
+  state->iv = malloc(EVP_CIPHER_iv_length(AES_ALGORITHM));
+  memset(state->iv, 0, EVP_CIPHER_iv_length(AES_ALGORITHM));
 }
 
 void aes_randclear(aes_randstate_t state) {
@@ -109,7 +112,7 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   memcpy(state->iv, &state->ctr, sizeof(state->ctr)); 
 
   state->ctx = EVP_CIPHER_CTX_new();
-  EVP_EncryptInit_ex (state->ctx, EVP_aes_128_gcm(), NULL, state->key,
+  EVP_EncryptInit_ex (state->ctx, AES_ALGORITHM, NULL, state->key,
       state->iv);
 
   unsigned char *output = malloc(2 * (nb + EVP_MAX_IV_LENGTH));
@@ -169,7 +172,10 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
     printf("Error in generating randomness.\n");
   }
 
-  mpz_inp_raw(rop, fp);
+  if(mpz_inp_raw(rop, fp) == 0) {
+    printf("Error in parsing randomness.\n");
+  }
+
   //mpfr_printf("rop: %Zd\n", rop);
 
   fclose(fp); 

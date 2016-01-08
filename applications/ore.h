@@ -34,6 +34,7 @@ ore_flag_t ORE_GLOBAL_FLAGS = ORE_DEFAULT;
 
 /* functions dealing with ORE challenge generation */
 void generate_plaintexts(int argc, char *argv[]);
+int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file);
 void ore_challenge_gen(int argc, char *argv[]);
 void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);

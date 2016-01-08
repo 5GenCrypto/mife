@@ -125,10 +125,12 @@ void fread_mife_pp(mife_pp_t pp, char *filepath) {
     &flag_int,
     &pp->num_enc
   ));
+  pp->n = malloc(pp->num_inputs * sizeof(int));
   for(int i = 0; i < pp->num_inputs; i++) {
     CHECK(fscanf(fp, "%d ", &pp->n[i]));
   }
   CHECK(fscanf(fp, "\n"));
+  pp->gammas = malloc(pp->num_inputs * sizeof(int));
   for(int i = 0; i < pp->num_inputs; i++) {
     CHECK(fscanf(fp, "%d ", &pp->gammas[i]));
   }
@@ -770,10 +772,32 @@ void test_dary_conversion() {
 
 }
 
+void print_matrix_sage(fmpz_mat_t a) {
+  printf("\n[");
+  for(int i = 0; i < a->r; i++) {
+    printf("[");
+    for(int j = 0; j < a->c; j++) {
+      fmpz_print(fmpz_mat_entry(a, i, j));
+      if(j != a->c-1) {
+        printf(", ");
+      }
+    }
+    printf("]");
+    if(i != a->r-1) {
+      printf(",");
+    }
+    printf("\n");
+  }
+  printf("]\n");
+}
+
+
 int test_matrix_inv(int n, aes_randstate_t randstate, fmpz_t modp) {
   printf("\nTesting matrix_inv function...                                ");
   fmpz_mat_t a;
   fmpz_mat_init(a, n, n);
+  
+  fmpz_mat_one(a);
 
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
@@ -812,9 +836,7 @@ int test_matrix_inv(int n, aes_randstate_t randstate, fmpz_t modp) {
  * https://www.cs.rochester.edu/~brown/Crypto/assts/projects/adj.html
  */
 
-/*
-   Recursive definition of determinate using expansion by minors.
-*/
+// uses gaussian elimination to obtain the determinant of a matrix
 void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p) {
   assert(n >= 1);
 
@@ -840,31 +862,72 @@ void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p) {
   }
 
   fmpz_mat_t m;
-  fmpz_mat_init(m, n-1, n-1);
+  fmpz_mat_init_set(m, a);
 
-  fmpz_set_ui(det, 0);
-  for(int j1=0;j1<n;j1++) {
-    for (int i=1;i<n;i++) {
-      int j2 = 0;
-      for (int j=0;j<n;j++) {
-        if (j == j1)
-          continue;
-        fmpz_set(fmpz_mat_entry(m,i-1,j2), fmpz_mat_entry(a,i,j));
-        j2++;
+  fmpz_t tmp;
+  fmpz_init(tmp);
+  fmpz_t multfactor;
+  fmpz_init(multfactor);
+
+  int num_swaps = 0;
+
+  for(int j = 0; j < n; j++) {
+    for(int i = j+1; i < n; i++) {
+
+      if(fmpz_is_zero(fmpz_mat_entry(m, j, j))) {
+        // find first row that isn't a zero, and swap
+        int was_swapped = 0;
+        int h;
+        for(h = j+1; h < n; h++) {
+          if(fmpz_is_zero(fmpz_mat_entry(m, h, j))) {
+            continue;
+          }
+
+          // swap row h with row j
+          for(int k = 0; k < n; k++) {
+            fmpz_set(tmp, fmpz_mat_entry(m, h, k));
+            fmpz_set(fmpz_mat_entry(m, h, k), fmpz_mat_entry(m, j, k));
+            fmpz_set(fmpz_mat_entry(m, j, k), tmp);
+          }
+          was_swapped = 1;
+          break;
+        }
+
+        if(!was_swapped) {
+          // matrix is not invertible!
+          fmpz_set_ui(det, 0);
+          fmpz_clear(multfactor);
+          fmpz_clear(tmp);
+          fmpz_mat_clear(m);
+          return;
+        }
+
+        num_swaps++;
+      }
+
+      fmpz_invmod(multfactor, fmpz_mat_entry(m, j, j), p);
+      fmpz_mul(multfactor, multfactor, fmpz_mat_entry(m, i, j));
+      fmpz_mod(multfactor, multfactor, p);
+      for(int k = j; k < n; k++) {
+        fmpz_mul(tmp, fmpz_mat_entry(m, j, k), multfactor);
+        fmpz_sub(fmpz_mat_entry(m, i, k), fmpz_mat_entry(m, i, k), tmp);
+        fmpz_mod(fmpz_mat_entry(m, i, k), fmpz_mat_entry(m, i, k), p);
       }
     }
-    fmpz_t det2;
-    fmpz_init(det2);
-    fmpz_mat_det_modp(det2, m, n-1, p);
-    fmpz_mul(det2, det2, fmpz_mat_entry(a,0,j1));
-    fmpz_mod(det2, det2, p);
-    if(j1 % 2 == 1) {
-      fmpz_negmod(det2, det2, p);
-    }
-    fmpz_add(det, det, det2);
-    fmpz_clear(det2);
   }
 
+  fmpz_clear(multfactor);
+  fmpz_clear(tmp);
+
+  fmpz_set_ui(det, 1);
+
+  for(int j = 0; j < n; j++) {
+    fmpz_mul(det, det, fmpz_mat_entry(m, j, j));
+  }
+  if(num_swaps % 2 == 1) {
+    fmpz_neg(det, det);
+  }
+  fmpz_mod(det, det, p);
   fmpz_mat_clear(m);
 }
 
