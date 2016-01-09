@@ -22,13 +22,13 @@
  *   is that `matrices[i].num_cols == matrices[i+1].num_rows`
  */
 typedef struct {
-	unsigned int f2_num_rows, f2_num_cols;
-	bool **f2_elems;
+	unsigned int num_rows, num_cols;
+	bool **elems;
 } f2_matrix;
 
 typedef struct {
-	unsigned int f2_matrices_len;
-	f2_matrix *f2_matrices;
+	unsigned int matrices_len;
+	f2_matrix *matrices;
 } f2_mbp;
 
 /* returns true iff dest is successfully initialized to the contents of src */
