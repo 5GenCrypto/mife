@@ -13,13 +13,9 @@ void fmpz_init_exp(fmpz_t exp, int base, int n) {
   fmpz_clear(tmp);
 }
 
-void mife_init_params(mife_pp_t pp, int d, int bitstr_len, mife_flag_t flags) {
+void mife_init_params(mife_pp_t pp, int bitstr_len, mife_flag_t flags) {
   pp->flags = flags;
-  pp->d = d; 
   pp->bitstr_len = bitstr_len;
-  // FIXME get rid of these, they are not useful
-  pp->ct_size = -1;
-  pp->num_enc = -1;
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -55,15 +51,13 @@ void gghlite_params_clear_read(gghlite_params_t self) {
 void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "w");
-  fprintf(fp, "%d %d %d %d %d %d %d %d\n",
+  fprintf(fp, "%d %d %d %d %d %d\n",
     pp->num_inputs,
     pp->bitstr_len,
-    pp->d,
     pp->L,
     pp->kappa,
     pp->numR,
-    pp->flags,
-    pp->num_enc
+    pp->flags
   );
   for(int i = 0; i < pp->num_inputs; i++) {
     fprintf(fp, "%d ", pp->n[i]);
@@ -115,15 +109,13 @@ void fread_mife_pp(mife_pp_t pp, char *filepath) {
   int mpfr_base = 10;
   FILE *fp = fopen(filepath, "r");
   int flag_int;
-  CHECK(fscanf(fp, "%d %d %d %d %d %d %d %d\n",
+  CHECK(fscanf(fp, "%d %d %d %d %d %d\n",
     &pp->num_inputs,
     &pp->bitstr_len,
-    &pp->d,
     &pp->L,
     &pp->kappa,
     &pp->numR,
-    &flag_int,
-    &pp->num_enc
+    &flag_int
   ));
   pp->n = malloc(pp->num_inputs * sizeof(int));
   for(int i = 0; i < pp->num_inputs; i++) {
@@ -323,7 +315,8 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   mife_mat_clr_clear(pp, met);
 }
 
-void mife_mbp_init(
+void mife_mbp_set(
+    void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
     int (*paramfn)(int, int),
@@ -332,6 +325,7 @@ void mife_mbp_init(
     void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
     int (*parsefn)(char **)
     ) {
+  pp->mbp_params = mbp_params;
   pp->num_inputs = num_inputs;
   pp->paramfn = paramfn;
   pp->kilianfn = kilianfn;
@@ -359,7 +353,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     pp->gamma += pp->gammas[i];
   }
 
-  printf("kappa: %d\n", pp->kappa);
+  //printf("kappa: %d\n", pp->kappa);
 
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
@@ -370,9 +364,10 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   pp->params_ref = &(sk->self->params);
 
-  printf("Supporting at most 2^%d plaintexts, each in base %d,\n", pp->L,
-      pp->d);
+  /*
+  printf("Supporting at most 2^%d plaintexts \n", pp->L);
   printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
+  */
   
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
@@ -526,7 +521,7 @@ void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
       if(PRINT_ENCODING_PROGRESS) {
         printf("Generated encoding %d / %d (Time elapsed: %8.2f s)\n",
             NUM_ENCODINGS_GENERATED,
-            pp->num_enc,
+            get_NUM_ENC(),
             get_T());
       }
     }
@@ -797,8 +792,6 @@ int test_matrix_inv(int n, aes_randstate_t randstate, fmpz_t modp) {
   fmpz_mat_t a;
   fmpz_mat_init(a, n, n);
   
-  fmpz_mat_one(a);
-
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
       fmpz_randm_aes(fmpz_mat_entry(a, i, j), randstate, modp);
@@ -1043,6 +1036,14 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
     _fmpz_mod_poly_normalise(poly);
 
     return 1;
+}
+
+void set_NUM_ENC(int val) {
+  NUM_ENCODINGS_TOTAL = val;
+}
+
+int get_NUM_ENC() {
+  return NUM_ENCODINGS_TOTAL;
 }
 
 void reset_T() {

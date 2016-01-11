@@ -10,6 +10,7 @@
 
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
+int NUM_ENCODINGS_TOTAL;
 uint64_t T;
 
 typedef enum {
@@ -61,19 +62,17 @@ struct _mife_pp_struct {
   int num_inputs; // the arity of the MBP (for comparisons, this is 2).
   int *n; // of length num_inputs
   int *gammas; // gamma for each input
-  long ct_size; // estimated size of a ciphertext based on # of encodings
   int bitstr_len; // length of the plaintexts in d-ary
-  int d; // the base
   int L; // log # of plaintexts we can support
   int gamma; // should be sum of gammas[i] 
   int kappa; // the kappa for gghlite (degree of multilinearity)
   int numR; // number of kilian matrices. should be kappa-1
-  int num_enc; // number of encodings per ciphertext
   mife_flag_t flags;
   fmpz_t p; // the prime, the order of the field
   gghlite_params_t *params_ref; // gghlite's public parameters, by reference
 
   // MBP function pointers
+  void *mbp_params; // additional parameters one can pass into the MBP setup
   int (*paramfn)(int, int); // for determining number of matrices per input
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn)(int, int *, int *); // function pointer for MBP ordering
@@ -85,8 +84,9 @@ typedef struct _mife_pp_struct mife_pp_t[1];
 
 
 /* MIFE interface */
-void mife_init_params(mife_pp_t pp, int d, int bitstr_len, mife_flag_t flags);
-void mife_mbp_init(
+void mife_init_params(mife_pp_t pp, int bitstr_len, mife_flag_t flags);
+void mife_mbp_set(
+    void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
     int (*paramfn)(int, int),
@@ -104,6 +104,8 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 /* MIFE internal functions */
 void reset_T();
 float get_T();
+void set_NUM_ENC(int val);
+int get_NUM_ENC();
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk);
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk);

@@ -15,6 +15,8 @@
 #define Y_TYPE 1
 #define NONZERO_VAL 1
 
+int CT_SIZE;
+
 typedef enum {
    //!< the MBP produced is a series of 2n (d+3) x (d+3) matrices
   ORE_MBP_NORMAL = 0x08,
@@ -32,12 +34,18 @@ typedef enum {
 
 ore_flag_t ORE_GLOBAL_FLAGS = ORE_DEFAULT;
 
+typedef struct _ore_params_struct {
+  int d; // the base
+} ore_params_t;
+
 /* functions dealing with ORE challenge generation */
 void generate_plaintexts(int argc, char *argv[]);
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file);
 void ore_challenge_gen(int argc, char *argv[]);
-void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size);
+void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
+    ore_params_t *params);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);
+
 int ore_mbp_param(int bitstr_len, int index);
 void ore_mbp_kilian(mife_pp_t pp, int *dims);
 void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
@@ -49,6 +57,8 @@ int ore_mbp_parse(char **m);
 void run_tests();
 int test_ore(int lambda, int mspace_size, int num_messages, int d,
     int bitstr_len, ore_flag_t flags, int verbose);
+void print_random_matrices_with_inverse(int n, char *p_file,
+    char *a_file, char *inv_file);
 
 
 /* benchmarking info for choosing best params */
