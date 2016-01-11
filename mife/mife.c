@@ -562,7 +562,7 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
       memset(groups[i][j], 0, pp->gamma * sizeof(int));
       for(int k = 0; k < pp->gammas[i]; k++) {
         if(ptns[i][k] == j) {
-          groups[i][j][k + i * pp->gammas[0]] = 1;
+          groups[i][j][k + gamma_offset] = 1;
         }
       }
     }
