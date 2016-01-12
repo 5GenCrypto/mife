@@ -731,11 +731,11 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     }
     
     for(int k = 0, bc = 0; k < pp->n[1]; k++, bc++) {
-      if(k == 0 && pp->n[1] > 1) {
+      if(k == 0 && pp->n[0] > 1) {
         ore_dc_clrmat_init_SECOND(met->clr[1][k], dary_repr[bc],
             dary_repr[bc+1], d);
         bc++;
-      } else if(k == 0 && pp->n[1] == 1) {
+      } else if(k == 0 && pp->n[0] == 1) {
         ore_dc_clrmat_init_SECONDANDLAST(met->clr[1][k], dary_repr[bc],
             d);
       } else if((pp->bitstr_len % 2 == 1) && (k == pp->n[1]-1)) {
@@ -921,15 +921,12 @@ void run_tests() {
   test_rand();
 
   test_dary_conversion();
-  //test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
+  test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);
-  // FIXME: test_ore(5, 16, 5, 2, 2, ORE_MBP_DC, 0); FAILS!
-  /* 
   test_ore(5, 16, 5, 2, 4, ORE_MBP_MC, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_NORMAL, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_DC, 0);
   test_ore(5, 1000, 10, 5, 5, ORE_MBP_MC, 0);
-  */
 
   mpfr_free_cache();
   flint_cleanup();
@@ -987,6 +984,4 @@ void print_random_matrices_with_inverse(int n, char *p_file,
   fmpz_mat_clear(identity);
 
   aes_randclear(randstate);
-
 }
-
