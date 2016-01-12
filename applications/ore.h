@@ -1,6 +1,7 @@
 #ifndef _ORE_H_
 #define _ORE_H_
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,12 +9,14 @@
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-defs.h>
 #include <mife/mife.h>
-#include "common.h"
 
 /* these are used for get_matrix_bit() */
 #define X_TYPE 0
 #define Y_TYPE 1
 #define NONZERO_VAL 1
+
+
+#define DEFAULT_SHA_SEED "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 int CT_SIZE;
 
@@ -38,11 +41,37 @@ typedef struct _ore_params_struct {
   int d; // the base
 } ore_params_t;
 
+typedef struct ore_cmdline {
+  int lambda;
+  int d1;
+  int d2;
+  int challenge_index;
+  int num_messages;
+  char *m_file;
+  char *seed;
+
+  char *pp_file;
+  int num_files;
+  char **files;
+
+  int is_cgen;
+  int is_plaintexts_gen;
+  int is_pp_gen;
+  int is_tests_only;
+  int is_evaluate_only;
+
+} ore_cmdline_t[1];
+
+void ore_print_help_and_exit();
+void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params);
+
 /* functions dealing with ORE challenge generation */
-void generate_plaintexts(int argc, char *argv[]);
+void generate_plaintexts(int num_messages, int d, int n, char *seed);
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file);
-void ore_pp_gen(int argc, char *argv[]);
-void ore_challenge_gen(int argc, char *argv[]);
+void test_all_ciphertexts(char *pp_file, int n);
+void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed);
+void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
+    int d, int n, char *seed);
 void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
     ore_params_t *params);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);

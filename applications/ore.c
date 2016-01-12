@@ -10,14 +10,119 @@
 
 #define CHECK(x) if(x < 0) { assert(0); }
 
+void ore_print_help_and_exit() {
+  printf("-l, --lambda   security parameter\n");
+  printf("-s, --seed   SHA256 seed\n");
+	printf("-d, --domain   specify twice for base and exponent (i.e., -d 2 -d 5 for 2^5 messages)\n");
+  printf("-c, --ciphertext-gen   the index of the ciphertext to generate to a file (specify with -c index -c message_file_name), gets placed in ct{index}.out\n");
+  printf("-f, --file   file name, can be used multiple times to specify multiple files\n");
+  printf("-m, --num-messages   the number of messages (use -f filename to specify file name)\n");
+  printf("-q, --messages-gen   only generates secret messages\n");
+  printf("-e, --evaluate   evaluate on a set of files (specify with -f file1 -f file2 ...)\n");
+  printf("-t, --tests-only   only run tests\n");
+  printf("-p, --pp-gen   generates public and secret parameters\n");
+  printf("-h, --help   print this help\n");
+  exit(0);
+}
+
+void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params) {
+  memset(params, 0, sizeof(ore_cmdline_t));
+  params->seed = DEFAULT_SHA_SEED;
+
+  int c;
+  const char *short_opt = "l:c:s:f:d:pqteh";
+  struct option long_opt[] = {
+    {"lambda", required_argument, NULL, 'l'},
+    {"ciphertext-gen", required_argument, NULL, 'c'},
+    {"seed", required_argument, NULL, 's'},
+    {"pp-gen", no_argument, NULL, 'p'},
+    {"messages-gen", no_argument, NULL, 'q'},
+    {"tests-only", no_argument, NULL, 't'},
+    {"domain", required_argument, NULL, 'd'},
+    {"num-messages", required_argument, NULL, 'm'},
+    {"evaluate", required_argument, NULL, 'e'},
+    {"file", required_argument, NULL, 'f'},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, 0, NULL, 0}
+  };
+
+  while((c = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
+    switch(c) {
+      case 0: break;
+      case 'l':
+        params->lambda = atoi(optarg);
+        break;
+      case 'c':
+        if(params->challenge_index == 0) {
+          params->challenge_index = atoi(optarg);
+          params->is_cgen = 1;
+        } else {
+          params->m_file = optarg;
+        }
+        break;
+      case 's':
+        params->seed = optarg;
+        break;
+      case 'm':
+        params->num_messages = atoi(optarg);
+        params->is_plaintexts_gen = 1;
+        break;
+      case 'f':
+        params->num_files++;
+        if(params->num_files == 1) {
+          params->files = malloc(sizeof(char *));
+        } else {
+          params->files = realloc(params->files,
+              params->num_files * sizeof(char *));
+        }
+        params->files[params->num_files-1] = optarg;
+        break;
+      case 'q':
+        params->pp_file = optarg;
+        break;
+      case 'p':
+        params->is_pp_gen = 1;
+        break;
+      case 't':
+        params->is_tests_only = 1;
+        break;
+      case 'e':
+        params->is_evaluate_only = 1;
+        break;
+      case 'd':
+        if(params->d1 == 0) {
+          params->d1 = atoi(optarg);
+        } else {
+          params->d2 = atoi(optarg);
+        }
+        break;
+      case 'h':
+      case '?':
+      default:
+        ore_print_help_and_exit();
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
-  //printf("Last change from 2AM on 1/7/2016\n");
-  run_tests();
-  //ore_pp_gen(argc, argv);
-  //ore_challenge_gen(argc, argv);
-  //generate_plaintexts(argc, argv);
+  ore_cmdline_t params;
+  ore_parse_cmdline(argc, argv, params);
+
+  if(params->is_tests_only) {
+    run_tests();
+  } else if(params->is_pp_gen) {
+    ore_pp_gen(params->pp_file, params->lambda, params->d1, params->d2, params->seed);
+  } else if(params->is_cgen) {
+    ore_challenge_gen(params->m_file, params->challenge_index, params->lambda, params->d1, params->d2, params->seed);
+  } else if(params->is_plaintexts_gen) {
+    generate_plaintexts(params->num_messages, params->d1, params->d2,
+        params->seed);
+  }
+
   //print_random_matrices_with_inverse(atoi(argv[1]), argv[2], argv[3], 
   //argv[4]);
+
+  return 0;
 }
 
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
@@ -54,31 +159,15 @@ void test_all_ciphertexts(char *pp_file, int n) {
   }
 }
 
-void generate_plaintexts(int argc, char *argv[]) {
-  cmdline_params_t cmdline_params;
-
-  const char *name =  "Order Revealing Encryption";
-  parse_cmdline(cmdline_params, argc, argv, name, NULL);
-
-  int lambda = 80;
-  int num_messages = 20;
-
-  /* message space size will be base_d ^ base_n */
-  int base_d = 10;
-  int base_n = 10;
-
-  mife_pp_t pp;
-
+void generate_plaintexts(int num_messages, int d, int n, char *seed) {
+  printf("Using SHA256 seed: %s\n", seed);  
+  
   fmpz_t message_space_size;
-  fmpz_init_exp(message_space_size, base_d, base_n);
-  ore_params_t *params = malloc(sizeof(ore_params_t));
-  ore_set_best_params(pp, lambda, message_space_size, params);
-
-  printf("Using SHA256 seed: %s\n", cmdline_params->shaseed);  
+  fmpz_init_exp(message_space_size, d, n);
 
   /* Generate the messages first with a copied randstate */
   aes_randstate_t gen_randstate;
-  aes_randinit_seed(gen_randstate, cmdline_params->shaseed);
+  aes_randinit_seed(gen_randstate, seed);
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   printf("The plaintexts:\n");
   for(int i = 0; i < num_messages; i++) {
@@ -88,28 +177,17 @@ void generate_plaintexts(int argc, char *argv[]) {
   }
   fmpz_clear(message_space_size);
   aes_randclear(gen_randstate);
-  free(params);
   printf("\n");
 }
 
-void ore_pp_gen(int argc, char *argv[]) {
-  cmdline_params_t cmdline_params;
-
-  const char *name =  "Order Revealing Encryption";
-  parse_cmdline(cmdline_params, argc, argv, name, NULL);
-
+void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed) {
   int L = 80; // 2^L = # of total messages we can encrypt
-  int lambda = cmdline_params->lambda; // security parameter
-
-  /* message space size will be base_d ^ base_n */
-  int base_d = 10;
-  int base_n = 10;
 
   mife_pp_t pp;
   mife_sk_t sk;
 
   fmpz_t message_space_size;
-  fmpz_init_exp(message_space_size, base_d, base_n);
+  fmpz_init_exp(message_space_size, d, n);
   ore_params_t *params = malloc(sizeof(ore_params_t));
   ore_set_best_params(pp, lambda, message_space_size, params);
 
@@ -129,10 +207,10 @@ void ore_pp_gen(int argc, char *argv[]) {
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
-  mife_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
+  mife_setup(pp, sk, L, lambda, ggh_flags, seed);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
-  fwrite_mife_pp(pp, "pp.out");
+  fwrite_mife_pp(pp, pp_file);
   mife_clear_pp(pp);
   mife_clear_sk(sk);
   mpfr_free_cache();
@@ -142,40 +220,38 @@ void ore_pp_gen(int argc, char *argv[]) {
 
 }
 
-void ore_challenge_gen(int argc, char *argv[]) {
-  cmdline_params_t cmdline_params;
-
-  const char *name =  "Order Revealing Encryption";
-  parse_cmdline(cmdline_params, argc, argv, name, NULL);
-
+void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
+    int d, int n, char *seed) {
   int L = 80; // 2^L = # of total messages we can encrypt
-  int lambda = cmdline_params->lambda; // security parameter
-  int num_messages = 20;
-
-  /* message space size will be base_d ^ base_n */
-  int base_d = 10;
-  int base_n = 10;
 
   mife_pp_t pp;
   mife_sk_t sk;
 
   fmpz_t message_space_size;
-  fmpz_init_exp(message_space_size, base_d, base_n);
+  fmpz_init_exp(message_space_size, d, n);
   ore_params_t *params = malloc(sizeof(ore_params_t));
   ore_set_best_params(pp, lambda, message_space_size, params);
 
   /* Read in the messages */
-  fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
-  FILE *fp = fopen("plaintexts.secret", "r");
+  FILE *fp = fopen(m_file, "r");
   if(!fp) {
-    printf("ERROR: Could not find file plaintexts.secret\n");
+    printf("ERROR: Could not find file %s\n", m_file);
     exit(1);
   }
-  for(int i = 0; i < num_messages; i++) {
-    unsigned long m;
-    CHECK(fscanf(fp, "%lu\n", &m));
-    fmpz_init_set_ui(messages[i], m);
+ 
+  fmpz_t *messages;
+  unsigned long m;
+  int num_messages = 0;
+  while(fscanf(fp, "%lu\n", &m) > 0) {
+    if(num_messages == 0) {
+      messages = malloc(sizeof(fmpz_t));
+    } else {
+      messages = realloc(messages, num_messages+1 * sizeof(fmpz_t));
+    fmpz_init_set_ui(messages[num_messages], m);
+    num_messages++;
+    }
   }
+
   fclose(fp);
   fmpz_clear(message_space_size);
 
@@ -196,18 +272,15 @@ void ore_challenge_gen(int argc, char *argv[]) {
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
-  mife_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
+  mife_setup(pp, sk, L, lambda, ggh_flags, seed);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
-  fwrite_mife_pp(pp, "pp.out");
-
-  int ci = cmdline_params->challenge_index;
- 
   PRINT_ENCODING_PROGRESS = 1;
   mife_ciphertext_t *ciphertexts =
     malloc(num_messages * sizeof(mife_ciphertext_t));
-  for(int i = 0; i < num_messages; i++) { 
-    if(ci == 0 || i == ci-1) {
+  for(int i = 0; i < num_messages; i++) {
+    // FIXME use distinct randomness here
+    if(challenge_index == 0 || i == challenge_index-1) {
       printf("Encrypting message %d\n", i+1);
       NUM_ENCODINGS_GENERATED = 0;
       reset_T();
@@ -217,13 +290,14 @@ void ore_challenge_gen(int argc, char *argv[]) {
       fwrite_mife_ciphertext(pp, ciphertexts[i], str);
       free(str);
       mife_ciphertext_clear(pp, ciphertexts[i]);
-
     }
   }
   PRINT_ENCODING_PROGRESS = 0;
 
   free(ciphertexts);
-  free(messages);
+  if(num_messages > 0) {
+    free(messages);
+  }
 
   mife_clear_pp(pp);
   mife_clear_sk(sk);
