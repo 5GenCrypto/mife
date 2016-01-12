@@ -85,14 +85,14 @@ int jsmn_parse_f2_row(const char *const json_string, const jsmntok_t **const jso
 
 bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const json_tokens, f2_matrix *const matrix) {
 	/* demand an array of rows */
-	matrix->f2_num_rows = (*json_tokens)->size;
+	matrix->num_rows = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
 		fprintf(stderr, "at position %d\nexpecting matrix, found non-array\n", (*json_tokens)->start);
 		return false;
 	}
 
 	/* reserve some memory */
-	if(NULL == (matrix->f2_elems = malloc(matrix->f2_num_rows * sizeof(*matrix->f2_elems)))) {
+	if(NULL == (matrix->elems = malloc(matrix->num_rows * sizeof(*matrix->elems)))) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_matrix\n");
 		return false;
 	}
@@ -100,52 +100,52 @@ bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const
 	/* parse each row */
 	int num_cols = -1;
 	int i;
-	for(i = 0; i < matrix->f2_num_rows; i++) {
+	for(i = 0; i < matrix->num_rows; i++) {
 		++(*json_tokens);
-		if(0 > (num_cols = jsmn_parse_f2_row(json_string, json_tokens, matrix->f2_elems+i, num_cols))) {
+		if(0 > (num_cols = jsmn_parse_f2_row(json_string, json_tokens, matrix->elems+i, num_cols))) {
 			int j;
 			for(j = 0; j < i; j++)
-				free(matrix->f2_elems[j]);
-			free(matrix->f2_elems);
+				free(matrix->elems[j]);
+			free(matrix->elems);
 			return false;
 		}
 	}
-	matrix->f2_num_cols = num_cols;
+	matrix->num_cols = num_cols;
 
 	return true;
 }
 
 bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const json_tokens, f2_mbp *const mbp) {
 	/* demand an array of at least one matrix */
-	mbp->f2_matrices_len = (*json_tokens)->size;
+	mbp->matrices_len = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY) {
 		fprintf(stderr, "at position %d\nexpecting matrix branching program, found non-array\n", (*json_tokens)->start);
 		return false;
 	}
-	if(mbp->f2_matrices_len < 1) return false;
+	if(mbp->matrices_len < 1) return false;
 
 	/* reserve some memory */
-	if(NULL == (mbp->f2_matrices = malloc(mbp->f2_matrices_len * sizeof(*mbp->f2_matrices)))) {
+	if(NULL == (mbp->matrices = malloc(mbp->matrices_len * sizeof(*mbp->matrices)))) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_mbp\n");
 		return false;
 	}
 
 	/* parse each matrix */
 	int i;
-	for(i = 0; i < mbp->f2_matrices_len; i++) {
+	for(i = 0; i < mbp->matrices_len; i++) {
 		++(*json_tokens);
-		if(!jsmn_parse_f2_matrix(json_string, json_tokens, mbp->f2_matrices+i)) {
+		if(!jsmn_parse_f2_matrix(json_string, json_tokens, mbp->matrices+i)) {
 			int j;
 			for(j = 0; j < i; j++)
-				f2_matrix_free(mbp->f2_matrices[j]);
-			free(mbp->f2_matrices);
+				f2_matrix_free(mbp->matrices[j]);
+			free(mbp->matrices);
 			return false;
 		}
 	}
 
 	/* check that the dimensions match up */
-	for(i = 0; i < mbp->f2_matrices_len-1; i++) {
-		if(mbp->f2_matrices[i].f2_num_cols != mbp->f2_matrices[i+1].f2_num_rows) {
+	for(i = 0; i < mbp->matrices_len-1; i++) {
+		if(mbp->matrices[i].num_cols != mbp->matrices[i+1].num_rows) {
 			fprintf(stderr, "matrices %d and %d have incompatible shapes\n", i, i+1);
 			f2_mbp_free(*mbp);
 			return false;
@@ -226,8 +226,8 @@ bool jsmn_parse_step(const char *const json_string, const jsmntok_t **const json
 
 	/* check that all the matrices have the same size */
 	for(i = 1; i < step->symbols_len; i++) {
-		if(step->matrix[i].f2_num_rows != step->matrix[0].f2_num_rows ||
-		   step->matrix[i].f2_num_cols != step->matrix[0].f2_num_cols) {
+		if(step->matrix[i].num_rows != step->matrix[0].num_rows ||
+		   step->matrix[i].num_cols != step->matrix[0].num_cols) {
 			fprintf(stderr, "before position %d\ndimension mismatch in matrices 0 and %d\n", (*json_tokens)->end, i);
 			step_free(*step);
 			return false;
@@ -265,7 +265,7 @@ bool jsmn_parse_steps(const char *const json_string, const jsmntok_t **const jso
 
 	/* check that the steps' dimensions mesh */
 	for(i = 1; i < template->steps_len; i++) {
-		if(template->steps[i-1].matrix[0].f2_num_cols != template->steps[i].matrix[0].f2_num_rows) {
+		if(template->steps[i-1].matrix[0].num_cols != template->steps[i].matrix[0].num_rows) {
 			fprintf(stderr, "before position %d\ndimension mismatch in steps %d and %d\n", (*json_tokens)->end, i-1, i);
 			return false;
 		}
@@ -375,7 +375,7 @@ bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const 
 		template_free(*template);
 		return false;
 	}
-	if(template->steps[template->steps_len-1].matrix[0].f2_num_cols != template->outputs_len) {
+	if(template->steps[template->steps_len-1].matrix[0].num_cols != template->outputs_len) {
 		fprintf(stderr, "before position %d\ndimension mismatch between final step and outputs\n", (*json_tokens)->end);
 		template_free(*template);
 		return false;

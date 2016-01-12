@@ -22,15 +22,17 @@
  *   is that `matrices[i].num_cols == matrices[i+1].num_rows`
  */
 typedef struct {
-	unsigned int f2_num_rows, f2_num_cols;
-	bool **f2_elems;
+	unsigned int num_rows, num_cols;
+	bool **elems;
 } f2_matrix;
 
 typedef struct {
-	unsigned int f2_matrices_len;
-	f2_matrix *f2_matrices;
+	unsigned int matrices_len;
+	f2_matrix *matrices;
 } f2_mbp;
 
+/* returns true iff dest is successfully initialized to the contents of src */
+bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
 void f2_matrix_free(f2_matrix m);
 void f2_mbp_free(f2_mbp mbp);
 
@@ -62,5 +64,43 @@ typedef struct {
 
 void step_free(step s);
 void template_free(template t);
+
+/* For our purposes, a plaintext is a sequence of symbols and nothing more.
+ * Particular applications may wish to provide an application-specific
+ * interface for producing these things.
+ *
+ * For example, consider the case of base-2 ORE, using the compression
+ * technique where we draw bits from the left and right arguments in the order
+ * "left right right left left right right left ...". In this case, the
+ * "semantic plaintext" number 13 would be represented by the "syntactic
+ * plaintext":
+ *
+ *       .-------.--------- 1101 fills in the "right bits"
+ *      v       v
+ * [1, 11, 10, 01, 1]
+ *  ^       ^      ^
+ *   `-------`------`------ 1101 fills in the "left bits"
+ *
+ * One might certainly want a convenient way for the user to specify the
+ * semantic plaintext and get the syntactic plaintext out the other end. We do
+ * not try to model these "semantic plaintexts" in this type, as that is an
+ * application-specific operation; instead, we operate directly on symbol
+ * sequences.
+ */
+typedef struct {
+	unsigned int symbols_len;
+	char **symbols;
+} plaintext;
+
+void plaintext_free(plaintext pt);
+
+/* Choose the matrices from a template that correspond to a particular plaintext.
+ * Inputs a template t and plaintext pt.
+ * Outputs a matrix branching program mbp.
+ * Returns true if all the plaintext symbols were found in the template and the
+ * 	mbp is initialized; otherwise leaves the mbp uninitialized and returns
+ * 	false.
+ */
+bool template_instantiate(const template *const t, const plaintext *const pt, f2_mbp *const mbp);
 
 #endif

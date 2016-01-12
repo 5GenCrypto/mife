@@ -6,7 +6,7 @@ lib_LTLIBRARIES=libmife.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 
-libmife_la_SOURCES = mife.c
+libmife_la_SOURCES = mife.c matrix.c
 libmife_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 libmife_la_INCLUDEDOR = $(includedir)/mife
 libmife_la_LIBADD = $(top_builddir)/gghlite/libgghlite.la \
@@ -18,4 +18,4 @@ libmife_la_LIBADD = $(top_builddir)/gghlite/libgghlite.la \
 
 
 
-include_HEADERS = mife.h
+include_HEADERS = mife.h matrix.h

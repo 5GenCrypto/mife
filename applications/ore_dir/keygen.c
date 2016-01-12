@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <gghlite/gghlite.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,11 @@ int main(int argc, char **argv) {
 	keygen_inputs ins;
 	keygen_locations outs;
 	parse_cmdline(argc, argv, &ins, &outs);
+
+	fmpz_t order;
+	gghlite_params_t public;
+	fmpz_mat_t kilian[] = {};
+	fmpz_mat_t kilian_inverse[] = {};
 
 	/* TODO: do something interesting with this data */
 	printf("security parameter %d\ndb size %d\npublic output to %s\nprivate output to %s\n"
