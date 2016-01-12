@@ -20,13 +20,16 @@ void mife_init_params(mife_pp_t pp, int bitstr_len, mife_flag_t flags) {
 
 void gghlite_params_clear_read(gghlite_params_t self) {
   for(int i = 0; i < self->gamma; i++) {
-    for(int j = 0; j < KAPPA; j++) {
+    for(int j = 0; j < self->kappa; j++) {
       free(self->x[i][j]);
     }
     free(self->x[i]);
   }
   free(self->x);
   free(self->y);
+
+  dgsl_rot_mp_clear(self->D_sigma_s);
+  dgsl_rot_mp_clear(self->D_sigma_p);
 
   fmpz_mod_poly_clear(self->pzt);
   mpfr_clear(self->xi);
@@ -37,7 +40,6 @@ void gghlite_params_clear_read(gghlite_params_t self) {
   mpfr_clear(self->sigma);
   fmpz_mod_poly_oz_ntt_precomp_clear(self->ntt);
   fmpz_clear(self->q);
-  free(self);
 }
 
 void fwrite_gghlite_params(FILE *fp, gghlite_params_t params) {
@@ -373,8 +375,9 @@ void mife_ciphertext_clear(mife_pp_t pp, mife_ciphertext_t ct) {
 }
 
 void mife_clear_pp_read(mife_pp_t pp) {
-  mife_clear_pp(pp);
   gghlite_params_clear_read(*pp->params_ref);
+  free(pp->params_ref);
+  mife_clear_pp(pp);
 }
 
 void mife_clear_pp(mife_pp_t pp) {

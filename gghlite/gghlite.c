@@ -428,8 +428,8 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
   memset(self->a, 0, self->params->gamma * sizeof(gghlite_enc_t));
   self->b = malloc(self->params->gamma * sizeof(gghlite_enc_t **));
   for(int i = 0; i < self->params->gamma; i++) {
-    self->b[i] = malloc(KAPPA * sizeof(gghlite_enc_t *));
-    for(int j = 0; j < KAPPA; j++) {
+    self->b[i] = malloc(self->params->kappa * sizeof(gghlite_enc_t *));
+    for(int j = 0; j < self->params->kappa; j++) {
       self->b[i][j] = malloc(2 * sizeof(gghlite_enc_t));
       memset(self->b[i][j], 0, 2 * sizeof(gghlite_enc_t));
     }
@@ -487,9 +487,6 @@ void gghlite_sk_clear(gghlite_sk_t self, int clear_params) {
   fmpq_poly_clear(self->g_inv);
   dgsl_rot_mp_clear(self->D_g);
 
-  if (clear_params)
-    gghlite_params_clear(self->params);
- 
   free(self->z);
   free(self->z_inv);
   free(self->a);
@@ -502,6 +499,9 @@ void gghlite_sk_clear(gghlite_sk_t self, int clear_params) {
   }
 
   free(self->b);
+
+  if (clear_params)
+    gghlite_params_clear(self->params);
 }
 
 

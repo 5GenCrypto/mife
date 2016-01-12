@@ -45,8 +45,6 @@ typedef enum {
    Maximum supported multi-linearity level.
 */
 
-#define KAPPA (sizeof(uint64_t)<<3)
-
 /**
    @brief GGHLite `params`
 

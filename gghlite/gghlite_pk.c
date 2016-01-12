@@ -15,8 +15,8 @@ void gghlite_params_initzero(gghlite_params_t self, size_t lambda, size_t kappa,
 
   self->x = malloc(self->gamma * sizeof(gghlite_enc_t **));
   for(int i = 0; i < self->gamma; i++) {
-    self->x[i] = malloc(KAPPA * sizeof(gghlite_enc_t *));
-    for(int j = 0; j < KAPPA; j++) {
+    self->x[i] = malloc(self->kappa * sizeof(gghlite_enc_t *));
+    for(int j = 0; j < self->kappa; j++) {
       self->x[i][j] = malloc(2 * sizeof(gghlite_enc_t));
       memset(self->x[i][j], 0, 2 * sizeof(gghlite_enc_t));
     }
@@ -522,7 +522,7 @@ int gghlite_params_check_sec(const gghlite_params_t self) {
 
 void gghlite_params_init_gamma(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma, uint64_t rerand_mask, gghlite_flag_t flags) {
   assert(lambda > 0);
-  assert((kappa > 0) && (kappa <= KAPPA));
+  assert(kappa > 0);
   assert(gamma > 0);
 
   gghlite_params_initzero(self, lambda, kappa, gamma);
@@ -572,7 +572,7 @@ void gghlite_params_clear(gghlite_params_t self) {
   fmpz_clear(self->q);
 
   for(int i = 0; i < self->gamma; i++) {
-    for(int j = 0; j < KAPPA; j++) {
+    for(int j = 0; j < self->kappa; j++) {
       free(self->x[i][j]);
     }
     free(self->x[i]);
