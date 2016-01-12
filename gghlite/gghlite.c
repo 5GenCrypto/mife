@@ -59,7 +59,7 @@ void _gghlite_sk_set_y(gghlite_sk_t self) {
   fmpz_mod_poly_clear(tmp);
 }
 
-void _gghlite_sk_set_D_g(gghlite_sk_t self) {
+void gghlite_sk_set_D_g(gghlite_sk_t self) {
   assert(self);
   assert(self->params);
   assert(mpfr_cmp_d(self->params->sigma_p,0)>0);
@@ -441,7 +441,7 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
   _gghlite_sk_sample_z(self, randstate);
   _gghlite_sk_sample_h(self, randstate);
 
-  _gghlite_sk_set_D_g(self);
+  gghlite_sk_set_D_g(self);
 
   _gghlite_sk_sample_b(self, randstate);
   _gghlite_sk_sample_a(self, randstate);
@@ -452,6 +452,11 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
 
   _gghlite_params_set_D_sigma_p(self->params);
   _gghlite_params_set_D_sigma_s(self->params);
+}
+
+void gghlite_params_set_D_sigmas(gghlite_params_t params) {
+  _gghlite_params_set_D_sigma_p(params);
+  _gghlite_params_set_D_sigma_s(params);
 }
 
 void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
@@ -488,12 +493,14 @@ void gghlite_sk_clear(gghlite_sk_t self, int clear_params) {
   free(self->z);
   free(self->z_inv);
   free(self->a);
+
   for(int i = 0; i < self->params->gamma; i++) {
-    for(int j = 0; j < KAPPA; j++) {
+    for(int j = 0; j < self->params->kappa; j++) {
       free(self->b[i][j]);
     }
     free(self->b[i]);
   }
+
   free(self->b);
 }
 

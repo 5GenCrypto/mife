@@ -41,6 +41,7 @@ typedef struct _ore_params_struct {
 /* functions dealing with ORE challenge generation */
 void generate_plaintexts(int argc, char *argv[]);
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file);
+void ore_pp_gen(int argc, char *argv[]);
 void ore_challenge_gen(int argc, char *argv[]);
 void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
     ore_params_t *params);

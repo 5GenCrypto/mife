@@ -40,6 +40,43 @@ void gghlite_params_clear_read(gghlite_params_t self) {
   free(self);
 }
 
+void fwrite_gghlite_params(FILE *fp, gghlite_params_t params) {
+  int mpfr_base = 10;
+  fprintf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
+    params->lambda,
+    params->gamma,
+    params->kappa,
+    params->n,
+    params->ell,
+    params->rerand_mask,
+    params->flags
+  );
+  fmpz_fprint(fp, params->q);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->sigma, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->sigma_p, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->sigma_s, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->ell_b, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->ell_g, MPFR_RNDN);
+  fprintf(fp, "\n");
+  mpfr_out_str(fp, mpfr_base, 0, params->xi, MPFR_RNDN);
+  fprintf(fp, "\n");
+  gghlite_enc_fprint(fp, params->pzt);
+  fprintf(fp, "\n");
+  fprintf(fp, "%zd\n", params->ntt->n);
+  fmpz_mod_poly_fprint(fp, params->ntt->w);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, params->ntt->w_inv);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, params->ntt->phi);
+  fprintf(fp, "\n");
+  fmpz_mod_poly_fprint(fp, params->ntt->phi_inv);
+}
+
 /**
  * 
  * Members of pp that are not currently transferred:
@@ -49,12 +86,12 @@ void gghlite_params_clear_read(gghlite_params_t self) {
  * params->D_sigma_s
  */
 void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
-  int mpfr_base = 10;
   FILE *fp = fopen(filepath, "w");
-  fprintf(fp, "%d %d %d %d %d %d\n",
+  fprintf(fp, "%d %d %d %d %d %d %d\n",
     pp->num_inputs,
     pp->bitstr_len,
     pp->L,
+    pp->gamma,
     pp->kappa,
     pp->numR,
     pp->flags
@@ -69,50 +106,186 @@ void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
   fprintf(fp, "\n");
   fmpz_fprint(fp, pp->p);
   fprintf(fp, "\n");
-  fprintf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
-    (*pp->params_ref)->lambda,
-    (*pp->params_ref)->gamma,
-    (*pp->params_ref)->kappa,
-    (*pp->params_ref)->n,
-    (*pp->params_ref)->ell,
-    (*pp->params_ref)->rerand_mask,
-    (*pp->params_ref)->flags
-  );
-  fmpz_fprint(fp, (*pp->params_ref)->q);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma, MPFR_RNDN);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma_p, MPFR_RNDN);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->sigma_s, MPFR_RNDN);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->ell_b, MPFR_RNDN);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->ell_g, MPFR_RNDN);
-  fprintf(fp, "\n");
-  mpfr_out_str(fp, mpfr_base, 0, (*pp->params_ref)->xi, MPFR_RNDN);
-  fprintf(fp, "\n");
-  gghlite_enc_fprint(fp, (*pp->params_ref)->pzt);
-  fprintf(fp, "\n");
-  fprintf(fp, "%zd\n", (*pp->params_ref)->ntt->n);
-  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->w);
-  fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->w_inv);
-  fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->phi);
-  fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, (*pp->params_ref)->ntt->phi_inv);
+
+  fwrite_gghlite_params(fp, *pp->params_ref);
   fclose(fp);
 }
 
-void fread_mife_pp(mife_pp_t pp, char *filepath) {
+void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
+  FILE *fp = fopen(filepath, "w");
+  fprintf(fp, "%d\n", sk->numR);
+  for(int i = 0; i < sk->numR; i++) {
+    fprintf(fp, "%ld %ld\n", sk->R[i]->r, sk->R[i]->c);
+    fmpz_mat_fprint(fp, sk->R[i]);
+    fprintf(fp, "\n");
+    fprintf(fp, "%ld %ld\n", sk->R_inv[i]->r, sk->R_inv[i]->c);
+    fmpz_mat_fprint(fp, sk->R_inv[i]);
+    fprintf(fp, "\n");
+  }
+  fwrite_gghlite_params(fp, sk->self->params);
+  fprintf(fp, "\n");
+  fmpz_poly_fprint(fp, sk->self->g);
+  fprintf(fp, "\n");
+  fmpq_poly_fprint(fp, sk->self->g_inv);
+  fprintf(fp, "\n");
+  fmpz_poly_fprint(fp, sk->self->h);
+  fprintf(fp, "\n");
+  for(int i = 0; i < sk->self->params->gamma; i++) {
+    fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z[i]));
+    fprintf(fp, "\n");
+    fmpz_mod_poly_fprint(fp, sk->self->z[i]);
+    fprintf(fp, "\n");
+    fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z_inv[i]));
+    fprintf(fp, "\n");
+    fmpz_mod_poly_fprint(fp, sk->self->z_inv[i]);
+    fprintf(fp, "\n");
+    fmpz_poly_fprint(fp, sk->self->a[i]);
+    fprintf(fp, "\n");
+    for(int j = 0; j < sk->self->params->kappa; j++) {
+      fmpz_poly_fprint(fp, sk->self->b[i][j][0]);
+      fprintf(fp, "\n");
+      fmpz_poly_fprint(fp, sk->self->b[i][j][1]);
+      fprintf(fp, "\n");
+    }
+  }
+
+  fclose(fp);
+
+}
+
+void fread_mife_sk(mife_sk_t sk, char *filepath) {
+  FILE *fp = fopen(filepath, "r");
+  CHECK(fscanf(fp, "%d\n", &sk->numR));
+  sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
+  sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
+
+  for(int i = 0; i < sk->numR; i++) {
+    unsigned long r1, c1, r2, c2;
+    CHECK(fscanf(fp, "%ld %ld\n", &r1, &c1));
+    fmpz_mat_init(sk->R[i], r1, c1);
+    fmpz_mat_fread(fp, sk->R[i]);
+    CHECK(fscanf(fp, "\n"));
+    CHECK(fscanf(fp, "%ld %ld\n", &r2, &c2));
+    fmpz_mat_init(sk->R_inv[i], r2, c2);
+    fmpz_mat_fread(fp, sk->R_inv[i]);
+    CHECK(fscanf(fp, "\n"));
+  }
+  fread_gghlite_params(fp, sk->self->params);
+  CHECK(fscanf(fp, "\n"));
+  fmpz_poly_init(sk->self->g);
+  fmpz_poly_fread(fp, sk->self->g);
+  CHECK(fscanf(fp, "\n"));
+  fmpq_poly_init(sk->self->g_inv);
+  fmpq_poly_fread(fp, sk->self->g_inv);
+  CHECK(fscanf(fp, "\n"));
+  fmpz_poly_init(sk->self->h);
+  fmpz_poly_fread(fp, sk->self->h);
+  CHECK(fscanf(fp, "\n"));
+  
+  sk->self->z = malloc(sk->self->params->gamma * sizeof(gghlite_enc_t));
+  sk->self->z_inv = malloc(sk->self->params->gamma * sizeof(gghlite_enc_t));
+  sk->self->a = malloc(sk->self->params->gamma * sizeof(gghlite_clr_t));
+  sk->self->b = malloc(sk->self->params->gamma * sizeof(gghlite_clr_t **));
+  for(int i = 0; i < sk->self->params->gamma; i++) {
+    fmpz_t p1, p2;
+    fmpz_init(p1);
+    fmpz_init(p2);
+    fmpz_fread(fp, p1);
+    CHECK(fscanf(fp, "\n"));
+    fmpz_mod_poly_init(sk->self->z[i], p1);
+    fmpz_mod_poly_fread(fp, sk->self->z[i]);
+    CHECK(fscanf(fp, "\n"));
+    fmpz_fread(fp, p2);
+    CHECK(fscanf(fp, "\n"));
+    fmpz_mod_poly_init(sk->self->z_inv[i], p2);
+    fmpz_mod_poly_fread(fp, sk->self->z_inv[i]);
+    CHECK(fscanf(fp, "\n"));
+    fmpz_poly_init(sk->self->a[i]);
+    fmpz_poly_fread(fp, sk->self->a[i]);
+    CHECK(fscanf(fp, "\n"));
+    sk->self->b[i] = malloc(sk->self->params->kappa * sizeof(gghlite_clr_t *));
+    for(int j = 0; j < sk->self->params->kappa; j++) {
+      sk->self->b[i][j] = malloc(2 * sizeof(gghlite_clr_t));
+      fmpz_poly_init(sk->self->b[i][j][0]);
+      fmpz_poly_fread(fp, sk->self->b[i][j][0]);
+      CHECK(fscanf(fp, "\n"));
+      fmpz_poly_init(sk->self->b[i][j][1]);
+      fmpz_poly_fread(fp, sk->self->b[i][j][1]);
+      CHECK(fscanf(fp, "\n"));
+    }
+    fmpz_clear(p1);
+    fmpz_clear(p2);
+  }
+
+  gghlite_sk_set_D_g(sk->self);
+  fclose(fp);
+}
+
+
+void fread_gghlite_params(FILE *fp, gghlite_params_t params) {
   int mpfr_base = 10;
+  size_t lambda, kappa, gamma, n, ell;
+  uint64_t rerand_mask;
+  int gghlite_flag_int;
+  CHECK(fscanf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
+    &lambda,
+    &gamma,
+    &kappa,
+    &n,
+    &ell,
+    &rerand_mask,
+    &gghlite_flag_int
+  ));
+  
+  gghlite_params_initzero(params, lambda, kappa, gamma);
+  params->n = n;
+  params->ell = ell;
+  params->rerand_mask = rerand_mask;
+  params->flags = gghlite_flag_int;
+
+  fmpz_fread(fp, params->q);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->sigma, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->sigma_p, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->sigma_s, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->ell_b, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->ell_g, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  mpfr_inp_str(params->xi, fp, mpfr_base, MPFR_RNDN);
+  CHECK(fscanf(fp, "\n"));
+  
+  gghlite_enc_init(params->pzt, params);
+  gghlite_enc_init(params->ntt->w, params);
+  gghlite_enc_init(params->ntt->w_inv, params);
+  gghlite_enc_init(params->ntt->phi, params);
+  gghlite_enc_init(params->ntt->phi_inv, params);
+
+  gghlite_enc_fread(fp, params->pzt);
+  CHECK(fscanf(fp, "\n"));
+  CHECK(fscanf(fp, "%zd\n", &params->ntt->n));
+  gghlite_enc_fread(fp, params->ntt->w);
+  CHECK(fscanf(fp, "\n"));
+  gghlite_enc_fread(fp, params->ntt->w_inv);
+  CHECK(fscanf(fp, "\n"));
+  gghlite_enc_fread(fp, params->ntt->phi);
+  CHECK(fscanf(fp, "\n"));
+  gghlite_enc_fread(fp, params->ntt->phi_inv);
+
+  gghlite_params_set_D_sigmas(params);
+}
+
+void fread_mife_pp(mife_pp_t pp, char *filepath) {
   FILE *fp = fopen(filepath, "r");
   int flag_int;
-  CHECK(fscanf(fp, "%d %d %d %d %d %d\n",
+  CHECK(fscanf(fp, "%d %d %d %d %d %d %d\n",
     &pp->num_inputs,
     &pp->bitstr_len,
     &pp->L,
+    &pp->gamma,
     &pp->kappa,
     &pp->numR,
     &flag_int
@@ -133,56 +306,7 @@ void fread_mife_pp(mife_pp_t pp, char *filepath) {
   CHECK(fscanf(fp, "\n"));
 
   pp->params_ref = malloc(sizeof(gghlite_params_t));
-  size_t lambda, kappa, gamma, n, ell;
-  uint64_t rerand_mask;
-  int gghlite_flag_int;
-  CHECK(fscanf(fp, "%zd %zd %zd %ld %ld %lu %d\n",
-    &lambda,
-    &gamma,
-    &kappa,
-    &n,
-    &ell,
-    &rerand_mask,
-    &gghlite_flag_int
-  ));
-  
-  gghlite_params_initzero(*pp->params_ref, lambda, kappa, gamma);
-  (*pp->params_ref)->n = n;
-  (*pp->params_ref)->ell = ell;
-  (*pp->params_ref)->rerand_mask = rerand_mask;
-  (*pp->params_ref)->flags = gghlite_flag_int;
-
-  fmpz_fread(fp, (*pp->params_ref)->q);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->sigma, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->sigma_p, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->sigma_s, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->ell_b, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->ell_g, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  mpfr_inp_str((*pp->params_ref)->xi, fp, mpfr_base, MPFR_RNDN);
-  CHECK(fscanf(fp, "\n"));
-  
-  gghlite_enc_init((*pp->params_ref)->pzt, *pp->params_ref);
-  gghlite_enc_init((*pp->params_ref)->ntt->w, *pp->params_ref);
-  gghlite_enc_init((*pp->params_ref)->ntt->w_inv, *pp->params_ref);
-  gghlite_enc_init((*pp->params_ref)->ntt->phi, *pp->params_ref);
-  gghlite_enc_init((*pp->params_ref)->ntt->phi_inv, *pp->params_ref);
-
-  gghlite_enc_fread(fp, (*pp->params_ref)->pzt);
-  CHECK(fscanf(fp, "\n"));
-  CHECK(fscanf(fp, "%zd\n", &(*pp->params_ref)->ntt->n));
-  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w);
-  CHECK(fscanf(fp, "\n"));
-  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->w_inv);
-  CHECK(fscanf(fp, "\n"));
-  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi);
-  CHECK(fscanf(fp, "\n"));
-  gghlite_enc_fread(fp, (*pp->params_ref)->ntt->phi_inv);
+  fread_gghlite_params(fp, *pp->params_ref);
   fclose(fp);
 }
 

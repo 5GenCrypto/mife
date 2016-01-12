@@ -13,9 +13,11 @@
 int main(int argc, char *argv[]) {
   //printf("Last change from 2AM on 1/7/2016\n");
   run_tests();
+  ore_pp_gen(argc, argv);
   //ore_challenge_gen(argc, argv);
   //generate_plaintexts(argc, argv);
-  print_random_matrices_with_inverse(atoi(argv[1]), argv[2], argv[3], argv[4]);
+  //print_random_matrices_with_inverse(atoi(argv[1]), argv[2], argv[3], 
+  //argv[4]);
 }
 
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
@@ -30,6 +32,26 @@ int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
   free(cts);
   mife_clear_pp_read(pp);
   return ret;
+}
+
+void test_all_ciphertexts(char *pp_file, int n) {
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+      char *str1 = malloc(20);
+      char *str2 = malloc(20);
+      sprintf(str1, "ct%d.out", i+1);
+      sprintf(str2, "ct%d.out", j+1);
+      printf("Checking ciphertext %d with ciphertext %d...           ", i, j);
+      int result = test_ciphertexts(pp_file, str1, str2);
+      if((i == j && result == 0) ||
+          (i < j && result == 1) ||
+          (i > j && result == 2)) {
+        printf("SUCCESS\n");
+      } else {
+        printf("FAIL\n");
+      }
+    }
+  }
 }
 
 void generate_plaintexts(int argc, char *argv[]) {
@@ -68,6 +90,56 @@ void generate_plaintexts(int argc, char *argv[]) {
   aes_randclear(gen_randstate);
   free(params);
   printf("\n");
+}
+
+void ore_pp_gen(int argc, char *argv[]) {
+  cmdline_params_t cmdline_params;
+
+  const char *name =  "Order Revealing Encryption";
+  parse_cmdline(cmdline_params, argc, argv, name, NULL);
+
+  int L = 80; // 2^L = # of total messages we can encrypt
+  int lambda = cmdline_params->lambda; // security parameter
+
+  /* message space size will be base_d ^ base_n */
+  int base_d = 10;
+  int base_n = 10;
+
+  mife_pp_t pp;
+  mife_sk_t sk;
+
+  fmpz_t message_space_size;
+  fmpz_init_exp(message_space_size, base_d, base_n);
+  ore_params_t *params = malloc(sizeof(ore_params_t));
+  ore_set_best_params(pp, lambda, message_space_size, params);
+
+  printf("Estimated ciphertext size for lambda = 80: ");
+  const char *units[3] = {"KB","MB","GB"};
+  double sd = CT_SIZE / 8.0;
+  int i;
+  for(i=0; i<3; i++) {
+    if (sd < 1024.0)
+      break;
+    sd = sd/1024;
+  }
+  printf("%6.2f %s\n\n", sd, units[i-1]);
+
+  mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
+      &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
+
+  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
+  reset_T();
+  mife_setup(pp, sk, L, lambda, ggh_flags, cmdline_params->shaseed);
+  printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
+
+  fwrite_mife_pp(pp, "pp.out");
+  mife_clear_pp(pp);
+  mife_clear_sk(sk);
+  mpfr_free_cache();
+  flint_cleanup();
+  free(params);
+  printf("\nSUCCESS\n");
+
 }
 
 void ore_challenge_gen(int argc, char *argv[]) {
@@ -734,9 +806,16 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
 
   fwrite_mife_pp(pp, "pp_test.out");
-  //mife_clear_pp(pp);
+  mife_clear_pp(pp);
   mife_pp_t pp2;
   fread_mife_pp(pp2, "pp_test.out");
+
+  fwrite_mife_sk(sk, "sk_test.out");
+  mife_clear_sk(sk);
+  mife_sk_t sk2;
+  fread_mife_sk(sk2, "sk_test.out");
+  aes_randinit(sk2->randstate);
+
   mife_mbp_set(params, pp2, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
@@ -746,7 +825,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   for(int i = 0; i < num_messages; i++) {
     fmpz_init(messages[i]);
-    fmpz_randm_aes(messages[i], sk->randstate, message_space_size);
+    fmpz_randm_aes(messages[i], sk2->randstate, message_space_size);
     if(verbose) {
       fmpz_print(messages[i]);
       printf("\n");
@@ -755,7 +834,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   mife_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(mife_ciphertext_t));
   for(int i = 0; i < num_messages; i++) {
-    mife_encrypt(ciphertexts[i], messages[i], pp, sk);
+    mife_encrypt(ciphertexts[i], messages[i], pp2, sk2);
   }
 
   for(int i = 0; i < num_messages; i++) {
@@ -804,7 +883,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   free(messages);
 
   mife_clear_pp_read(pp2);
-  mife_clear_sk(sk);
+  mife_clear_sk(sk2);
   free(params);
   
   if(status == 0) {

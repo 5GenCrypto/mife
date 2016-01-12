@@ -87,6 +87,10 @@ static inline void gghlite_jigsaw_params_init(gghlite_params_t self, size_t lamb
 
 void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate);
 
+
+void gghlite_sk_set_D_g(gghlite_sk_t self);
+void gghlite_params_set_D_sigmas(gghlite_params_t params);
+
 /**
    @brief Initialise a new GGHLite instance.
 
