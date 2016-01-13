@@ -429,7 +429,7 @@ void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
   fmpz_clear(two);
   
   mife_mat_clr_t met;
-  pp->setfn(met, message, pp, sk);
+  pp->setfn(pp, met, message);
 
   if(! (pp->flags & MIFE_NO_RANDOMIZERS)) {
     mife_apply_randomizers(met, pp, sk);     
@@ -443,11 +443,11 @@ void mife_mbp_set(
     void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
-    int (*paramfn)(mife_pp_t, int),
-    void (*kilianfn)(struct _mife_pp_struct *, int *),
-    void (*orderfn)(int, int *, int *),
-    void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
-    int (*parsefn)(char **)
+    int (*paramfn)  (mife_pp_t, int),
+    void (*kilianfn)(mife_pp_t, int *),
+    void (*orderfn) (mife_pp_t, int, int *, int *),
+    void (*setfn)   (mife_pp_t, mife_mat_clr_t, fmpz_t),
+    int (*parsefn)  (mife_pp_t, char **)
     ) {
   pp->mbp_params = mbp_params;
   pp->num_inputs = num_inputs;
@@ -717,7 +717,7 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
 
     for(int index = 0; index < pp->kappa; index++) {
       int i, j;
-      pp->orderfn(index, &i, &j);
+      pp->orderfn(pp, index, &i, &j);
 
       // first one
       if(index == 0) {
@@ -804,12 +804,12 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
 
   for(int index = 1; index < pp->kappa; index++) {
     int i, j;
-    pp->orderfn(index, &i, &j);
+    pp->orderfn(pp, index, &i, &j);
     
     if(index == 1) {
       // multiply the 0th index with the 1st index
       int i0, j0;
-      pp->orderfn(0, &i0, &j0);
+      pp->orderfn(pp, 0, &i0, &j0);
       gghlite_enc_mat_init(*pp->params_ref, tmp,
         cts[i0]->enc[i0][j0]->nrows, cts[i]->enc[i][j]->ncols);
       gghlite_enc_mat_mul(*pp->params_ref, tmp,
@@ -829,7 +829,7 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
   }
   gghlite_enc_mat_clear(tmp);
 
-  int ret = pp->parsefn(result);
+  int ret = pp->parsefn(pp, result);
 
   for(int i = 0; i < tmp->nrows; i++) {
     free(result[i]);

@@ -72,11 +72,11 @@ struct _mife_pp_struct {
 
   // MBP function pointers
   void *mbp_params; // additional parameters one can pass into the MBP setup
-  int (*paramfn)(struct _mife_pp_struct *, int); // for determining number of matrices per input
+  int (*paramfn)  (struct _mife_pp_struct *, int); // for determining number of matrices per input
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
-  void (*orderfn)(int, int *, int *); // function pointer for MBP ordering
-  void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t);
-  int (*parsefn)(char **); // function pointer for parsing output 
+  void (*orderfn) (struct _mife_pp_struct *, int, int *, int *); // function pointer for MBP ordering
+  void (*setfn)   (struct _mife_pp_struct *, mife_mat_clr_t, fmpz_t);
+  int (*parsefn)  (struct _mife_pp_struct *, char **); // function pointer for parsing output 
 };
 
 typedef struct _mife_pp_struct mife_pp_t[1];
@@ -88,11 +88,11 @@ void mife_mbp_set(
     void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
-    int (*paramfn)(struct _mife_pp_struct *, int),
-    void (*kilianfn)(struct _mife_pp_struct *, int *),
-    void (*orderfn)(int, int *, int *),
-    void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
-    int (*parsefn)(char **)
+    int (*paramfn)  (mife_pp_t, int),
+    void (*kilianfn)(mife_pp_t, int *),
+    void (*orderfn) (mife_pp_t, int, int *, int *),
+    void (*setfn)   (mife_pp_t, mife_mat_clr_t, fmpz_t),
+    int (*parsefn)  (mife_pp_t, char **)
     );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed);

@@ -760,8 +760,7 @@ void ore_mbp_kilian(mife_pp_t pp, int *dims) {
 
 
 /* sets the cleartext matrices */
-void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
-    mife_sk_t sk) {
+void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, fmpz_t message) {
   int d = ((ore_params_t *) pp->mbp_params)->d;
   const int bitstr_len = ((ore_params_t *) pp->mbp_params)->bitstr_len;
   ulong *dary_repr = malloc(bitstr_len * sizeof(ulong));
@@ -846,12 +845,12 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
 }
 
 // index ranges from [0, kappa - 1]
-void ore_mbp_ordering(int index, int *ip, int *jp) {
+void ore_mbp_ordering(mife_pp_t pp, int index, int *ip, int *jp) {
   *ip = index % 2;
   *jp = index / 2;
 }
 
-int ore_mbp_parse(char **m) {
+int ore_mbp_parse(mife_pp_t pp, char **m) {
   if(m[0][0] + m[0][1] + m[0][2] != 1)
     return -1;
 
