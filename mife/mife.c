@@ -13,9 +13,8 @@ void fmpz_init_exp(fmpz_t exp, int base, int n) {
   fmpz_clear(tmp);
 }
 
-void mife_init_params(mife_pp_t pp, int bitstr_len, mife_flag_t flags) {
+void mife_init_params(mife_pp_t pp, mife_flag_t flags) {
   pp->flags = flags;
-  pp->bitstr_len = bitstr_len;
 }
 
 void gghlite_params_clear_read(gghlite_params_t self) {
@@ -89,9 +88,8 @@ void fwrite_gghlite_params(FILE *fp, gghlite_params_t params) {
  */
 void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
   FILE *fp = fopen(filepath, "w");
-  fprintf(fp, "%d %d %d %d %d %d %d\n",
+  fprintf(fp, "%d %d %d %d %d %d\n",
     pp->num_inputs,
-    pp->bitstr_len,
     pp->L,
     pp->gamma,
     pp->kappa,
@@ -283,9 +281,8 @@ void fread_gghlite_params(FILE *fp, gghlite_params_t params) {
 void fread_mife_pp(mife_pp_t pp, char *filepath) {
   FILE *fp = fopen(filepath, "r");
   int flag_int;
-  CHECK(fscanf(fp, "%d %d %d %d %d %d %d\n",
+  CHECK(fscanf(fp, "%d %d %d %d %d %d\n",
     &pp->num_inputs,
-    &pp->bitstr_len,
     &pp->L,
     &pp->gamma,
     &pp->kappa,
@@ -446,7 +443,7 @@ void mife_mbp_set(
     void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
-    int (*paramfn)(int, int),
+    int (*paramfn)(mife_pp_t, int),
     void (*kilianfn)(struct _mife_pp_struct *, int *),
     void (*orderfn)(int, int *, int *),
     void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
@@ -467,7 +464,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   pp->n = malloc(pp->num_inputs * sizeof(int));
   for(int index = 0; index < pp->num_inputs; index++) { 
-    pp->n[index] = pp->paramfn(pp->bitstr_len, index);
+    pp->n[index] = pp->paramfn(pp, index);
   }
   
   pp->kappa = pp->n[0] + pp->n[1];

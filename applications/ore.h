@@ -39,6 +39,7 @@ ore_flag_t ORE_GLOBAL_FLAGS = ORE_DEFAULT;
 
 typedef struct _ore_params_struct {
   int d; // the base
+  int bitstr_len; // length of the plaintexts in d-ary
 } ore_params_t;
 
 typedef struct ore_cmdline {
@@ -76,7 +77,7 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
     ore_params_t *params);
 int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type);
 
-int ore_mbp_param(int bitstr_len, int index);
+int ore_mbp_param(mife_pp_t pp, int index);
 void ore_mbp_kilian(mife_pp_t pp, int *dims);
 void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     mife_sk_t sk);

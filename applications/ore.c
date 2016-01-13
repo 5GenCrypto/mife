@@ -414,12 +414,13 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
   }
 
   params->d = min_base;  
-  mife_init_params(pp, nmap[min_base], MIFE_DEFAULT);
+  params->bitstr_len = nmap[min_base];
+  mife_init_params(pp, MIFE_DEFAULT);
 
   if(ORE_GLOBAL_FLAGS & ORE_MBP_DC) {
-    set_NUM_ENC(dc_num_enc(params->d, pp->bitstr_len));
+    set_NUM_ENC(dc_num_enc(params->d, params->bitstr_len));
   } else if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
-    set_NUM_ENC(mc_num_enc(params->d, pp->bitstr_len));
+    set_NUM_ENC(mc_num_enc(params->d, params->bitstr_len));
   }
   CT_SIZE = min_enc;
 }
@@ -709,7 +710,8 @@ int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type) {
   }
 }
 
-int ore_mbp_param(int bitstr_len, int index) {
+int ore_mbp_param(mife_pp_t pp, int index) {
+  const int bitstr_len = ((ore_params_t *) pp->mbp_params)->bitstr_len;
   if(ORE_GLOBAL_FLAGS & ORE_MBP_NORMAL) {
     return bitstr_len;
   }
@@ -761,8 +763,9 @@ void ore_mbp_kilian(mife_pp_t pp, int *dims) {
 void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     mife_sk_t sk) {
   int d = ((ore_params_t *) pp->mbp_params)->d;
-  ulong *dary_repr = malloc(pp->bitstr_len * sizeof(ulong));
-  message_to_dary(dary_repr, pp->bitstr_len, message, d);
+  const int bitstr_len = ((ore_params_t *) pp->mbp_params)->bitstr_len;
+  ulong *dary_repr = malloc(bitstr_len * sizeof(ulong));
+  message_to_dary(dary_repr, bitstr_len, message, d);
 
   assert(pp->num_inputs == 2);
 
@@ -794,7 +797,7 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
     for(int k = 0, bc = 0; k < pp->n[0]; k++, bc++) {
       if(bc == 0) {
         ore_dc_clrmat_init_FIRST(met->clr[0][k], dary_repr[bc], d);
-      } else if(bc == pp->bitstr_len - 1) {
+      } else if(bc == bitstr_len - 1) {
         ore_dc_clrmat_init_LAST(met->clr[0][k], dary_repr[bc], d,
             X_TYPE);
       } else {
@@ -812,7 +815,7 @@ void ore_mbp_set_matrices(mife_mat_clr_t met, fmpz_t message, mife_pp_t pp,
       } else if(k == 0 && pp->n[0] == 1) {
         ore_dc_clrmat_init_SECONDANDLAST(met->clr[1][k], dary_repr[bc],
             d);
-      } else if((pp->bitstr_len % 2 == 1) && (k == pp->n[1]-1)) {
+      } else if((bitstr_len % 2 == 1) && (k == pp->n[1]-1)) {
         ore_dc_clrmat_init_LAST(met->clr[1][k], dary_repr[bc], d,
             Y_TYPE);
       } else {
@@ -869,7 +872,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_pp_t pp;
   mife_sk_t sk;
 
-  mife_init_params(pp, bitstr_len, flags);
+  mife_init_params(pp, flags);
   
   ore_params_t *params = malloc(sizeof(ore_params_t));
   params->d = d;

@@ -62,7 +62,6 @@ struct _mife_pp_struct {
   int num_inputs; // the arity of the MBP (for comparisons, this is 2).
   int *n; // of length num_inputs
   int *gammas; // gamma for each input
-  int bitstr_len; // length of the plaintexts in d-ary
   int L; // log # of plaintexts we can support
   int gamma; // should be sum of gammas[i] 
   int kappa; // the kappa for gghlite (degree of multilinearity)
@@ -73,7 +72,7 @@ struct _mife_pp_struct {
 
   // MBP function pointers
   void *mbp_params; // additional parameters one can pass into the MBP setup
-  int (*paramfn)(int, int); // for determining number of matrices per input
+  int (*paramfn)(struct _mife_pp_struct *, int); // for determining number of matrices per input
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn)(int, int *, int *); // function pointer for MBP ordering
   void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t);
@@ -84,12 +83,12 @@ typedef struct _mife_pp_struct mife_pp_t[1];
 
 
 /* MIFE interface */
-void mife_init_params(mife_pp_t pp, int bitstr_len, mife_flag_t flags);
+void mife_init_params(mife_pp_t pp, mife_flag_t flags);
 void mife_mbp_set(
     void *mbp_params,
     mife_pp_t pp,
     int num_inputs,
-    int (*paramfn)(int, int),
+    int (*paramfn)(struct _mife_pp_struct *, int),
     void (*kilianfn)(struct _mife_pp_struct *, int *),
     void (*orderfn)(int, int *, int *),
     void (*setfn)(mife_mat_clr_t, fmpz_t, struct _mife_pp_struct *, mife_sk_t),
