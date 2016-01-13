@@ -75,7 +75,7 @@ struct _mife_pp_struct {
   int (*paramfn)  (struct _mife_pp_struct *, int); // for determining number of matrices per input
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn) (struct _mife_pp_struct *, int, int *, int *); // function pointer for MBP ordering
-  void (*setfn)   (struct _mife_pp_struct *, mife_mat_clr_t, fmpz_t);
+  void (*setfn)   (struct _mife_pp_struct *, mife_mat_clr_t, void *);
   int (*parsefn)  (struct _mife_pp_struct *, char **); // function pointer for parsing output 
 };
 
@@ -91,12 +91,12 @@ void mife_mbp_set(
     int (*paramfn)  (mife_pp_t, int),
     void (*kilianfn)(mife_pp_t, int *),
     void (*orderfn) (mife_pp_t, int, int *, int *),
-    void (*setfn)   (mife_pp_t, mife_mat_clr_t, fmpz_t),
+    void (*setfn)   (mife_pp_t, mife_mat_clr_t, void *),
     int (*parsefn)  (mife_pp_t, char **)
     );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, char *shaseed);
-void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
+void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk);
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 

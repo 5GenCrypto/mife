@@ -415,7 +415,7 @@ void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) {
   printf("\n");
 }
 
-void mife_encrypt(mife_ciphertext_t ct, fmpz_t message, mife_pp_t pp,
+void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk) {
   // compute a random index in the range [0,2^L]
   fmpz_t index, powL, two;
@@ -446,7 +446,7 @@ void mife_mbp_set(
     int (*paramfn)  (mife_pp_t, int),
     void (*kilianfn)(mife_pp_t, int *),
     void (*orderfn) (mife_pp_t, int, int *, int *),
-    void (*setfn)   (mife_pp_t, mife_mat_clr_t, fmpz_t),
+    void (*setfn)   (mife_pp_t, mife_mat_clr_t, void *),
     int (*parsefn)  (mife_pp_t, char **)
     ) {
   pp->mbp_params = mbp_params;

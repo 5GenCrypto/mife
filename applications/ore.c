@@ -760,8 +760,15 @@ void ore_mbp_kilian(mife_pp_t pp, int *dims) {
 
 
 /* sets the cleartext matrices */
-void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, fmpz_t message) {
+void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, void *message_untyped) {
   int d = ((ore_params_t *) pp->mbp_params)->d;
+  /* We really want `fmpz_t message = message_untyped`. But while fmpz_t
+   * behaves like a pointer type in many situations, it is actually an array
+   * type, which screws things up immensely here. So we rely on knowing
+   *     typedef fmpz fmpz_t[1];
+   * on the next line to use a pointer type that is "like" fmpz_t.
+   */
+  fmpz *message = message_untyped;
   const int bitstr_len = ((ore_params_t *) pp->mbp_params)->bitstr_len;
   ulong *dary_repr = malloc(bitstr_len * sizeof(ulong));
   message_to_dary(dary_repr, bitstr_len, message, d);
