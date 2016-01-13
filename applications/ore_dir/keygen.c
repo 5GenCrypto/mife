@@ -6,6 +6,7 @@
 
 #include "matrix.h"
 #include "parse.h"
+#include "util.h"
 
 typedef struct {
 	int sec_param, log_db_size;
@@ -48,8 +49,7 @@ void location_init(keygen_inputs *const ins, location *const loc, const char *co
 	 * changes during a later refactor
 	 */
 	const int prefix_len = strlen(prefix), sec_param_len = 3*sizeof(int);
-	loc->path = malloc((prefix_len+sec_param_len+1)*sizeof(char));
-	if(NULL == loc->path) {
+	if(ALLOC_FAILS(loc->path, prefix_len+sec_param_len+1)) {
 		fprintf(stderr, "Out of memory\n");
 		exit(code);
 	}

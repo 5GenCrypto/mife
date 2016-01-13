@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "parse.h"
+#include "util.h"
 
 void location_free(location loc) { if(!loc.stack_allocated && NULL != loc.path) free(loc.path); }
 
@@ -14,11 +15,11 @@ location location_append(const location loc, const char *const path) {
 	location result = { NULL, false };
 	const unsigned int loc_len = strlen(loc.path), path_len = strlen(path);
 	const unsigned int result_len = loc_len+1+path_len, result_size = result_len+1;
-	if(NULL != (result.path = malloc(result_size * sizeof(*result.path))))
-		if(snprintf(result.path, result_size, "%s/%s", loc.path, path) != result_len) {
-			free(result.path);
-			result.path = NULL;
-		}
+	if(ALLOC_FAILS(result.path, result_size)) return result;
+	if(snprintf(result.path, result_size, "%s/%s", loc.path, path) != result_len) {
+		free(result.path);
+		result.path = NULL;
+	}
 	return result;
 }
 
@@ -65,7 +66,7 @@ int jsmn_parse_f2_row(const char *const json_string, const jsmntok_t **const jso
 	}
 
 	/* reserve some memory */
-	if(NULL == (*row = malloc(expected_num_cols * sizeof(bool)))) {
+	if(ALLOC_FAILS(*row, expected_num_cols)) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_row\n");
 		return -1;
 	}
@@ -92,7 +93,7 @@ bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const
 	}
 
 	/* reserve some memory */
-	if(NULL == (matrix->elems = malloc(matrix->num_rows * sizeof(*matrix->elems)))) {
+	if(ALLOC_FAILS(matrix->elems, matrix->num_rows)) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_matrix\n");
 		return false;
 	}
@@ -125,7 +126,7 @@ bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const js
 	if(mbp->matrices_len < 1) return false;
 
 	/* reserve some memory */
-	if(NULL == (mbp->matrices = malloc(mbp->matrices_len * sizeof(*mbp->matrices)))) {
+	if(ALLOC_FAILS(mbp->matrices, mbp->matrices_len)) {
 		fprintf(stderr, "out of memory in jsmn_parse_f2_mbp\n");
 		return false;
 	}
@@ -170,12 +171,12 @@ bool jsmn_parse_step(const char *const json_string, const jsmntok_t **const json
 	step->position = NULL;
 	step->symbols  = NULL;
 	step->matrix   = NULL;
-	if(NULL == (step->symbols = malloc((step->symbols_len+1) * sizeof(*step->symbols)))) {
+	if(ALLOC_FAILS(step->symbols, step->symbols_len+1)) {
 		fprintf(stderr, "out of memory in jsmn_parse_step\n");
 		return false;
 	}
 	for(i = 0; i < step->symbols_len; i++) step->symbols[i] = NULL;
-	if(NULL == (step->matrix = malloc((step->symbols_len+1) * sizeof(*step->matrix)))) {
+	if(ALLOC_FAILS(step->matrix, step->symbols_len+1)) {
 		fprintf(stderr, "out of memory in jsmn_parse_step\n");
 		step_free(*step);
 		return false;
@@ -246,7 +247,7 @@ bool jsmn_parse_steps(const char *const json_string, const jsmntok_t **const jso
 	}
 
 	/* reserve some space */
-	if(NULL == (template->steps = malloc(template->steps_len * sizeof(*template->steps)))) {
+	if(ALLOC_FAILS(template->steps, template->steps_len)) {
 		fprintf(stderr, "out of memory in jsmn_parse_steps\n");
 		return false;
 	}
@@ -283,7 +284,7 @@ bool jsmn_parse_string(const char *const json_string, const jsmntok_t **const js
 
 	/* reserve some space */
 	const unsigned int string_len = (*json_tokens)->end - (*json_tokens)->start;
-	if(NULL == (*string = malloc((string_len+1) * sizeof(**string)))) {
+	if(ALLOC_FAILS(*string, string_len+1)) {
 		fprintf(stderr, "out of memory in jsmn_parse_string\n");
 		return false;
 	}
@@ -303,7 +304,7 @@ bool jsmn_parse_outputs(const char *const json_string, const jsmntok_t **const j
 	}
 
 	/* reserve some space */
-	if(NULL == (template->outputs = malloc(template->outputs_len * sizeof(*template->outputs)))) {
+	if(ALLOC_FAILS(template->outputs, template->outputs_len)) {
 		fprintf(stderr, "out of memory in jsmn_parse_outputs\n");
 		return false;
 	}
@@ -413,7 +414,7 @@ bool jsmn_parse_template_location(const location loc, template *const template) 
 		fprintf(stderr, "found no JSON tokens\n");
 		goto fail_unmap;
 	}
-	if(NULL == (json_tokens = malloc(json_tokens_len * sizeof(jsmntok_t)))) {
+	if(ALLOC_FAILS(json_tokens, json_tokens_len)) {
 		fprintf(stderr, "out of memory when allocation tokens in jsmn_parse_template_location\n");
 		goto fail_unmap;
 	}
