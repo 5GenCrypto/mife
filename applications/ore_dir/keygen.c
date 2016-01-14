@@ -5,11 +5,15 @@
 #include <string.h>
 
 #include "matrix.h"
+#include "mife_glue.h"
 #include "parse.h"
 #include "util.h"
 
+#define SEED_SIZE 32
+
 typedef struct {
 	int sec_param, log_db_size;
+	char seed[SEED_SIZE];
 	template template;
 } keygen_inputs;
 
@@ -20,20 +24,25 @@ typedef struct {
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
 void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs);
 
+const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
+
 int main(int argc, char **argv) {
 	keygen_inputs ins;
 	keygen_locations outs;
+	mife_pp_t pp;
+	mife_sk_t sk;
+	template_stats stats;
+
 	parse_cmdline(argc, argv, &ins, &outs);
-
-	fmpz_t order;
-	gghlite_params_t public;
-	fmpz_mat_t kilian[] = {};
-	fmpz_mat_t kilian_inverse[] = {};
-
-	/* TODO: do something interesting with this data */
-	printf("security parameter %d\ndb size %d\npublic output to %s\nprivate output to %s\n"
-	      , ins.sec_param, ins.log_db_size, outs.public.path, outs.private.path
-	      );
+	template_to_template_stats(&ins.template, &stats);
+	mife_init_params(pp, MIFE_DEFAULT);
+	mife_mbp_set(&stats, pp, stats.positions_len,
+		template_stats_to_params,
+		template_stats_to_dimensions,
+		template_stats_to_position,
+		template_stats_to_cleartext,
+		template_stats_to_result);
+	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
 
 	/* TODO: write to the output locations */
 
@@ -61,6 +70,14 @@ void location_init(keygen_inputs *const ins, location *const loc, const char *co
 	loc->stack_allocated = false;
 }
 
+bool read_seed(location loc, char *dest) {
+	FILE *src = fopen(loc.path, "rb");
+	if(NULL == (src = fopen(loc.path      , "rb")) &&
+	   NULL == (src = fopen("/dev/urandom", "rb")))
+		return false;
+	return fread(dest, sizeof(*dest), SEED_SIZE, src) == SEED_SIZE;
+}
+
 void usage(const int code) {
 	printf(
 		"The key generation phase initializes the parameters that are shared across\n"
@@ -68,12 +85,18 @@ void usage(const int code) {
 		"\n"
 		"Common options:\n"
 		"  -h, --help         Display this usage information\n"
-		"  -r, --private      An output directory for private parameters [private-$secparam]\n"
-		"  -u, --public       An input/output directory for public parameters [public-$secparam]\n"
+		"  -r, --private      An directory for private parameters [private-$secparam]\n"
+		"  -u, --public       An directory for public parameters [public-$secparam]\n"
 		"\n"
 		"Keygen-specific options:\n"
 		"  -s, --secparam     Security parameter [80]\n"
 		"  -n, --dbsize       Allow up to 2^n records [80]\n"
+		"\n"
+		"Files used:\n"
+		"  <public>/template.json  R  JSON    a description of the function being\n"
+		"                                     encrypted\n"
+		"  <private>/seed.bin      RW binary  32-byte seed for PRNG\n"
+		"  /dev/urandom            R  binary  used in case above file is missing\n"
 		);
 	exit(code);
 }
@@ -148,6 +171,18 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		usage(7);
 	}
 	location_free(template_location);
+
+	/* read seed */
+	location seed_location = location_append(outs->private, "seed.bin");
+	if(NULL == seed_location.path) {
+		fprintf(stderr, "%s: out of memory when trying to create path to seed\n", *argv);
+		exit(-1);
+	}
+	if(!read_seed(seed_location, ins->seed)) {
+		fprintf(stderr, "%s: could not read seed\n", *argv);
+		usage(8);
+	}
+	location_free(seed_location);
 }
 
 void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs) {
