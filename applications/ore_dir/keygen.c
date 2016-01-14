@@ -24,6 +24,7 @@ typedef struct {
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
 void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs);
 
+const mife_flag_t   mife_flags = MIFE_DEFAULT;
 const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
 
 int main(int argc, char **argv) {
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
 
 	parse_cmdline(argc, argv, &ins, &outs);
 	template_to_template_stats(&ins.template, &stats);
-	mife_init_params(pp, MIFE_DEFAULT);
+	mife_init_params(pp, mife_flags);
 	mife_mbp_set(&stats, pp, stats.positions_len,
 		template_stats_to_params,
 		template_stats_to_dimensions,
