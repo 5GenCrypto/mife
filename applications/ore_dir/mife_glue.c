@@ -1,3 +1,5 @@
+#include <fmpz.h>
+
 #include "mife_glue.h"
 #include "util.h"
 
@@ -77,9 +79,32 @@ void template_stats_to_position(mife_pp_t pp, int global_index, int *out_positio
 	*out_local_index = j;
 }
 
-void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, fmpz_t bits) {
+/* TODO: it would be good to not call assert */
+void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *cleartext_raw_untyped) {
 	const template_stats *const stats = pp->mbp_params;
-	/* TODO */
+	const plaintext      *const cleartext_raw = cleartext_raw_untyped;
+	f2_mbp mbp;
+	int i;
+
+	assert(pp->num_inputs == stats->positions_len); /* except this assert; this assert is okay */
+	assert(template_instantiate(stats->template, cleartext_raw, &mbp));
+	assert(!ALLOC_FAILS(cleartext->clr, pp->num_inputs));
+	for(i = 0; i < stats->positions_len; i++)
+		assert(!ALLOC_FAILS(cleartext->clr[i], pp->n[i]));
+
+	for(i = 0; i < mbp.matrices_len; i++) {
+		int position, local_index;
+		int j, k;
+		template_stats_to_position(pp, i, &position, &local_index);
+
+		const f2_matrix f2_m = mbp.matrices[i];
+		fmpz_mat_struct *fmpz_m = cleartext->clr[position][local_index];
+
+		fmpz_mat_init(fmpz_m, f2_m.num_rows, f2_m.num_cols);
+		for(j = 0; j < f2_m.num_rows; j++)
+			for(k = 0; k < f2_m.num_cols; k++)
+				fmpz_set_ui(fmpz_mat_entry(fmpz_m, j, k), f2_m.elems[j][k]);
+	}
 }
 
 /* TODO: hm! maybe the outputs should be a matrix rather than an array */

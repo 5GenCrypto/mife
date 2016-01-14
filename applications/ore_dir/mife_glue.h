@@ -19,6 +19,6 @@ bool template_to_template_stats(const template *const template, template_stats *
 int  template_stats_to_params    (mife_pp_t pp, int i);
 void template_stats_to_dimensions(mife_pp_t pp, int *out);
 void template_stats_to_position  (mife_pp_t pp, int global_index, int *out_position, int *out_local_index);
-void template_stats_to_cleartext (mife_pp_t pp, mife_mat_clr_t cleartext, fmpz_t bits);
+void template_stats_to_cleartext (mife_pp_t pp, mife_mat_clr_t cleartext, void *cleartext_raw_untyped);
 int  template_stats_to_result    (mife_pp_t pp, char **raw_result);
 #endif
