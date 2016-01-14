@@ -9,7 +9,7 @@ typedef struct {
 	char **positions;   /* each element references the position string from a step in the template */
 	int **indexes;      /* which steps in the template have the given position? */
 	int *indexes_lens;  /* how many steps in the template have the given position? */
-	template *template; /* a reference to the template in question */
+	const template *template; /* a reference to the template in question */
 } template_stats;
 void template_stats_free(template_stats stats);
 bool template_to_template_stats(const template *const template, template_stats *stats);

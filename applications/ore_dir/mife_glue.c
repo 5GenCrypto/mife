@@ -20,7 +20,7 @@ void template_stats_free(template_stats stats) {
 bool template_to_template_stats(const template *const template, template_stats *stats) {
 	int i, j;
 	const int len = template->steps_len;
-	*stats = (template_stats) { 0, NULL, NULL, NULL };
+	*stats = (template_stats) { 0, NULL, NULL, NULL, NULL };
 
 	if(ALLOC_FAILS(stats->positions   , len) ||
 	   ALLOC_FAILS(stats->indexes     , len) ||
@@ -46,6 +46,7 @@ bool template_to_template_stats(const template *const template, template_stats *
 		}
 	}
 
+	stats->template = template;
 	return true;
 
 fail:
