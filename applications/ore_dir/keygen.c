@@ -1,8 +1,10 @@
+#include <errno.h>
 #include <getopt.h>
 #include <gghlite/gghlite.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "matrix.h"
 #include "mife_glue.h"
@@ -22,6 +24,7 @@ typedef struct {
 } keygen_locations;
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
+void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
 void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs);
 
 const mife_flag_t   mife_flags = MIFE_DEFAULT;
@@ -44,8 +47,7 @@ int main(int argc, char **argv) {
 		template_stats_to_cleartext,
 		template_stats_to_result);
 	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
-
-	/* TODO: write to the output locations */
+	print_outputs(outs, pp, sk);
 
 	cleanup(&ins, &outs);
 	return 0;
@@ -96,7 +98,9 @@ void usage(const int code) {
 		"Files used:\n"
 		"  <public>/template.json  R  JSON    a description of the function being\n"
 		"                                     encrypted\n"
-		"  <private>/seed.bin      RW binary  32-byte seed for PRNG\n"
+		"  <public>/mife.pub        W custom  public parameters for evaluating\n"
+		"  <private>/mife.priv      W custom  private parameters for encrypting\n"
+		"  <private>/seed.bin      R  binary  32-byte seed for PRNG\n"
 		"  /dev/urandom            R  binary  used in case above file is missing\n"
 		);
 	exit(code);
@@ -184,6 +188,36 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		usage(8);
 	}
 	location_free(seed_location);
+}
+
+/* for now, use the mife library's custom format; would be good to upgrade this
+ * to something a bit more redundant and human-readable to improve error
+ * detection, error reporting, versioning and just generally make this tool a
+ * bit more robust
+ */
+void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
+	/* the public directory has to exist -- we read template.json out of it! --
+	 * but the private one might not yet */
+	int err = mkdir(outs.private.path, S_IRWXU);
+	if(0 != err && EEXIST != err) {
+		fprintf(stderr, "could not create output directory %s\n", outs.private.path);
+		return;
+	}
+
+	location  public_location = location_append(outs.public , "mife.pub" );
+	location private_location = location_append(outs.private, "mife.priv");
+	if( public_location.path == NULL ||
+	   private_location.path == NULL) {
+		location_free(public_location);
+		fprintf(stderr, "out of memory when generating output paths\n");
+		return;
+	}
+
+	fwrite_mife_pp(pp,  public_location.path);
+	fwrite_mife_sk(sk, private_location.path);
+
+	location_free( public_location);
+	location_free(private_location);
 }
 
 void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs) {
