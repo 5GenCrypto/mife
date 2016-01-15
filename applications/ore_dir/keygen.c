@@ -15,7 +15,7 @@
 
 typedef struct {
 	int sec_param, log_db_size;
-	char seed[SEED_SIZE];
+	aes_randstate_t seed;
 	template template;
 } keygen_inputs;
 
@@ -25,7 +25,7 @@ typedef struct {
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
 void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
-void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs);
+void cleanup(keygen_inputs *const ins, keygen_locations *const outs);
 
 const mife_flag_t   mife_flags = MIFE_DEFAULT;
 const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
@@ -46,10 +46,7 @@ int main(int argc, char **argv) {
 		template_stats_to_position,
 		template_stats_to_cleartext,
 		template_stats_to_result);
-  aes_randstate_t randstate;
-  aes_randinit_seed(randstate, ins.seed, NULL);  
-  mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, randstate);
-  aes_randclear(randstate);
+	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
 	print_outputs(outs, pp, sk);
 
 	cleanup(&ins, &outs);
@@ -111,6 +108,7 @@ void usage(const int code) {
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
+	char seed[SEED_SIZE];
 
 	/* set defaults; the NULLs in outs will be overwritten */
 	ins->sec_param = 80;
@@ -186,11 +184,12 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		fprintf(stderr, "%s: out of memory when trying to create path to seed\n", *argv);
 		exit(-1);
 	}
-	if(!read_seed(seed_location, ins->seed)) {
+	if(!read_seed(seed_location, seed)) {
 		fprintf(stderr, "%s: could not read seed\n", *argv);
 		usage(8);
 	}
 	location_free(seed_location);
+	aes_randinit_seed(ins->seed, seed, NULL);
 }
 
 /* for now, use the mife library's custom format; would be good to upgrade this
@@ -224,7 +223,8 @@ void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	location_free(private_location);
 }
 
-void cleanup(const keygen_inputs *const ins, const keygen_locations *const outs) {
+void cleanup(keygen_inputs *const ins, keygen_locations *const outs) {
 	location_free(outs-> public);
 	location_free(outs->private);
+	aes_randclear(ins->seed);
 }
