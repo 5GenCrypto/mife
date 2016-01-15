@@ -68,6 +68,7 @@ bool read_seed(location loc, char *dest) {
 	if(NULL == (src = fopen(loc.path      , "rb")) &&
 	   NULL == (src = fopen("/dev/urandom", "rb")))
 		return false;
+	dest[SEED_SIZE] = '\0';
 	return fread(dest, sizeof(*dest), SEED_SIZE, src) == SEED_SIZE;
 }
 
@@ -100,7 +101,7 @@ void usage(const int code) {
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
-	char seed[SEED_SIZE];
+	char seed[SEED_SIZE+1];
 
 	/* set defaults; the NULLs in outs will be overwritten */
 	ins->sec_param = 80;
