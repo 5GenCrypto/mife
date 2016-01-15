@@ -199,7 +199,7 @@ void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	/* the public directory has to exist -- we read template.json out of it! --
 	 * but the private one might not yet */
 	int err = mkdir(outs.private.path, S_IRWXU);
-	if(0 != err && EEXIST != err) {
+	if(0 != err && EEXIST != errno) {
 		fprintf(stderr, "could not create output directory %s\n", outs.private.path);
 		return;
 	}
