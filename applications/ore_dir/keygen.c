@@ -1,17 +1,14 @@
 #include <errno.h>
 #include <getopt.h>
-#include <gghlite/gghlite.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#include "matrix.h"
+#include "cmdline.h"
 #include "mife_glue.h"
 #include "parse.h"
 #include "util.h"
-
-#define SEED_SIZE 32
 
 typedef struct {
 	int sec_param, log_db_size;
@@ -27,7 +24,6 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
 void cleanup(keygen_inputs *const ins, keygen_locations *const outs);
 
-const mife_flag_t   mife_flags = MIFE_DEFAULT;
 const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
 
 int main(int argc, char **argv) {
@@ -38,14 +34,7 @@ int main(int argc, char **argv) {
 	template_stats stats;
 
 	parse_cmdline(argc, argv, &ins, &outs);
-	template_to_template_stats(&ins.template, &stats);
-	mife_init_params(pp, mife_flags);
-	mife_mbp_set(&stats, pp, stats.positions_len,
-		template_stats_to_params,
-		template_stats_to_dimensions,
-		template_stats_to_position,
-		template_stats_to_cleartext,
-		template_stats_to_result);
+	if(!template_to_mife_pp(pp, &ins.template)) return -1;
 	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
 	print_outputs(outs, pp, sk);
 

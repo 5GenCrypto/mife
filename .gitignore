@@ -62,6 +62,8 @@ lt~obsolete.m4
 /applications/jigsaw
 /applications/bench_rem
 /applications/ore_dir/keygen
+/applications/ore_dir/encrypt
+/applications/ore_dir/eval
 /applications/ore_dir/Makefile
 /applications/ore
 dgs/benchmarks/Makefile
