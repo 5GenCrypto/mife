@@ -882,6 +882,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   
   ore_params_t *params = malloc(sizeof(ore_params_t));
   params->d = d;
+  params->bitstr_len = bitstr_len;
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
