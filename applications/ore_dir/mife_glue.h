@@ -2,13 +2,13 @@
 #include "matrix.h"
 #include "mife.h"
 
-/* template_stats structures should not be used after the template they were
- * constructed from are free'd! */
+/* the template field is not owned by the template_stats structure, so don't
+ * use it after the template it was constructed from is free'd! */
 typedef struct {
-	int positions_len;
-	char **positions;   /* each element references the position string from a step in the template */
-	int **indexes;      /* which steps in the template have the given position? */
-	int *indexes_lens;  /* how many steps in the template have the given position? */
+	int positions_len;   /* what is the arity of the function being encoded? */
+	int *position_index; /* for each step, map its position to a number from 0 to positions_len-1 */
+	int *local_index;    /* for each step, how many previous steps had the same position? */
+	int *step_lens;      /* for each function position, how many steps use that position? */
 	const template *template; /* a reference to the template in question */
 } template_stats;
 void template_stats_free(template_stats stats);
