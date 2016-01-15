@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, ins.seed, NULL);  
   mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, randstate);
+  aes_randclear(randstate);
 	print_outputs(outs, pp, sk);
 
 	cleanup(&ins, &outs);
