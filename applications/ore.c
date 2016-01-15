@@ -20,7 +20,7 @@ void ore_print_help_and_exit() {
   printf("-q, --messages-gen   only generates secret messages\n");
   printf("-e, --evaluate   evaluate on a set of files (specify with -f file1 -f file2 ...)\n");
   printf("-t, --tests-only   only run tests\n");
-  printf("-p, --pp-gen   generates public and secret parameters\n");
+  printf("-p, --pp-gen   generates public and secret parameters (-p pp.out -p sk.out)\n");
   printf("-h, --help   print this help\n");
   exit(0);
 }
@@ -30,12 +30,12 @@ void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params) {
   params->seed = DEFAULT_SHA_SEED;
 
   int c;
-  const char *short_opt = "l:c:s:f:d:pqteh";
+  const char *short_opt = "l:c:s:f:d:p:qteh";
   struct option long_opt[] = {
     {"lambda", required_argument, NULL, 'l'},
     {"ciphertext-gen", required_argument, NULL, 'c'},
     {"seed", required_argument, NULL, 's'},
-    {"pp-gen", no_argument, NULL, 'p'},
+    {"pp-gen", required_argument, NULL, 'p'},
     {"messages-gen", no_argument, NULL, 'q'},
     {"tests-only", no_argument, NULL, 't'},
     {"domain", required_argument, NULL, 'd'},
@@ -77,10 +77,12 @@ void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params) {
         }
         params->files[params->num_files-1] = optarg;
         break;
-      case 'q':
-        params->pp_file = optarg;
-        break;
       case 'p':
+        if(params->is_pp_gen == 0) {
+          params->pp_file = optarg;
+        } else {
+          params->sk_file = optarg;
+        }
         params->is_pp_gen = 1;
         break;
       case 't':
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
   if(params->is_tests_only) {
     run_tests();
   } else if(params->is_pp_gen) {
-    ore_pp_gen(params->pp_file, params->lambda, params->d1, params->d2, params->seed);
+    ore_pp_sk_gen(params->pp_file, params->sk_file, params->lambda, params->d1, params->d2, params->seed);
   } else if(params->is_cgen) {
     ore_challenge_gen(params->m_file, params->challenge_index, params->lambda, params->d1, params->d2, params->seed);
   } else if(params->is_plaintexts_gen) {
@@ -180,7 +182,8 @@ void generate_plaintexts(int num_messages, int d, int n, char *seed) {
   printf("\n");
 }
 
-void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed) {
+void ore_pp_sk_gen(char *pp_file, char *sk_file, int lambda, int d, int n,
+    char *seed) {
   int L = 80; // 2^L = # of total messages we can encrypt
 
   mife_pp_t pp;
@@ -197,11 +200,12 @@ void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed) {
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, seed, NULL);
+  aes_randinit_seed(randstate, seed, "setup");
   mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
   fwrite_mife_pp(pp, pp_file);
+  fwrite_mife_sk(sk, sk_file);
   mife_clear_pp(pp);
   mife_clear_sk(sk);
   aes_randclear(randstate);

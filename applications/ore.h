@@ -52,6 +52,7 @@ typedef struct ore_cmdline {
   char *seed;
 
   char *pp_file;
+  char *sk_file;
   int num_files;
   char **files;
 
@@ -70,7 +71,8 @@ void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params);
 void generate_plaintexts(int num_messages, int d, int n, char *seed);
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file);
 void test_all_ciphertexts(char *pp_file, int n);
-void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed);
+void ore_pp_sk_gen(char *pp_file, char *sk_file, int lambda, int d, int n,
+    char *seed);
 void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
     int d, int n, char *seed);
 void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
