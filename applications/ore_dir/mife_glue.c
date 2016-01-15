@@ -4,52 +4,43 @@
 #include "util.h"
 
 void template_stats_free(template_stats stats) {
-	int i, j;
-	const int len = stats.positions_len;
-	free(stats.positions);
-	if(stats.indexes != NULL)
-		for(i = 0; i < len; i++)
-			free(stats.indexes[i]);
-	free(stats.indexes);
-	free(stats.indexes_lens);
+	free(stats.position_index);
+	free(stats.local_index);
+	free(stats.step_lens);
 }
 
-/* TODO: this function is pretty wasteful in terms of memory: it allocates
- * lists that are as long as the number of steps in the template, which is
- * always safe but probably also always much longer than necessary */
 bool template_to_template_stats(const template *const template, template_stats *stats) {
 	int i, j;
 	const int len = template->steps_len;
+	char **positions = NULL;
 	*stats = (template_stats) { 0, NULL, NULL, NULL, NULL };
 
-	if(ALLOC_FAILS(stats->positions   , len) ||
-	   ALLOC_FAILS(stats->indexes     , len) ||
-	   ALLOC_FAILS(stats->indexes_lens, len))
+	if(ALLOC_FAILS(positions            , len) ||
+	   ALLOC_FAILS(stats->position_index, len) ||
+	   ALLOC_FAILS(stats->local_index   , len) ||
+	   ALLOC_FAILS(stats->step_lens     , len))
 		goto fail;
 
-	for(i = 0; i < template->steps_len; i++) {
+	for(i = 0; i < len; i++) {
 		for(j = 0; j < stats->positions_len; j++)
-			if(!strcmp(template->steps[i].position, stats->positions[j]))
+			if(!strcmp(template->steps[i].position, positions[j]))
 				break;
 
-		if(j < stats->positions_len)
-			/* found a match: update it */
-			stats->indexes[j][stats->indexes_lens[j]++] = i;
-		else {
-			/* no match: allocate a new position and initialize it */
-			if(ALLOC_FAILS(stats->indexes[j], len))
-				goto fail;
-			stats->positions[j] = template->steps[i].position;
-			stats->indexes[j][0] = i;
-			stats->indexes_lens[j] = 1;
-			stats->positions_len++;
-		}
+		stats->step_lens[i] = 0;
+		stats->position_index[i] = j;
+		stats->local_index[i] = stats->step_lens[j]++;
+
+		if(j == stats->positions_len)
+			/* never seen this position before, record it */
+			positions[stats->positions_len++] = template->steps[i].position;
 	}
 
 	stats->template = template;
+	free(positions);
 	return true;
 
 fail:
+	free(positions);
 	template_stats_free(*stats);
 	return false;
 }
@@ -57,7 +48,7 @@ fail:
 int template_stats_to_params(mife_pp_t pp, int i) {
 	const template_stats *const stats = pp->mbp_params;
 	assert(i < stats->positions_len);
-	return stats->indexes_lens[i];
+	return stats->step_lens[i];
 }
 
 void template_stats_to_dimensions(mife_pp_t pp, int *out) {
@@ -68,16 +59,10 @@ void template_stats_to_dimensions(mife_pp_t pp, int *out) {
 		out[i] = template->steps[i].matrix[0].num_cols;
 }
 
-/* TODO: efficiency */
-void template_stats_to_position(mife_pp_t pp, int global_index, int *out_position, int *out_local_index) {
+void template_stats_to_position(mife_pp_t pp, int global_index, int *out_position, int *out_local) {
 	const template_stats *const stats = pp->mbp_params;
-	int i, j;
-	for(i = 0; i < stats->positions_len; i++)
-		for(j = 0; j < stats->indexes_lens[i]; j++)
-			if(stats->indexes[i][j] == global_index)
-				break;
-	*out_position = i;
-	*out_local_index = j;
+	*out_position = stats->position_index[global_index];
+	*out_local    = stats->local_index[global_index];
 }
 
 /* TODO: it would be good to not call assert */
@@ -87,19 +72,23 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 	f2_mbp mbp;
 	int i;
 
-	assert(pp->num_inputs == stats->positions_len); /* except this assert; this assert is okay */
 	assert(template_instantiate(stats->template, cleartext_raw, &mbp));
+
+	/* except these asserts; the asserts in this block are okay */
+	assert(pp->num_inputs == stats->positions_len);
+	assert(mbp.matrices_len == stats->template->steps_len);
+
 	assert(!ALLOC_FAILS(cleartext->clr, pp->num_inputs));
 	for(i = 0; i < stats->positions_len; i++)
 		assert(!ALLOC_FAILS(cleartext->clr[i], pp->n[i]));
 
 	for(i = 0; i < mbp.matrices_len; i++) {
-		int position, local_index;
 		int j, k;
-		template_stats_to_position(pp, i, &position, &local_index);
 
+		/* abbreviations */
+		const int position = stats->position_index[i], local = stats->local_index[i];
 		const f2_matrix f2_m = mbp.matrices[i];
-		fmpz_mat_struct *fmpz_m = cleartext->clr[position][local_index];
+		fmpz_mat_struct *fmpz_m = cleartext->clr[position][local];
 
 		fmpz_mat_init(fmpz_m, f2_m.num_rows, f2_m.num_cols);
 		for(j = 0; j < f2_m.num_rows; j++)
