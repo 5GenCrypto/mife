@@ -82,6 +82,8 @@ bool read_seed(location loc, char *dest) {
 }
 
 void usage(const int code) {
+	/* separate the diagnostic information from the usage information a little bit */
+	if(0 != code) printf("\n\n");
 	printf(
 		"The key generation phase initializes the parameters that are shared across\n"
 		"an entire database. Brackets indicate default values for each argument.\n"
