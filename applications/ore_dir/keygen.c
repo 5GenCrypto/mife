@@ -46,7 +46,9 @@ int main(int argc, char **argv) {
 		template_stats_to_position,
 		template_stats_to_cleartext,
 		template_stats_to_result);
-	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, ins.seed, NULL);  
+  mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, randstate);
 	print_outputs(outs, pp, sk);
 
 	cleanup(&ins, &outs);

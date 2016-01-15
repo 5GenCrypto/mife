@@ -1,6 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = jsmn
 LDADD = \
+	$(top_builddir)/aesrand/libaesrand.la \
 	$(top_builddir)/mife/libmife.la \
 	-L$(top_builddir)/applications/ore_dir/jsmn \
 	-L$(top_builddir)/flint -lflint -ljsmn -lgmp -lmpfr -lm -lssl -lcrypto
