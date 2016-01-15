@@ -1,6 +1,6 @@
 #include "aesrand.h"
 
-#define AES_ALGORITHM EVP_aes_128_gcm()
+#define AES_ALGORITHM EVP_aes_256_ctr()
 
 int X = 0;
 int Y = 0;
@@ -109,7 +109,16 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   int TRY_MAX = 1000000000; // number of times to attempt getting good randomness
   //printf("nb: %lu\n", nb);
 
+  // update the internal counter, works at most 2^64 times
   memcpy(state->iv, &state->ctr, sizeof(state->ctr)); 
+
+ /* TODO keep working on this 
+  printf("state->iv: "); 
+  for(int i = 0 ; i < EVP_CIPHER_iv_length(AES_ALGORITHM); i++) {
+    printf("%x ", state->iv[i]);
+  }
+  printf("\n");
+*/
 
   state->ctx = EVP_CIPHER_CTX_new();
   EVP_EncryptInit_ex (state->ctx, AES_ALGORITHM, NULL, state->key,
