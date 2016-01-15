@@ -1,4 +1,6 @@
 #ifndef _MIFE_GLUE_H
+#define _MIFE_GLUE_H
+
 #include "matrix.h"
 #include "mife.h"
 

@@ -1,4 +1,5 @@
 #ifndef _ORE_UTILS_H
+#define _ORE_UTILS_H
 
 #ifdef ALLOC_FAILS
 #error "trying to redefine ALLOC_FAILS"

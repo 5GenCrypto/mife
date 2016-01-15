@@ -1,4 +1,5 @@
 #ifndef _ORE_CMDLINE_H
+#define _ORE_CMDLINE_H
 
 #include <gghlite/gghlite.h>
 #include "matrix.h"
