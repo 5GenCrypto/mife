@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   print_header("GGHLite Noise Distribution", params);
 
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, params->shaseed);
+  aes_randinit_seed(randstate, params->shaseed, NULL);
 
 
   gghlite_sk_t self;

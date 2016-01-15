@@ -9,15 +9,28 @@ int VERBOSE = 0;
 
 void aes_randinit(aes_randstate_t state) {
   char *default_seed = "12345678901234567890123456789012";
-  aes_randinit_seed(state, default_seed);
+  aes_randinit_seed(state, default_seed, NULL);
 }
 
-void aes_randinit_seed(aes_randstate_t state, char *seed) {
+void aes_randinit_seed(aes_randstate_t state, char *seed, char *additional) {
   state->aes_init = 1;
   state->ctr = 0;
-  state->key = seed;
   state->iv = malloc(EVP_CIPHER_iv_length(AES_ALGORITHM));
   memset(state->iv, 0, EVP_CIPHER_iv_length(AES_ALGORITHM));
+
+  if(additional == NULL) {
+    additional = "";
+  }
+
+  char *digest = malloc(strlen(seed) + strlen(additional) + 1);
+  digest[0] = 0;
+  strcat(digest, seed);
+  strcat(digest, additional);
+
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, digest, strlen(digest));
+  SHA256_Final(state->key, &sha256);
 }
 
 void aes_randclear(aes_randstate_t state) {
@@ -112,26 +125,20 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   // update the internal counter, works at most 2^64 times
   memcpy(state->iv, &state->ctr, sizeof(state->ctr)); 
 
- /* TODO keep working on this 
-  printf("state->iv: "); 
-  for(int i = 0 ; i < EVP_CIPHER_iv_length(AES_ALGORITHM); i++) {
-    printf("%x ", state->iv[i]);
-  }
-  printf("\n");
-*/
-
   state->ctx = EVP_CIPHER_CTX_new();
-  EVP_EncryptInit_ex (state->ctx, AES_ALGORITHM, NULL, state->key,
-      state->iv);
+  EVP_EncryptInit_ex (state->ctx, AES_ALGORITHM, NULL, state->key, state->iv);
 
   unsigned char *output = malloc(2 * (nb + EVP_MAX_IV_LENGTH));
   mp_bitcnt_t outlen = 0;
   int halt_count = 0;
 
+  int in_size = nb;
+  unsigned char in[in_size];
+  memset(in, 0, in_size);
+
   while(outlen < nb && halt_count < TRY_MAX) {
     int buflen = 0;
-    EVP_EncryptUpdate(state->ctx, output+outlen, &buflen,
-        (unsigned char *) &state->ctr, sizeof(unsigned long));
+    EVP_EncryptUpdate(state->ctx, output+outlen, &buflen, in, in_size);
     state->ctr++;
     outlen += buflen;
     halt_count++;

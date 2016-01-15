@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   print_header("Playing with primes", params);
 
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, params->shaseed);
+  aes_randinit_seed(randstate, params->shaseed, NULL);
 
   gghlite_sk_t self;
   gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);

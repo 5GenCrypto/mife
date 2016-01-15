@@ -167,7 +167,7 @@ void generate_plaintexts(int num_messages, int d, int n, char *seed) {
 
   /* Generate the messages first with a copied randstate */
   aes_randstate_t gen_randstate;
-  aes_randinit_seed(gen_randstate, seed);
+  aes_randinit_seed(gen_randstate, seed, NULL);
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   printf("The plaintexts:\n");
   for(int i = 0; i < num_messages; i++) {
@@ -191,28 +191,20 @@ void ore_pp_gen(char *pp_file, int lambda, int d, int n, char *seed) {
   ore_params_t *params = malloc(sizeof(ore_params_t));
   ore_set_best_params(pp, lambda, message_space_size, params);
 
-  printf("Estimated ciphertext size for lambda = 80: ");
-  const char *units[3] = {"KB","MB","GB"};
-  double sd = CT_SIZE / 8.0;
-  int i;
-  for(i=0; i<3; i++) {
-    if (sd < 1024.0)
-      break;
-    sd = sd/1024;
-  }
-  printf("%6.2f %s\n\n", sd, units[i-1]);
-
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
-  mife_setup(pp, sk, L, lambda, ggh_flags, seed);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, seed, NULL);
+  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
   fwrite_mife_pp(pp, pp_file);
   mife_clear_pp(pp);
   mife_clear_sk(sk);
+  aes_randclear(randstate);
   mpfr_free_cache();
   flint_cleanup();
   free(params);
@@ -239,56 +231,47 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
     exit(1);
   }
  
-  fmpz_t *messages;
+  fmpz_t *messages = malloc(sizeof(fmpz_t));
   unsigned long m;
   int num_messages = 0;
-  while(fscanf(fp, "%lu\n", &m) > 0) {
-    if(num_messages == 0) {
-      messages = malloc(sizeof(fmpz_t));
-    } else {
-      messages = realloc(messages, num_messages+1 * sizeof(fmpz_t));
+  while(fscanf(fp, "%lu\n", &m) >= 0) {
+    messages = realloc(messages, (num_messages+1) * sizeof(fmpz_t));
     fmpz_init_set_ui(messages[num_messages], m);
     num_messages++;
-    }
   }
+  printf("Number of messages found in %s: %d\n", m_file, num_messages);
 
   fclose(fp);
   fmpz_clear(message_space_size);
-
-
-  printf("Estimated ciphertext size for lambda = 80: ");
-  const char *units[3] = {"KB","MB","GB"};
-  double sd = CT_SIZE / 8.0;
-  int i;
-  for(i=0; i<3; i++) {
-    if (sd < 1024.0)
-      break;
-    sd = sd/1024;
-  }
-  printf("%6.2f %s\n\n", sd, units[i-1]);
 
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
-  mife_setup(pp, sk, L, lambda, ggh_flags, seed);
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, seed, "setup");
+  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
+  aes_randclear(randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
   PRINT_ENCODING_PROGRESS = 1;
   mife_ciphertext_t *ciphertexts =
     malloc(num_messages * sizeof(mife_ciphertext_t));
   for(int i = 0; i < num_messages; i++) {
-    // FIXME use distinct randomness here
     if(challenge_index == 0 || i == challenge_index-1) {
       printf("Encrypting message %d\n", i+1);
       NUM_ENCODINGS_GENERATED = 0;
       reset_T();
-      mife_encrypt(ciphertexts[i], messages[i], pp, sk);
-      char *str = malloc(10 * sizeof(char));
+      aes_randstate_t encrypt_randstate;
+      char str_i[100];
+      sprintf(str_i, "%d", i+1);
+      aes_randinit_seed(encrypt_randstate, seed, str_i);
+      mife_encrypt(ciphertexts[i], messages[i], pp, sk, encrypt_randstate);
+      aes_randclear(encrypt_randstate);
+      char str[100];
       sprintf(str, "ct%d.out", i+1);
       fwrite_mife_ciphertext(pp, ciphertexts[i], str);
-      free(str);
       mife_ciphertext_clear(pp, ciphertexts[i]);
     }
   }
@@ -886,8 +869,10 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
+  aes_randstate_t randstate;
+  aes_randinit_seed(randstate, DEFAULT_SHA_SEED, NULL);
   gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
-  mife_setup(pp, sk, L, lambda, ggh_flags, DEFAULT_SHA_SEED);
+  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
 
   fwrite_mife_pp(pp, "pp_test.out");
   mife_clear_pp(pp);
@@ -898,7 +883,6 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_clear_sk(sk);
   mife_sk_t sk2;
   fread_mife_sk(sk2, "sk_test.out");
-  aes_randinit(sk2->randstate);
 
   mife_mbp_set(params, pp2, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
@@ -909,7 +893,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   fmpz_t *messages = malloc(num_messages * sizeof(fmpz_t));
   for(int i = 0; i < num_messages; i++) {
     fmpz_init(messages[i]);
-    fmpz_randm_aes(messages[i], sk2->randstate, message_space_size);
+    fmpz_randm_aes(messages[i], randstate, message_space_size);
     if(verbose) {
       fmpz_print(messages[i]);
       printf("\n");
@@ -918,7 +902,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   mife_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(mife_ciphertext_t));
   for(int i = 0; i < num_messages; i++) {
-    mife_encrypt(ciphertexts[i], messages[i], pp2, sk2);
+    mife_encrypt(ciphertexts[i], messages[i], pp2, sk2, randstate);
   }
 
   for(int i = 0; i < num_messages; i++) {
@@ -969,6 +953,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_clear_pp_read(pp2);
   mife_clear_sk(sk2);
   free(params);
+  aes_randclear(randstate);
   
   if(status == 0) {
     printf("SUCCESS\n");
@@ -1020,7 +1005,7 @@ void run_tests() {
 void print_random_matrices_with_inverse(int n, char *p_file,
     char *a_file, char *inv_file) {
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, "62f1b2d2733a5e5fd63de8eff7fcf965");
+  aes_randinit_seed(randstate, "62f1b2d2733a5e5fd63de8eff7fcf965", NULL);
   fmpz_t modp;
   fmpz_init(modp);
   FILE *fp = fopen(p_file, "r");

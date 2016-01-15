@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
   print_header(name, cmdline_params);
 
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, cmdline_params->shaseed);
+  aes_randinit_seed(randstate, cmdline_params->shaseed, NULL);
 
   uint64_t t = ggh_walltime(0);
   uint64_t t_total = ggh_walltime(0);

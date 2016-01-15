@@ -53,7 +53,6 @@ struct _mife_sk_struct {
   gghlite_sk_t self;
   fmpz_mat_t *R;
   fmpz_mat_t *R_inv;
-  aes_randstate_t randstate;
 };
 
 typedef struct _mife_sk_struct mife_sk_t[1];
@@ -95,9 +94,9 @@ void mife_mbp_set(
     int (*parsefn)  (mife_pp_t, char **)
     );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
-    gghlite_flag_t ggh_flags, char *shaseed);
+    gghlite_flag_t ggh_flags, aes_randstate_t randstate);
 void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
-    mife_sk_t sk);
+    mife_sk_t sk, aes_randstate_t randstate);
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 
 /* MIFE internal functions */
@@ -105,16 +104,17 @@ void reset_T();
 float get_T();
 void set_NUM_ENC(int val);
 int get_NUM_ENC();
-void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk);
+void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk,
+    aes_randstate_t randstate);
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
-    mife_pp_t pp, mife_sk_t sk);
+    mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate);
 void mife_clear_pp_read(mife_pp_t pp);
 void mife_clear_pp(mife_pp_t pp);
 void mife_clear_sk(mife_sk_t sk);
 void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met);
 void mife_gen_partitioning(int *partitioning, fmpz_t index, int L, int nu);
 void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
-    fmpz_mat_t m, int *group);
+    fmpz_mat_t m, int *group, aes_randstate_t randstate);
 void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m);
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2);

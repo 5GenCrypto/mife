@@ -12,19 +12,20 @@
 #include "../flint/fmpz_poly.h"
 #include "../flint/fmpz_mod_poly.h"
 #include <openssl/evp.h>
+#include <openssl/sha.h>
 
 struct _aes_randstate_struct {
   char aes_init;
   unsigned long ctr;
   EVP_CIPHER_CTX *ctx;
-  unsigned char *key;
+  unsigned char key[SHA256_DIGEST_LENGTH];
   unsigned char *iv;
 };
 
 typedef struct _aes_randstate_struct aes_randstate_t[1];
 
 void aes_randinit(aes_randstate_t state);
-void aes_randinit_seed(aes_randstate_t state, char *seed);
+void aes_randinit_seed(aes_randstate_t state, char *seed, char *additional);
 void aes_randclear(aes_randstate_t state);
 
 void fmpz_mod_poly_randtest_aes(fmpz_mod_poly_t f, aes_randstate_t state,

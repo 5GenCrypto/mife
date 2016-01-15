@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     ggh_die("Setting GGHLITE_FLAGS_PRIME_G defeats the purpose of this application.");
 
   aes_randstate_t randstate;
-  aes_randinit_seed(randstate, params->shaseed);
+  aes_randinit_seed(randstate, params->shaseed, NULL);
 
   gghlite_sk_t self;
   gghlite_params_init(self->params, params->lambda, params->kappa, params->rerand, params->flags);

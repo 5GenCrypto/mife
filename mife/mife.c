@@ -391,7 +391,6 @@ void mife_clear_sk(mife_sk_t sk) {
   }
   free(sk->R);
   free(sk->R_inv);
-  aes_randclear(sk->randstate);
 }
 
 void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met) {
@@ -416,7 +415,7 @@ void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) {
 }
 
 void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
-    mife_sk_t sk) {
+    mife_sk_t sk, aes_randstate_t randstate) {
   // compute a random index in the range [0,2^L]
   fmpz_t index, powL, two;
   fmpz_init(index);
@@ -424,7 +423,7 @@ void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
   fmpz_init_set_ui(two, 2);
   fmpz_pow_ui(powL, two, pp->L); // computes powL = 2^L
   fmpz_set_ui(index, 0);
-  fmpz_randm_aes(index, sk->randstate, powL);
+  fmpz_randm_aes(index, randstate, powL);
   fmpz_clear(powL);
   fmpz_clear(two);
   
@@ -432,9 +431,9 @@ void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
   pp->setfn(pp, met, message);
 
   if(! (pp->flags & MIFE_NO_RANDOMIZERS)) {
-    mife_apply_randomizers(met, pp, sk);     
+    mife_apply_randomizers(met, pp, sk, randstate);
   }
-  mife_set_encodings(ct, met, index, pp, sk);
+  mife_set_encodings(ct, met, index, pp, sk, randstate);
   fmpz_clear(index);
   mife_mat_clr_clear(pp, met);
 }
@@ -459,8 +458,7 @@ void mife_mbp_set(
 } 
 
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
-    gghlite_flag_t ggh_flags, char *shaseed) {
-  aes_randinit_seed(sk->randstate, shaseed);
+    gghlite_flag_t ggh_flags, aes_randstate_t randstate) {
 
   pp->n = malloc(pp->num_inputs * sizeof(int));
   for(int index = 0; index < pp->num_inputs; index++) { 
@@ -484,7 +482,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
                       pp->kappa,
                       pp->gamma,
                       ggh_flags,
-                      sk->randstate);
+                      randstate);
 
   pp->params_ref = &(sk->self->params);
 
@@ -509,7 +507,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
       for(int j = 0; j < dims[k]; j++) {
-        fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), sk->randstate, pp->p);
+        fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), randstate, pp->p);
       }
     }
 	
@@ -529,12 +527,13 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
   }
 }
 
-void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk) {
+void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk,
+    aes_randstate_t randstate) {
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int k = 0; k < pp->n[i]; k++) {
       fmpz_t rand;
       fmpz_init(rand);
-      fmpz_randm_aes(rand, sk->randstate, pp->p);
+      fmpz_randm_aes(rand, randstate, pp->p);
       fmpz_mat_scalar_mul_modp(met->clr[i][k], rand, pp->p);
       fmpz_clear(rand);
     }
@@ -633,14 +632,14 @@ void gghlite_enc_mat_clear(gghlite_enc_mat_t m) {
 
 
 void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
-    fmpz_mat_t m, int *group) {
+    fmpz_mat_t m, int *group, aes_randstate_t randstate) {
   gghlite_clr_t e;
   gghlite_clr_init(e);
   for(int i = 0; i < enc->nrows; i++) {
     for(int j = 0; j < enc->ncols; j++) {
       fmpz_poly_set_coeff_fmpz(e, 0, fmpz_mat_entry(m, i, j));
       gghlite_enc_set_gghlite_clr(enc->m[i][j], sk->self, e, 1, group, 1,
-          sk->randstate);
+          randstate);
       NUM_ENCODINGS_GENERATED++;
       if(PRINT_ENCODING_PROGRESS) {
         printf("Generated encoding %d / %d (Time elapsed: %8.2f s)\n",
@@ -664,7 +663,7 @@ void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m) {
 }
 
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
-    mife_pp_t pp, mife_sk_t sk) {
+    mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate) {
 
   int **ptns = malloc(pp->num_inputs * sizeof(int *));
   for(int i = 0; i < pp->num_inputs; i++) {
@@ -753,7 +752,8 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     for(int j = 0; j < pp->n[i]; j++) {
       gghlite_enc_mat_init(sk->self->params, ct->enc[i][j],
           met->clr[i][j]->r, met->clr[i][j]->c);
-      mife_mat_encode(pp, sk, ct->enc[i][j], met->clr[i][j], groups[i][j]);
+      mife_mat_encode(pp, sk, ct->enc[i][j], met->clr[i][j], groups[i][j],
+          randstate);
     }
   }
   
