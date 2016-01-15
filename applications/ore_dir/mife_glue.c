@@ -75,6 +75,7 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 	assert(template_instantiate(stats->template, cleartext_raw, &mbp));
 
 	/* except these asserts; the asserts in this block are okay */
+	/* (but should at least print some diagnostic information) */
 	assert(pp->num_inputs == stats->positions_len);
 	assert(mbp.matrices_len == stats->template->steps_len);
 
