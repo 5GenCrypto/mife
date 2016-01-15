@@ -95,6 +95,8 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 			for(k = 0; k < f2_m.num_cols; k++)
 				fmpz_set_ui(fmpz_mat_entry(fmpz_m, j, k), f2_m.elems[j][k]);
 	}
+
+	f2_mbp_free(mbp);
 }
 
 /* TODO: hm! maybe the outputs should be a matrix rather than an array */
