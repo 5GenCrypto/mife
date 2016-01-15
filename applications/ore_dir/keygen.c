@@ -178,7 +178,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		exit(-1);
 	}
 	if(!read_seed(seed_location, seed)) {
-		fprintf(stderr, "%s: could not read seed\n", *argv);
+		fprintf(stderr, "%s: could not read %d bytes of seed\n", *argv, SEED_SIZE);
 		usage(8);
 	}
 	location_free(seed_location);
