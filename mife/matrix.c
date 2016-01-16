@@ -83,11 +83,11 @@ bool template_instantiate(const template *const t, const plaintext *const pt, f2
 		return false;
 
 	int *i = &mbp->matrices_len;
-	for(*i = 0; *i < t->steps_len; *i++) {
+	for(*i = 0; *i < t->steps_len; (*i)++) {
 		int j;
 		bool found = false;
 		for(j = 0; j < t->steps[*i].symbols_len; j++) {
-			if(!strcmp(pt->symbols[*i], t->steps[*i].symbols[*i])) {
+			if(!strcmp(pt->symbols[*i], t->steps[*i].symbols[j])) {
 				if(found) /* found a second hit! bail out */ {
 					f2_matrix_free(mbp->matrices[*i]);
 					f2_mbp_free(*mbp);
