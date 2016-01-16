@@ -1,14 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "matrix.h"
+#include "util.h"
 
 bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
-	if(NULL == (dest->elems = malloc(sizeof(*dest->elems) * src.num_rows)))
+	if(ALLOC_FAILS(dest->elems, src.num_rows))
 		return false;
 	int *i = &dest->num_rows; /* to shorten some lines */
 	int j;
 	for(*i = 0; *i < src.num_rows; *i++) {
-		if(NULL == (dest->elems[*i] = malloc(sizeof(*(dest->elems[*i])) * src.num_cols))) {
+		if(ALLOC_FAILS(dest->elems[*i], src.num_cols)) {
 			f2_matrix_free(*dest);
 			return false;
 		}
@@ -79,7 +80,7 @@ void plaintext_free(plaintext pt) {
 
 bool template_instantiate(const template *const t, const plaintext *const pt, f2_mbp *const mbp) {
 	if(t->steps_len != pt->symbols_len) return false;
-	if(NULL == (mbp->matrices = malloc(sizeof(*mbp->matrices) * t->steps_len)))
+	if(ALLOC_FAILS(mbp->matrices, t->steps_len))
 		return false;
 
 	int *i = &mbp->matrices_len;
