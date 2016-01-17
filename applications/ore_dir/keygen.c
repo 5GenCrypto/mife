@@ -182,7 +182,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		usage(8);
 	}
 	location_free(seed_location);
-	aes_randinit_seed(ins->seed, seed, NULL);
+	aes_randinit_seed(ins->seed, seed, "keygen");
 }
 
 /* for now, use the mife library's custom format; would be good to upgrade this
