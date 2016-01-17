@@ -298,10 +298,14 @@ void print_outputs(location database_location, mife_pp_t pp, mife_ciphertext_t c
 }
 
 void cleanup(encrypt_inputs *const ins, location *const database_location) {
-	/* TODO */
+	plaintext_free(ins->pt);
+	fmpz_clear(ins->uid);
+	mife_clear_sk(ins->sk);
 	template_stats *stats = ins->pp->mbp_params;
 	template *templ = (template *)stats->template;
 	template_stats_free(*stats); free(stats);
 	template_free(*templ); free(templ);
-	fmpz_clear(ins->uid);
+	mife_clear_pp_read(ins->pp);
+	aes_randclear(ins->seed);
+	location_free(*database_location);
 }
