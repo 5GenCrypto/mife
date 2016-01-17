@@ -63,15 +63,6 @@ void location_init(keygen_inputs *const ins, location *const loc, const char *co
 	loc->stack_allocated = false;
 }
 
-bool read_seed(location loc, char *dest) {
-	FILE *src = fopen(loc.path, "rb");
-	if(NULL == (src = fopen(loc.path      , "rb")) &&
-	   NULL == (src = fopen("/dev/urandom", "rb")))
-		return false;
-	dest[SEED_SIZE] = '\0';
-	return fread(dest, sizeof(*dest), SEED_SIZE, src) == SEED_SIZE;
-}
-
 void usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
@@ -101,7 +92,6 @@ void usage(const int code) {
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
-	char seed[SEED_SIZE+1];
 
 	/* set defaults; the NULLs in outs will be overwritten */
 	ins->sec_param = 80;
@@ -172,17 +162,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 	location_free(template_location);
 
 	/* read seed */
-	location seed_location = location_append(outs->private, "seed.bin");
-	if(NULL == seed_location.path) {
-		fprintf(stderr, "%s: out of memory when trying to create path to seed\n", *argv);
-		exit(-1);
-	}
-	if(!read_seed(seed_location, seed)) {
-		fprintf(stderr, "%s: could not read %d bytes of seed\n", *argv, SEED_SIZE);
-		usage(8);
-	}
-	location_free(seed_location);
-	aes_randinit_seed(ins->seed, seed, "keygen");
+	check_parse_result(load_seed(outs->private, "keygen", ins->seed), usage, 8);
 }
 
 /* for now, use the mife library's custom format; would be good to upgrade this

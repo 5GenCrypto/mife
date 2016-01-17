@@ -172,24 +172,34 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 	fread_mife_sk(ins->sk, sk_location.path);
 	location_free(sk_location);
 
-	/* TODO: initialize the random seed */
-
 	/* TODO: initialize uid if !have_uid */
 	if(!have_uid) exit(-2);
+
+	/* initialize the random seed */
+	const char function_name[] = "encrypt";
+	size_t context_len = fmpz_sizeinbase(ins->uid, 62) + sizeof(function_name);
+	char *context;
+	if(ALLOC_FAILS(context, context_len)) {
+		fprintf(stderr, "%s: out of memory when generating context for RNG seed\n", *argv);
+		exit(-1);
+	}
+	memcpy(context, function_name, sizeof(function_name)-1);
+	fmpz_get_str(context + sizeof(function_name)-1, 62, ins->uid);
+	check_parse_result(load_seed(private_location, context, ins->seed), usage, 5);
 
 	/* from here on out, it's all sanity-checks */
 
 	/* check that the uid is in range */
 	if(fmpz_sizeinbase(ins->uid, 2) >= (size_t)ins->pp->L) {
 		fprintf(stderr, "uid uses %zu bits, but the current key supports only up to %d bits\n", fmpz_sizeinbase(ins->uid, 2), ins->pp->L);
-		usage(5);
+		usage(6);
 	}
 
 	/* check that the template and plaintext have the same length */
 	if(template->steps_len != ins->pt.symbols_len) {
 		fprintf(stderr, "the number of symbols in the plaintext (%d)\ndoes not match the number of steps in the template (%d)\n",
 		        ins->pt.symbols_len, template->steps_len);
-		usage(6);
+		usage(7);
 	}
 
 	/* check that the template and plaintext match up appropriately */
@@ -208,7 +218,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 		}
 		match_everywhere &= match_here;
 	}
-	if(!match_everywhere) usage(7);
+	if(!match_everywhere) usage(8);
 
 	/* TODO: check that `ins->pp` and `stats` match up */
 	/* TODO: check that the secret key is appropriately dimensioned */

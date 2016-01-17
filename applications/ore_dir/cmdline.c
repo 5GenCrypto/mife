@@ -13,3 +13,39 @@ bool template_to_mife_pp(mife_pp_t pp, const template *const template, template_
 		template_stats_to_result);
 	return true;
 }
+
+parse_result load_seed(location private_location, char *context, aes_randstate_t seed) {
+	FILE *src;
+	char dest[SEED_SIZE+1];
+	parse_result result;
+	location seed_location = location_append(private_location, "seed.bin");
+
+	if(NULL == seed_location.path) {
+		fprintf(stderr, "out of memory when trying to create path to seed\n");
+		result = PARSE_OUT_OF_MEMORY;
+		goto fail_none;
+	}
+	if(NULL == (src = fopen(seed_location.path, "rb")) &&
+	   NULL == (src = fopen("/dev/urandom"    , "rb"))) {
+		fprintf(stderr, "could not seed for reading; attempted to read:\n");
+		fprintf(stderr, "\t%s\n\t/dev/urandom\n", seed_location.path);
+		result = PARSE_IO_ERROR;
+		goto fail_free_location;
+	}
+
+	dest[SEED_SIZE] = '\0';
+	if(fread(dest, sizeof(*dest), SEED_SIZE, src) != SEED_SIZE) {
+		fprintf(stderr, "could not read %d bytes of seed\n", SEED_SIZE);
+		result = PARSE_INVALID;
+		goto fail_free_location;
+	}
+
+	/* TODO: error checking */
+	aes_randinit_seed(seed, dest, context);
+	result = PARSE_SUCCESS;
+
+fail_free_location:
+	location_free(seed_location);
+fail_none:
+	return result;
+}

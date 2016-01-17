@@ -13,4 +13,13 @@
 #define SEED_SIZE 32
 #endif /* ifdef SEED_SIZE */
 
+typedef enum {
+	PARSE_SUCCESS,
+	PARSE_INVALID,
+	PARSE_OUT_OF_MEMORY,
+	PARSE_IO_ERROR
+} parse_result;
+
+void check_parse_result(parse_result result, void usage(int), int problem);
+
 #endif /* ifndef _ORE_UTILS_H */
