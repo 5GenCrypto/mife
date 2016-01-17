@@ -37,13 +37,15 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 	if(fread(dest, sizeof(*dest), SEED_SIZE, src) != SEED_SIZE) {
 		fprintf(stderr, "could not read %d bytes of seed\n", SEED_SIZE);
 		result = PARSE_INVALID;
-		goto fail_free_location;
+		goto fail_close_src;
 	}
 
 	/* TODO: error checking */
 	aes_randinit_seed(seed, dest, context);
 	result = PARSE_SUCCESS;
 
+fail_close_src:
+	fclose(src);
 fail_free_location:
 	location_free(seed_location);
 fail_none:
