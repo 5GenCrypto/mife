@@ -13,6 +13,14 @@
 #define SEED_SIZE 32
 #endif /* ifdef SEED_SIZE */
 
+typedef struct {
+	char *path;
+	bool stack_allocated;
+} location;
+
+void location_free(location loc);
+location location_append(const location loc, const char *const path);
+
 typedef enum {
 	PARSE_SUCCESS,
 	PARSE_INVALID,

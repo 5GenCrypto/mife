@@ -5,14 +5,7 @@
 #include <stdbool.h>
 
 #include "matrix.h"
-
-typedef struct {
-	char *path;
-	bool stack_allocated;
-} location;
-
-void location_free(location loc);
-location location_append(const location loc, const char *const path);
+#include "util.h"
 
 /* bool return type: whether the parse succeeded
  * json_string: the original string that was parsed
