@@ -385,6 +385,34 @@ bool jsmn_parse_template(const char *const json_string, const jsmntok_t **const 
 	return true;
 }
 
+bool jsmn_parse_plaintext(const char *const json_string, const jsmntok_t **const json_tokens, plaintext *const plaintext) {
+	/* demand an array */
+	plaintext->symbols_len = (*json_tokens)->size;
+	if((*json_tokens)->type != JSMN_ARRAY) {
+		fprintf(stderr, "at position %d\nexpecting plaintext, found non-array\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some memory */
+	if(ALLOC_FAILS(plaintext->symbols, plaintext->symbols_len)) {
+		fprintf(stderr, "out of memory in jsmn_parse_plaintext\n");
+		return false;
+	}
+
+	/* parse each symbol */
+	int i;
+	for(i = 0; i < plaintext->symbols_len; i++) {
+		++(*json_tokens);
+		if(!jsmn_parse_string(json_string, json_tokens, plaintext->symbols+i)) {
+			plaintext->symbols_len = i;
+			plaintext_free(*plaintext);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool jsmn_parse_template_location(const location loc, template *const template) {
 	int fd;
 	struct stat fd_stat;
@@ -409,13 +437,13 @@ bool jsmn_parse_template_location(const location loc, template *const template) 
 
 	/* first pass: figure out how much stuff is in the string */
 	jsmn_init(&parser);
-	int json_tokens_len = jsmn_parse(&parser, json_string, fd_stat.st_size, NULL, 0);
+	const int json_tokens_len = jsmn_parse(&parser, json_string, fd_stat.st_size, NULL, 0);
 	if(json_tokens_len < 1) {
 		fprintf(stderr, "found no JSON tokens\n");
 		goto fail_unmap;
 	}
 	if(ALLOC_FAILS(json_tokens, json_tokens_len)) {
-		fprintf(stderr, "out of memory when allocation tokens in jsmn_parse_template_location\n");
+		fprintf(stderr, "out of memory when allocating tokens in jsmn_parse_template_location\n");
 		goto fail_unmap;
 	}
 
@@ -428,22 +456,51 @@ bool jsmn_parse_template_location(const location loc, template *const template) 
 	}
 
 	/* convert the parsed JSON to our custom type */
-	const jsmntok_t **const state = malloc(sizeof(*state));
-	if(NULL == state) {
-		fprintf(stderr, "out of memory when allocating state in jsmn_parse_template_location\n");
-		goto fail_free_tokens;
-	}
-	*state = json_tokens;
-	status = jsmn_parse_template(json_string, state, template);
+	const jsmntok_t *state = json_tokens;
+	status = jsmn_parse_template(json_string, &state, template);
 
-fail_free_state:
-	free(state);
 fail_free_tokens:
 	free(json_tokens);
 fail_unmap:
 	munmap(json_string, fd_stat.st_size);
 fail_close:
 	close(fd);
+fail_none:
+	return status;
+}
+
+bool jsmn_parse_plaintext_string(const char *const json_string, plaintext *const plaintext) {
+	jsmn_parser parser;
+	jsmntok_t *json_tokens;
+	bool status = false;
+	const size_t json_string_len = strlen(json_string);
+
+	/* first pass: figure out how much stuff is in the string */
+	jsmn_init(&parser);
+	const int json_tokens_len = jsmn_parse(&parser, json_string, json_string_len, NULL, 0);
+	if(json_tokens_len < 1) {
+		fprintf(stderr, "found no JSON tokens\n");
+		goto fail_none;
+	}
+	if(ALLOC_FAILS(json_tokens, json_tokens_len)) {
+		fprintf(stderr, "out of memory when allocating tokens in jsmn_parse_plaintext_string\n");
+		goto fail_none;
+	}
+
+	/* second pass: record the results of parsing */
+	jsmn_init(&parser);
+	const int tokens_parsed = jsmn_parse(&parser, json_string, json_string_len, json_tokens, json_tokens_len);
+	if(tokens_parsed != json_tokens_len) {
+		fprintf(stderr, "The impossible happened: parsed the same string twice and got two\ndifferent token counts (%d first time, %d second).\n", json_tokens_len, tokens_parsed);
+		goto fail_free_tokens;
+	}
+
+	/* convert the parsed JSON to our custom type */
+	const jsmntok_t *state = json_tokens;
+	status = jsmn_parse_plaintext(json_string, &state, plaintext);
+
+fail_free_tokens:
+	free(json_tokens);
 fail_none:
 	return status;
 }

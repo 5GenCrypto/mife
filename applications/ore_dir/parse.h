@@ -31,7 +31,9 @@ bool jsmn_parse_f2_mbp   (const char *const json_string, const jsmntok_t **const
 bool jsmn_parse_string   (const char *const json_string, const jsmntok_t **const json_tokens, char     **const string);
 bool jsmn_parse_step     (const char *const json_string, const jsmntok_t **const json_tokens, step      *const step  );
 bool jsmn_parse_template (const char *const json_string, const jsmntok_t **const json_tokens, template  *const templ );
+bool jsmn_parse_plaintext(const char *const json_string, const jsmntok_t **const json_tokens, plaintext *const pt    );
 
-/* top-level wrapper */
+/* top-level wrappers */
 bool jsmn_parse_template_location(const location loc, template *const template);
+bool jsmn_parse_plaintext_string(const char *const json_string, plaintext *const plaintext);
 #endif
