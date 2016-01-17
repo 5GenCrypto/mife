@@ -126,11 +126,11 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 
 	/* read the plaintext */
 	if(optind != argc-1) {
-		fprintf(stderr, "%s: Specify exactly one plaintext (found %d).\n", *argv, argc-optind);
+		fprintf(stderr, "%s: specify exactly one plaintext (found %d)\n", *argv, argc-optind);
 		usage(2);
 	}
 	if(!jsmn_parse_plaintext_string(argv[optind], &ins->pt)) {
-		fprintf(stderr, "%s: Could not parse plaintext as JSON array of strings.\n", *argv);
+		fprintf(stderr, "%s: could not parse plaintext as JSON array of strings\n", *argv);
 		usage(3);
 	}
 

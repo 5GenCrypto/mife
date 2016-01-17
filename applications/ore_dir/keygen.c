@@ -52,7 +52,7 @@ void location_init(keygen_inputs *const ins, location *const loc, const char *co
 	 */
 	const int prefix_len = strlen(prefix), sec_param_len = 3*sizeof(int);
 	if(ALLOC_FAILS(loc->path, prefix_len+sec_param_len+1)) {
-		fprintf(stderr, "Out of memory\n");
+		fprintf(stderr, "out of memory while preparing filename\n");
 		exit(code);
 	}
 	memcpy(loc->path, prefix, prefix_len);
