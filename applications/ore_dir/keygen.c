@@ -121,7 +121,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		int c = getopt_long(argc, argv, "hn:r:s:u:", long_opts, NULL);
 		switch(c) {
 			case  -1: done = true; break;
-			case   0: break;
+			case   0: break; /* a long option with non-NULL flag; should never happen */
 			case '?': usage(1); break; /* braking is good defensive driving */
 			case 'h': usage(0); break;
 			case 'n':
