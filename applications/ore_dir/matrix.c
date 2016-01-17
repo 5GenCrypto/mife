@@ -8,7 +8,7 @@ bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
 		return false;
 	int *i = &dest->num_rows; /* to shorten some lines */
 	int j;
-	for(*i = 0; *i < src.num_rows; *i++) {
+	for(*i = 0; *i < src.num_rows; (*i)++) {
 		if(ALLOC_FAILS(dest->elems[*i], src.num_cols)) {
 			f2_matrix_free(*dest);
 			return false;
