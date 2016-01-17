@@ -1,4 +1,7 @@
 #include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "cmdline.h"
 #include "matrix.h"
@@ -6,6 +9,8 @@
 #include "mife_glue.h"
 #include "parse.h"
 #include "util.h"
+
+#define UID_TRIES 100
 
 typedef struct {
 	plaintext pt;
@@ -65,7 +70,28 @@ void usage(const int code) {
 	exit(code);
 }
 
+/* reads (num_bits/8 + 1)*8 bytes into n, mod 2^num_bits */
+bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
+	fmpz_zero(n);
+	while(num_bits >= 8) {
+		int c = fgetc(file);
+		if(EOF == c) return false;
+		fmpz_mul_ui(n, n, 256);
+		fmpz_add_ui(n, n, c);
+		num_bits -= 8;
+	}
+	if(num_bits >= 0) {
+		int c = fgetc(file);
+		if(EOF == c) return false;
+		c = c & (1 << num_bits);
+		fmpz_mul_ui(n, n, 1 << num_bits);
+		fmpz_add_ui(n, n, c);
+	}
+	return true;
+}
+
 void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *const database_location) {
+	int i, j;
 	bool done = false;
 	bool have_uid = false;
 
@@ -172,8 +198,47 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 	fread_mife_sk(ins->sk, sk_location.path);
 	location_free(sk_location);
 
-	/* TODO: initialize uid if !have_uid */
-	if(!have_uid) exit(-2);
+	/* initialize uid if !have_uid */
+	/* it is not important that the uid be cryptographically random, so just
+	 * use /dev/urandom */
+	if(!have_uid) {
+		char *record_path;
+		const size_t offset = strlen(database_location->path) + 1;
+		/* ought to be able to fit 3 bits per decimal character */
+		const size_t len = offset + ins->pp->L / 3 + 1;
+		FILE *urandom = fopen("/dev/urandom", "rb");
+		struct stat file_stat;
+		if(NULL == urandom) {
+			fprintf(stderr, "no uid specified and could not open /dev/urandom to choose one\n");
+			exit(-1);
+		}
+		if(ALLOC_FAILS(record_path, len)) {
+			fclose(urandom);
+			fprintf(stderr, "out of memory while finding unused uid\n");
+			exit(-1);
+		}
+
+		memcpy(record_path, database_location->path, offset-1);
+		record_path[offset-1] = '/';
+
+		for(i = 0; i < UID_TRIES; i++) {
+			fmpz_init(ins->uid);
+			fmpz_read_bits(ins->uid, urandom, ins->pp->L - 1);
+			fmpz_get_str(record_path + offset, 10, ins->uid);
+			/* probably not totally foolproof, but is a decent quick check that
+			 * a file doesn't exist
+			 */
+			if(stat(record_path, &file_stat)) break;
+			fmpz_clear(ins->uid);
+		}
+
+		fclose(urandom);
+
+		if(UID_TRIES == i) {
+			fprintf(stderr, "tried %d random uids, but they were all in use\n", UID_TRIES);
+			exit(-1);
+		}
+	}
 
 	/* initialize the random seed */
 	const char function_name[] = "encrypt";
@@ -204,7 +269,6 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 
 	/* check that the template and plaintext match up appropriately */
 	bool match_everywhere = true;
-	int i, j;
 	for(i = 0; i < template->steps_len; i++) {
 		bool match_here = false;
 		for(j = 0; j < template->steps[i].symbols_len; j++)
@@ -239,4 +303,5 @@ void cleanup(encrypt_inputs *const ins, location *const database_location) {
 	template *templ = (template *)stats->template;
 	template_stats_free(*stats); free(stats);
 	template_free(*templ); free(templ);
+	fmpz_clear(ins->uid);
 }
