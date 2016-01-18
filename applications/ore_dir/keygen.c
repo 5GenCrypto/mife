@@ -41,27 +41,6 @@ int main(int argc, char **argv) {
 	return success ? 0 : -1;
 }
 
-void location_init(keygen_inputs *const ins, location *const loc, const char *const prefix, const int code) {
-	/* three characters per byte of number should be a safe
-	 * overapproximation of how much space is needed; note we use
-	 * sizeof(int) instead of sizeof(ins->sec_param) because of the implicit
-	 * cast that may happen during the call to snprintf if sec_param's type
-	 * changes during a later refactor
-	 */
-	const int prefix_len = strlen(prefix), sec_param_len = 3*sizeof(int);
-	if(ALLOC_FAILS(loc->path, prefix_len+sec_param_len+1)) {
-		fprintf(stderr, "out of memory while preparing filename\n");
-		exit(code);
-	}
-	memcpy(loc->path, prefix, prefix_len);
-	if(snprintf(loc->path+prefix_len, sec_param_len+1, "%d", ins->sec_param) > sec_param_len+1) {
-		fprintf(stderr, "The impossible happened: %d bytes was not enough to store %d.\n", sec_param_len+1, ins->sec_param);
-		exit(code);
-	}
-	loc->stack_allocated = false;
-}
-
-/* TODO: match default directories between this tool and the others */
 void usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
@@ -71,8 +50,8 @@ void usage(const int code) {
 		"\n"
 		"Common options:\n"
 		"  -h, --help         Display this usage information\n"
-		"  -r, --private      A directory for private parameters [private-$secparam]\n"
-		"  -u, --public       A directory for public parameters [public-$secparam]\n"
+		"  -r, --private      A directory for private parameters [private]\n"
+		"  -u, --public       A directory for public parameters [public]\n"
 		"\n"
 		"Keygen-specific options:\n"
 		"  -s, --secparam     Security parameter [80]\n"
@@ -92,10 +71,10 @@ void usage(const int code) {
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
 
-	/* set defaults; the NULLs in outs will be overwritten */
+	/* set defaults */
 	ins->sec_param = 80;
 	ins->log_db_size = 80;
-	*outs = (keygen_locations) { { NULL, false}, { NULL, false } };
+	*outs = (keygen_locations) { { "public", true }, { "private", true } };
 
 	struct option long_opts[] =
 		{ {"help"     ,       no_argument, NULL, 'h'}
@@ -121,7 +100,6 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 				break;
 			case 'r':
 				outs->private.path = optarg;
-				outs->private.stack_allocated = true;
 				break;
 			case 's':
 				if((ins->sec_param = atoi(optarg)) < 1) {
@@ -131,7 +109,6 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 				break;
 			case 'u':
 				outs->public.path = optarg;
-				outs->public.stack_allocated = true;
 				break;
 			default:
 				fprintf(stderr, "The impossible happened! getopt returned %d (%c)\n", c, c);
@@ -144,9 +121,6 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		fprintf(stderr, "%s: unexpected non-option argument %s\n", *argv, argv[optind]);
 		exit(4);
 	}
-
-	if(NULL == outs-> public.path) location_init(ins, &outs-> public,  "public-", 5);
-	if(NULL == outs->private.path) location_init(ins, &outs->private, "private-", 6);
 
 	/* read template */
 	location template_location = location_append(outs->public, "template.json");
