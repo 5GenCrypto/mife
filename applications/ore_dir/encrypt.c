@@ -23,7 +23,7 @@ typedef struct {
 
 void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *const database_location);
 bool print_outputs(location database, fmpz_t uid, mife_pp_t pp, mife_ciphertext_t ct);
-void cleanup(encrypt_inputs *const ins, location *const database_location);
+void cleanup(encrypt_inputs *const ins, location *const database_location, mife_ciphertext_t ct);
 
 int main(int argc, char **argv) {
 	encrypt_inputs ins;
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	mife_encrypt(ct, &ins.pt, ins.pp, ins.sk, ins.seed);
 	success = print_outputs(database_location, ins.uid, ins.pp, ct);
 
-	cleanup(&ins, &database_location);
+	cleanup(&ins, &database_location, ct);
 
 	return success ? 0 : -1;
 }
@@ -352,7 +352,8 @@ done:
 	return success;
 }
 
-void cleanup(encrypt_inputs *const ins, location *const database_location) {
+void cleanup(encrypt_inputs *const ins, location *const database_location, mife_ciphertext_t ct) {
+	mife_ciphertext_clear(ins->pp, ct);
 	plaintext_free(ins->pt);
 	fmpz_clear(ins->uid);
 	mife_clear_sk(ins->sk);

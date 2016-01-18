@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 
 #include "cmdline.h"
+#include "mife.h"
 #include "mife_glue.h"
 #include "parse.h"
 #include "util.h"
@@ -19,7 +20,7 @@ typedef struct {
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
 bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
-void cleanup(keygen_inputs *const ins, keygen_locations *const outs);
+void cleanup(keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
 
 const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
 
@@ -36,8 +37,7 @@ int main(int argc, char **argv) {
 	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
 	success = print_outputs(outs, pp, sk);
 
-	cleanup(&ins, &outs);
-	template_stats_free(stats);
+	cleanup(&ins, &outs, pp, sk);
 	return success ? 0 : -1;
 }
 
@@ -193,8 +193,12 @@ bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	return true;
 }
 
-void cleanup(keygen_inputs *const ins, keygen_locations *const outs) {
+void cleanup(keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk) {
+	aes_randclear(ins->seed);
+	template_stats_free(*(template_stats *)pp->mbp_params);
+	template_free(ins->template);
 	location_free(outs-> public);
 	location_free(outs->private);
-	aes_randclear(ins->seed);
+	mife_clear_pp(pp);
+	mife_clear_sk(sk);
 }
