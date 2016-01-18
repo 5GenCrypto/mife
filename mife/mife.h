@@ -99,13 +99,25 @@ void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk, aes_randstate_t randstate);
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts);
 
+/* memory-efficient MIFE interface */
+void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
+    mife_mat_clr_t out_clr, int ****out_partitions);
+void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
+    int global_index, mife_mat_clr_t clr, int ***partitions,
+    gghlite_enc_mat_t out_ct);
+void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
+
 /* MIFE internal functions */
 void reset_T();
 float get_T();
 void set_NUM_ENC(int val);
 int get_NUM_ENC();
+void mife_apply_randomizer(mife_pp_t pp, aes_randstate_t randstate, fmpz_mat_t m);
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk,
     aes_randstate_t randstate);
+int ***mife_partitions(mife_pp_t pp, fmpz_t index);
+void mife_partitions_clear(mife_pp_t pp, int ***partitions);
+void mife_apply_kilian(mife_pp_t pp, mife_sk_t sk, fmpz_mat_t m, int global_index);
 void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate);
 void mife_clear_pp_read(mife_pp_t pp);

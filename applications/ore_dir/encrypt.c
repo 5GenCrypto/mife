@@ -22,22 +22,27 @@ typedef struct {
 } encrypt_inputs;
 
 void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *const database_location);
-bool print_outputs(location database, fmpz_t uid, mife_pp_t pp, mife_ciphertext_t ct);
-void cleanup(encrypt_inputs *const ins, location *const database_location, mife_ciphertext_t ct);
+bool print_output(mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location database_location, fmpz_t uid);
+void cleanup(encrypt_inputs *const ins, location *const database_location);
 
 int main(int argc, char **argv) {
 	encrypt_inputs ins;
 	location database_location;
-	mife_ciphertext_t ct;
-	bool success;
+	mife_mat_clr_t clr;
+	int i, ***partitions;
+	bool success = true;
 
 	parse_cmdline(argc, argv, &ins, &database_location);
-	/* TODO: keeping the whole ciphertext in memory is probably infeasible */
-	mife_encrypt(ct, &ins.pt, ins.pp, ins.sk, ins.seed);
-	success = print_outputs(database_location, ins.uid, ins.pp, ct);
+	mife_encrypt_setup(ins.pp, ins.uid, &ins.pt, clr, &partitions);
+	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
+		gghlite_enc_mat_t ct;
+		mife_encrypt_single(ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
+		success &= print_output(ins.pp, i, ct, database_location, ins.uid);
+		gghlite_enc_mat_clear(ct);
+	}
+	mife_encrypt_cleanup(ins.pp, clr, partitions);
 
-	cleanup(&ins, &database_location, ct);
-
+	cleanup(&ins, &database_location);
 	return success ? 0 : -1;
 }
 
@@ -318,7 +323,7 @@ done:
 	return result;
 }
 
-bool print_outputs(location database_location, fmpz_t uid, mife_pp_t pp, mife_ciphertext_t ct) {
+bool print_output(mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location database_location, fmpz_t uid) {
 	bool success = false;
 	const template_stats *const stats    = pp->mbp_params;
 	const template       *const template = stats->template;
@@ -329,22 +334,16 @@ bool print_outputs(location database_location, fmpz_t uid, mife_pp_t pp, mife_ci
 		goto done;
 	}
 
-	int i;
 	success = true;
-	for(i = 0; i < template->steps_len; i++) {
-		const int position_index = stats->position_index[i];
-		const int    local_index = stats->   local_index[i];
-		const char *const position = template->steps[i].position;
-		FILE *dest = fopen_bin(database_location, uid_str, position, local_index);
-		if(NULL == dest) {
-			fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
-			success = false;
-		}
-		fwrite_gghlite_enc_mat(/* TODO: why is pp needed? */ pp,
-		                       ct->enc[position_index][local_index],
-		                       dest);
-		fclose(dest);
+	const int local_index = stats->local_index[global_index];
+	const char *const position = template->steps[global_index].position;
+	FILE *dest = fopen_bin(database_location, uid_str, position, local_index);
+	if(NULL == dest) {
+		fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
+		success = false;
 	}
+	fwrite_gghlite_enc_mat(/* TODO: why is pp needed? */ pp, ct, dest);
+	fclose(dest);
 
 free_uid_str:
 	free(uid_str);
@@ -352,8 +351,7 @@ done:
 	return success;
 }
 
-void cleanup(encrypt_inputs *const ins, location *const database_location, mife_ciphertext_t ct) {
-	mife_ciphertext_clear(ins->pp, ct);
+void cleanup(encrypt_inputs *const ins, location *const database_location) {
 	plaintext_free(ins->pt);
 	fmpz_clear(ins->uid);
 	mife_clear_sk(ins->sk);

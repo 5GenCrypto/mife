@@ -414,6 +414,36 @@ void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) {
   printf("\n");
 }
 
+void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
+    mife_mat_clr_t out_clr, int ****out_partitions) {
+  pp->setfn(pp, out_clr, message);
+  *out_partitions = mife_partitions(pp, uid);
+}
+
+void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
+    int global_index, mife_mat_clr_t clr, int ***partitions,
+    gghlite_enc_mat_t dest) {
+  int position_index, local_index;
+  fmpz_mat_t src;
+
+  pp->orderfn(pp, global_index, &position_index, &local_index);
+  fmpz_mat_init_set(src, clr->clr[position_index][local_index]);
+
+  if(!(pp->flags & MIFE_NO_RANDOMIZERS))
+    mife_apply_randomizer(pp, randstate, src);
+
+  if(!(pp->flags & MIFE_NO_KILIAN))
+    mife_apply_kilian(pp, sk, src, global_index);
+
+  gghlite_enc_mat_init(sk->self->params, dest, src->r, src->c);
+  mife_mat_encode(pp, sk, dest, src, partitions[position_index][local_index], randstate);
+}
+
+void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***partitions) {
+  mife_mat_clr_clear(pp, clr);
+  mife_partitions_clear(pp, partitions);
+}
+
 void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk, aes_randstate_t randstate) {
   // compute a random index in the range [0,2^L]
@@ -527,15 +557,19 @@ void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
   }
 }
 
+void mife_apply_randomizer(mife_pp_t pp, aes_randstate_t randstate, fmpz_mat_t m) {
+  fmpz_t rand;
+  fmpz_init(rand);
+  fmpz_randm_aes(rand, randstate, pp->p);
+  fmpz_mat_scalar_mul_modp(m, rand, pp->p);
+  fmpz_clear(rand);
+}
+
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk,
     aes_randstate_t randstate) {
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int k = 0; k < pp->n[i]; k++) {
-      fmpz_t rand;
-      fmpz_init(rand);
-      fmpz_randm_aes(rand, randstate, pp->p);
-      fmpz_mat_scalar_mul_modp(met->clr[i][k], rand, pp->p);
-      fmpz_clear(rand);
+      mife_apply_randomizer(pp, randstate, met->clr[i][k]);
     }
   }
 }
@@ -662,9 +696,7 @@ void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m) {
   }
 }
 
-void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
-    mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate) {
-
+int ***mife_partitions(mife_pp_t pp, fmpz_t index) {
   int **ptns = malloc(pp->num_inputs * sizeof(int *));
   for(int i = 0; i < pp->num_inputs; i++) {
     ptns[i] = malloc(pp->gammas[i] * sizeof(int));
@@ -709,39 +741,56 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     }
   }
 
+  return groups;
+}
+
+void mife_partitions_clear(mife_pp_t pp, int ***groups) {
+  for(int i = 0; i < pp->num_inputs; i++) {
+    for(int j = 0; j < pp->n[i]; j++) {
+      free(groups[i][j]);
+    }
+    free(groups[i]);
+  }
+  free(groups);
+}
+
+void mife_apply_kilian(mife_pp_t pp, mife_sk_t sk, fmpz_mat_t m, int global_index) {
+  fmpz_mat_t tmp;
+
+  // first one
+  if(global_index == 0) {
+    fmpz_mat_init(tmp, m->r, sk->R[0]->c);
+    fmpz_mat_mul(tmp, m, sk->R[0]);
+  }
+
+  // last one
+  else if(global_index == pp->kappa - 1) {
+    fmpz_mat_init(tmp, sk->R_inv[pp->numR-1]->r, m->c);
+    fmpz_mat_mul(tmp, sk->R_inv[pp->numR-1], m);
+  }
+
+  // all others
+  else {
+    fmpz_mat_init(tmp, sk->R_inv[global_index-1]->r, m->c);
+    fmpz_mat_mul(tmp, sk->R_inv[global_index-1], m);
+    fmpz_mat_mul(tmp, tmp, sk->R[global_index]);
+  }
+
+  fmpz_mat_set(m, tmp);
+  fmpz_mat_clear(tmp);
+}
+
+void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
+    mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate) {
+
+  int ***groups = mife_partitions(pp, index);
+
   if(! (pp->flags & MIFE_NO_KILIAN)) {
     // apply kilian to the cleartext matrices (overwriting them in the process)
-
-    fmpz_mat_t tmp;
-
     for(int index = 0; index < pp->kappa; index++) {
       int i, j;
       pp->orderfn(pp, index, &i, &j);
-
-      // first one
-      if(index == 0) {
-        fmpz_mat_init(tmp, met->clr[i][j]->r, sk->R[0]->c);
-        fmpz_mat_mul(tmp, met->clr[i][j], sk->R[0]);
-        fmpz_mat_set(met->clr[i][j], tmp);
-        fmpz_mat_clear(tmp);
-        continue;
-      }
-
-      // last one
-      if(index == pp->kappa - 1) {
-        fmpz_mat_init(tmp, sk->R_inv[pp->numR-1]->r, met->clr[i][j]->c);
-        fmpz_mat_mul(tmp, sk->R_inv[pp->numR-1], met->clr[i][j]);
-        fmpz_mat_set(met->clr[i][j], tmp);
-        fmpz_mat_clear(tmp);
-        continue;
-      }
-      
-      // all others
-      fmpz_mat_init(tmp, sk->R_inv[index-1]->r, met->clr[i][j]->c);
-      fmpz_mat_mul(tmp, sk->R_inv[index-1], met->clr[i][j]);
-      fmpz_mat_mul(tmp, tmp, sk->R[index]);
-      fmpz_mat_set(met->clr[i][j], tmp);
-      fmpz_mat_clear(tmp);
+      mife_apply_kilian(pp, sk, met->clr[i][j], index);
     }
   }
 
@@ -758,13 +807,7 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
   }
   
   // free group arrays
-  for(int i = 0; i < pp->num_inputs; i++) {
-    for(int j = 0; j < pp->n[i]; j++) {
-      free(groups[i][j]);
-    }
-    free(groups[i]);
-  }
-  free(groups);
+  mife_partitions_clear(pp, groups);
 }
 
 void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
