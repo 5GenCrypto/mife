@@ -170,10 +170,8 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	/* the public directory has to exist -- we read template.json out of it! --
 	 * but the private one might not yet */
-	int err = mkdir(outs.private.path, S_IRWXU);
-	if(0 != err && EEXIST != errno) {
+	if(!create_directory_if_missing(outs.private.path)) {
 		fprintf(stderr, "could not create output directory %s\n", outs.private.path);
-		perror("print_outputs");
 		return;
 	}
 
