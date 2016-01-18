@@ -18,7 +18,7 @@ typedef struct {
 } keygen_locations;
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
-void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
+bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
 void cleanup(keygen_inputs *const ins, keygen_locations *const outs);
 
 const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
@@ -29,15 +29,16 @@ int main(int argc, char **argv) {
 	mife_pp_t pp;
 	mife_sk_t sk;
 	template_stats stats;
+	bool success;
 
 	parse_cmdline(argc, argv, &ins, &outs);
 	if(!template_to_mife_pp(pp, &ins.template, &stats)) return -1;
 	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
-	print_outputs(outs, pp, sk);
+	success = print_outputs(outs, pp, sk);
 
 	cleanup(&ins, &outs);
 	template_stats_free(stats);
-	return 0;
+	return success ? 0 : -1;
 }
 
 void location_init(keygen_inputs *const ins, location *const loc, const char *const prefix, const int code) {
@@ -167,12 +168,12 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
  * detection, error reporting, versioning and just generally make this tool a
  * bit more robust
  */
-void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
+bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	/* the public directory has to exist -- we read template.json out of it! --
 	 * but the private one might not yet */
 	if(!create_directory_if_missing(outs.private.path)) {
 		fprintf(stderr, "could not create output directory %s\n", outs.private.path);
-		return;
+		return false;
 	}
 
 	location  public_location = location_append(outs.public , "mife.pub" );
@@ -181,7 +182,7 @@ void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	   private_location.path == NULL) {
 		location_free(public_location);
 		fprintf(stderr, "out of memory when generating output paths\n");
-		return;
+		return false;
 	}
 
 	fwrite_mife_pp(pp,  public_location.path);
@@ -189,6 +190,7 @@ void print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 
 	location_free( public_location);
 	location_free(private_location);
+	return true;
 }
 
 void cleanup(keygen_inputs *const ins, keygen_locations *const outs) {
