@@ -1,6 +1,8 @@
 #ifndef _ORE_UTILS_H
 #define _ORE_UTILS_H
 
+#include <stdbool.h>
+
 #ifdef ALLOC_FAILS
 #error "trying to redefine ALLOC_FAILS"
 #else  /* ifdef ALLOC_FAILS */
@@ -29,5 +31,6 @@ typedef enum {
 } parse_result;
 
 void check_parse_result(parse_result result, void usage(int), int problem);
+bool create_directory_if_missing(char *dir);
 
 #endif /* ifndef _ORE_UTILS_H */

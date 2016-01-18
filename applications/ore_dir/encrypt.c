@@ -11,6 +11,7 @@
 #include "util.h"
 
 #define UID_TRIES 100
+#define INT_STR_LEN (3 * sizeof(int))
 
 typedef struct {
 	plaintext pt;
@@ -21,20 +22,23 @@ typedef struct {
 } encrypt_inputs;
 
 void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *const database_location);
-void print_outputs(location database, mife_pp_t pp, mife_ciphertext_t ct);
+bool print_outputs(location database, fmpz_t uid, mife_pp_t pp, mife_ciphertext_t ct);
 void cleanup(encrypt_inputs *const ins, location *const database_location);
 
 int main(int argc, char **argv) {
 	encrypt_inputs ins;
 	location database_location;
 	mife_ciphertext_t ct;
+	bool success;
 
 	parse_cmdline(argc, argv, &ins, &database_location);
 	/* TODO: keeping the whole ciphertext in memory is probably infeasible */
 	mife_encrypt(ct, &ins.pt, ins.pp, ins.sk, ins.seed);
-	print_outputs(database_location, ins.pp, ct);
+	success = print_outputs(database_location, ins.uid, ins.pp, ct);
 
 	cleanup(&ins, &database_location);
+
+	return success ? 0 : -1;
 }
 
 void usage(const int code) {
@@ -293,8 +297,59 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, location *c
 	location_free(private_location);
 }
 
-void print_outputs(location database_location, mife_pp_t pp, mife_ciphertext_t ct) {
-	/* TODO */
+FILE *fopen_bin(const location database_location, const char *const uid_str, const char *const position, const int local_index) {
+	char *dir, *path;
+	const size_t  dir_len = strlen(database_location.path) + 1 + strlen(uid_str) + 1 + strlen(position), dir_size = dir_len + 1;
+	const size_t path_len = dir_len + 1 + INT_STR_LEN + 4, path_size = path_len + 1;
+	FILE *result = NULL;
+
+	if(ALLOC_FAILS( dir,  dir_size)) goto done;
+	if(ALLOC_FAILS(path, path_size)) goto free_dir;
+	assert(snprintf( dir,  dir_size, "%s/%s/%s" , database_location.path, uid_str, position) < dir_size);
+	assert(snprintf(path, path_size, "%s/%d.bin", dir, local_index) < path_size);
+	if(!create_directory_if_missing(dir)) goto free_path;
+	result = fopen(path, "wb");
+
+free_path:
+	free(path);
+free_dir:
+	free(dir);
+done:
+	return result;
+}
+
+bool print_outputs(location database_location, fmpz_t uid, mife_pp_t pp, mife_ciphertext_t ct) {
+	bool success = false;
+	const template_stats *const stats    = pp->mbp_params;
+	const template       *const template = stats->template;
+	      char           *const uid_str  = fmpz_get_str(NULL, 10, uid);
+
+	if(NULL == uid_str) {
+		fprintf(stderr, "could not produce string representing uid to build output directory name\n");
+		goto done;
+	}
+
+	int i;
+	success = true;
+	for(i = 0; i < template->steps_len; i++) {
+		const int position_index = stats->position_index[i];
+		const int    local_index = stats->   local_index[i];
+		const char *const position = template->steps[i].position;
+		FILE *dest = fopen_bin(database_location, uid_str, position, local_index);
+		if(NULL == dest) {
+			fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
+			success = false;
+		}
+		fwrite_gghlite_enc_mat(/* TODO: why is pp needed? */ pp,
+		                       ct->enc[position_index][local_index],
+		                       dest);
+		fclose(dest);
+	}
+
+free_uid_str:
+	free(uid_str);
+done:
+	return success;
 }
 
 void cleanup(encrypt_inputs *const ins, location *const database_location) {

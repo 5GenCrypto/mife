@@ -1,7 +1,10 @@
+#include <errno.h>
+#include <libgen.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "util.h"
 
 void location_free(location loc) { if(!loc.stack_allocated && NULL != loc.path) free(loc.path); }
@@ -25,4 +28,30 @@ void check_parse_result(parse_result result, void usage(int), int problem) {
 		case PARSE_OUT_OF_MEMORY: exit(-1); break;
 		case PARSE_IO_ERROR: usage(problem); break;
 	}
+}
+
+bool create_directory_if_missing(char *dir) {
+	if(!mkdir(dir, S_IRWXU)) return true;
+	switch(errno) {
+		case EEXIST: return true;
+		case ENOENT: break; /* try to create the parent and go again */
+		default: return false;
+	}
+
+	/* construct name of parent */
+	char *dir_copy, *dir_parent;
+	if(ALLOC_FAILS(dir_copy, strlen(dir)+1)) return false;
+	strcpy(dir_copy, dir);
+	dir_parent = dirname(dir_copy);
+
+	/* if we just tried to create the root directory or the current directory,
+	 * and THAT resulted in ENOENT, we are super-duper hosed */
+	if(!strcmp(dir_parent, ".")) {
+		free(dir_copy);
+		return false;
+	}
+
+	bool success = create_directory_if_missing(dir_parent) && (0 == mkdir(dir, S_IRWXU));
+	free(dir_copy);
+	return success;
 }
