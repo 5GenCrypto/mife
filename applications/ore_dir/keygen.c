@@ -61,6 +61,7 @@ void location_init(keygen_inputs *const ins, location *const loc, const char *co
 	loc->stack_allocated = false;
 }
 
+/* TODO: match default directories between this tool and the others */
 void usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
