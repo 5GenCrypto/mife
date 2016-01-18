@@ -491,11 +491,11 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, aes_randstate_t randstate) {
 
   pp->n = malloc(pp->num_inputs * sizeof(int));
-  for(int index = 0; index < pp->num_inputs; index++) { 
+  pp->kappa = 0;
+  for(int index = 0; index < pp->num_inputs; index++) {
     pp->n[index] = pp->paramfn(pp, index);
+    pp->kappa += pp->n[index];
   }
-  
-  pp->kappa = pp->n[0] + pp->n[1];
   pp->L = L;
 
   pp->gamma = 0;
