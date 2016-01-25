@@ -303,6 +303,8 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, aes_randstate_t randstate) {
     free(primes_s);
 
   ggh_printf(self->params, "\n");
+  
+  /* ADDED */ ggh_printf("finished computing g\n");
 
   mpfr_clear(norm);
   mpfr_clear(sqrtn_sigma);
@@ -441,17 +443,25 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
   _gghlite_sk_sample_z(self, randstate);
   _gghlite_sk_sample_h(self, randstate);
 
+  /* ADDED */ ggh_printf("finished sampling g, z, and h\n");
+
   gghlite_sk_set_D_g(self);
 
   _gghlite_sk_sample_b(self, randstate);
   _gghlite_sk_sample_a(self, randstate);
 
+  /* ADDED */ ggh_printf("finished sampling b, \n");
+  
   _gghlite_sk_set_y(self);
   _gghlite_sk_set_x(self);
   _gghlite_sk_set_pzt(self);
 
+  /* ADDED */ ggh_printf("finished setting pzt\n");
+
   _gghlite_params_set_D_sigma_p(self->params);
   _gghlite_params_set_D_sigma_s(self->params);
+  
+  /* ADDED */ ggh_printf("finished calling sk_init\n");
 }
 
 void gghlite_params_set_D_sigmas(gghlite_params_t params) {
