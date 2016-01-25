@@ -1,6 +1,8 @@
 #include "mife.h"
 
 #define CHECK(x) if(x < 0) { assert(0); }
+#define debug_printf printf
+
 
 /**
  * sets exp = base^n, where exp is an mpfr_t
@@ -508,15 +510,17 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   //printf("kappa: %d\n", pp->kappa);
 
-  printf("starting calling jigsaw_init_gamma: %d %d %d\n", lambda, pp->kappa, pp->gamma);
+  reset_T();
+  debug_printf("starting calling jigsaw_init_gamma: %d %d %d\n", lambda, pp->kappa, pp->gamma);
+  printf("%8.2f\n", get_T());
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
                       pp->kappa,
                       pp->gamma,
                       ggh_flags,
                       randstate);
-
-  printf("finished calling jigsaw_init_gamma\n");
+  debug_printf("finished calling jigsaw_init_gamma\n");
+  printf("%8.2f\n", get_T());
 
   pp->params_ref = &(sk->self->params);
 
@@ -525,8 +529,12 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
   */
   
+  debug_printf("setting p\n");
+  printf("%8.2f\n", get_T());
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
+  debug_printf("finished setting p\n");
+  printf("%8.2f\n", get_T());
 
   // set the kilian randomizers in sk
   pp->numR = pp->kappa - 1;
@@ -537,6 +545,8 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
   sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
 
+  debug_printf("setting kilian matrices\n");
+  printf("%8.2f\n", get_T());
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
@@ -546,8 +556,14 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     }
 	
     fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
+    debug_printf("computing an inverse\n");
+    printf("%8.2f\n", get_T());
     fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    debug_printf("finished computing an inverse\n");
+    printf("%8.2f\n", get_T());
   }
+  debug_printf("finished setting kilian\n");
+  printf("%8.2f\n", get_T());
 
   free(dims);
 }
