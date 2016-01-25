@@ -111,6 +111,7 @@ void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
   fclose(fp);
 }
 
+// TODO remove writing z, it is unnecessary
 void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
   FILE *fp = fopen(filepath, "w");
   fprintf(fp, "%d\n", sk->numR);
@@ -507,12 +508,15 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   //printf("kappa: %d\n", pp->kappa);
 
+  printf("starting calling jigsaw_init_gamma: %d %d %d\n", lambda, pp->kappa, pp->gamma);
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
                       pp->kappa,
                       pp->gamma,
                       ggh_flags,
                       randstate);
+
+  printf("finished calling jigsaw_init_gamma\n");
 
   pp->params_ref = &(sk->self->params);
 

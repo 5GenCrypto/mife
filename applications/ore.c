@@ -193,6 +193,8 @@ void ore_pp_sk_gen(char *pp_file, char *sk_file, int lambda, int d, int n,
   fmpz_init_exp(message_space_size, d, n);
   ore_params_t *params = malloc(sizeof(ore_params_t));
   ore_set_best_params(pp, lambda, message_space_size, params);
+  printf("ore_params->d: %d, ore_params->bitstr_len: %d\n",
+      params->d, params->bitstr_len);
 
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
@@ -256,6 +258,9 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, seed, "setup");
   mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
+  fwrite_mife_sk(sk, "sk_test.out");
+  mife_clear_sk(sk);
+  fread_mife_sk(sk, "sk_test.out");
   aes_randclear(randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
