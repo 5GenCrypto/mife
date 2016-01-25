@@ -401,13 +401,18 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate) {
   const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
   uint64_t t = ggh_walltime(0);
   for(size_t i=0; i<bound; i++) {
+    /* ADDED */ gghlite_printf(self->params, "sampling z[%d]:\n", i);
     fmpz_mod_poly_init(self->z[i], self->params->q);
 
     fmpz_mod_poly_randtest_aes(self->z[i], randstate, self->params->n);
+    /* ADDED */ gghlite_printf(self->params, "finished randtest for z[%d]:\n", 
+        i);
     fmpz_mod_poly_oz_ntt_enc(self->z[i], self->z[i], self->params->ntt);
+    /* ADDED */ gghlite_printf(self->params, "finished enc for z[%d]:\n");
 
     fmpz_mod_poly_init(self->z_inv[i], self->params->q);
     fmpz_mod_poly_oz_ntt_inv(self->z_inv[i], self->z[i], self->params->n);
+    /* ADDED */ gghlite_printf(self->params, "finished inv for z[%d]:\n");
   }
   self->t_sample +=  ggh_walltime(t);
 }
@@ -440,7 +445,9 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
   fmpz_mod_poly_oz_ntt_precomp_init(self->params->ntt, self->params->n, self->params->q);
 
   _gghlite_sk_sample_g(self, randstate);
+  /* ADDED */ ggh_printf(self->params, "starting to sample z\n");
   _gghlite_sk_sample_z(self, randstate);
+  /* ADDED */ ggh_printf(self->params, "finished sampling z, starting h\n");
   _gghlite_sk_sample_h(self, randstate);
 
   /* ADDED */ ggh_printf(self->params, "finished sampling g, z, and h\n");
