@@ -103,4 +103,19 @@ void plaintext_free(plaintext pt);
  */
 bool template_instantiate(const template *const t, const plaintext *const pt, f2_mbp *const mbp);
 
+/* A ciphertext mapping assigns a uid to each position, which can be used to
+ * locate the particular matrices necessary for evaluation.
+ */
+typedef struct {
+	unsigned int positions_len;
+	char **positions;
+	char **uids;
+} ciphertext_mapping;
+
+void ciphertext_mapping_free(ciphertext_mapping m);
+
+/* returns the uid associated with a given position, or NULL if the position
+ * isn't assigned to any uid */
+char *uid_from_position(const ciphertext_mapping m, const char *const position);
+
 #endif

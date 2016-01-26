@@ -25,8 +25,11 @@ bool jsmn_parse_string   (const char *const json_string, const jsmntok_t **const
 bool jsmn_parse_step     (const char *const json_string, const jsmntok_t **const json_tokens, step      *const step  );
 bool jsmn_parse_template (const char *const json_string, const jsmntok_t **const json_tokens, template  *const templ );
 bool jsmn_parse_plaintext(const char *const json_string, const jsmntok_t **const json_tokens, plaintext *const pt    );
+bool jsmn_parse_ciphertext_mapping
+                         (const char *const json_string, const jsmntok_t **const json_tokens, ciphertext_mapping *const mapping);
 
 /* top-level wrappers */
 bool jsmn_parse_template_location(const location loc, template *const template);
 bool jsmn_parse_plaintext_string(const char *const json_string, plaintext *const plaintext);
+bool jsmn_parse_ciphertext_mapping_string(const char *const json_string, ciphertext_mapping *const mapping);
 #endif

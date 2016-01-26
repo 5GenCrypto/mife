@@ -109,3 +109,25 @@ bool template_instantiate(const template *const t, const plaintext *const pt, f2
 	}
 	return true;
 }
+
+void ciphertext_mapping_free(ciphertext_mapping m) {
+	unsigned int i;
+
+	if(NULL != m.positions)
+		for(i = 0; i < m.positions_len; i++)
+			free(m.positions[i]);
+	free(m.positions);
+
+	if(NULL != m.uids)
+		for(i = 0; i < m.positions_len; i++)
+			free(m.uids[i]);
+	free(m.uids);
+}
+
+char *uid_from_position(const ciphertext_mapping m, const char *const position) {
+	unsigned int i;
+	for(i = 0; i < m.positions_len; i++)
+		if(!strcmp(m.positions[i], position))
+			return m.uids[i];
+	return NULL;
+}

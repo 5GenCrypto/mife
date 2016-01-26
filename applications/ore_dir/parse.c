@@ -398,11 +398,91 @@ bool jsmn_parse_plaintext(const char *const json_string, const jsmntok_t **const
 	return true;
 }
 
+bool jsmn_parse_ciphertext_mapping(const char *const json_string, const jsmntok_t **const json_tokens, ciphertext_mapping *const mapping) {
+	int i;
+
+	/* demand an object */
+	mapping->positions_len = (*json_tokens)->size;
+	if((*json_tokens)->type != JSMN_OBJECT) {
+		fprintf(stderr, "at position %d\nexpecting ciphertext mapping (JSON object with one key per input position and string values), found non-object\n", (*json_tokens)->start);
+		return false;
+	}
+
+	/* reserve some memory */
+	mapping->positions = NULL;
+	mapping->uids      = NULL;
+	if(ALLOC_FAILS(mapping->positions, mapping->positions_len)) {
+		fprintf(stderr, "out of memory in jsmn_parse_ciphertext_mapping\n");
+		return false;
+	}
+	if(ALLOC_FAILS(mapping->uids, mapping->positions_len)) {
+		fprintf(stderr, "out of memory in jsmn_parse_ciphertext_mapping\n");
+		free(mapping->positions);
+		return false;
+	}
+
+	/* parse each key-value pair */
+	for(i = 0; i < mapping->positions_len; i++) {
+		++(*json_tokens);
+		if(!jsmn_parse_string(json_string, json_tokens, mapping->positions + i)) {
+			mapping->positions_len = i;
+			ciphertext_mapping_free(*mapping);
+			return false;
+		}
+
+		++(*json_tokens);
+		if(!jsmn_parse_string(json_string, json_tokens, mapping->uids + i)) {
+			free(mapping->positions[i]);
+			mapping->positions_len = i;
+			ciphertext_mapping_free(*mapping);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* a helper function for the top-level wrappers that allocates the appropriate
+ * amount of space for tokens and populates them; the caller is then
+ * responsible for figuring out what those tokens mean
+ *
+ * not part of the public interface */
+bool jsmn_parse_setup(const char *const json_string, jsmntok_t **const json_tokens) {
+	jsmn_parser parser;
+	const size_t json_string_len = strlen(json_string);
+
+	/* first pass: figure out how much stuff is in the string */
+	jsmn_init(&parser);
+	const int json_tokens_len = jsmn_parse(&parser, json_string, json_string_len, NULL, 0);
+	if(json_tokens_len < 1) {
+		fprintf(stderr, "found no JSON tokens\n");
+		goto fail_none;
+	}
+	if(ALLOC_FAILS(*json_tokens, json_tokens_len)) {
+		fprintf(stderr, "out of memory when allocating tokens in jsmn_parse_setup\n");
+		goto fail_none;
+	}
+
+	/* second pass: record the results of parsing */
+	jsmn_init(&parser);
+	const int tokens_parsed = jsmn_parse(&parser, json_string, json_string_len, *json_tokens, json_tokens_len);
+	if(tokens_parsed != json_tokens_len) {
+		fprintf(stderr, "The impossible happened: parsed the same string twice and got two\ndifferent token counts (%d first time, %d second).\n", json_tokens_len, tokens_parsed);
+		goto fail_free_tokens;
+	}
+
+	return true;
+
+fail_free_tokens:
+	free(*json_tokens);
+fail_none:
+	return false;
+}
+
 bool jsmn_parse_template_location(const location loc, template *const template) {
 	int fd;
 	struct stat fd_stat;
 	char *json_string;
-	jsmn_parser parser;
 	jsmntok_t *json_tokens;
 	bool status = false;
 
@@ -420,32 +500,12 @@ bool jsmn_parse_template_location(const location loc, template *const template) 
 		goto fail_close;
 	}
 
-	/* first pass: figure out how much stuff is in the string */
-	jsmn_init(&parser);
-	const int json_tokens_len = jsmn_parse(&parser, json_string, fd_stat.st_size, NULL, 0);
-	if(json_tokens_len < 1) {
-		fprintf(stderr, "found no JSON tokens\n");
-		goto fail_unmap;
-	}
-	if(ALLOC_FAILS(json_tokens, json_tokens_len)) {
-		fprintf(stderr, "out of memory when allocating tokens in jsmn_parse_template_location\n");
-		goto fail_unmap;
+	if(jsmn_parse_setup(json_string, &json_tokens)) {
+		const jsmntok_t *state = json_tokens;
+		status = jsmn_parse_template(json_string, &state, template);
+		free(json_tokens);
 	}
 
-	/* second pass: record the results of parsing */
-	jsmn_init(&parser);
-	int tokens_parsed = jsmn_parse(&parser, json_string, fd_stat.st_size, json_tokens, json_tokens_len);
-	if(tokens_parsed != json_tokens_len) {
-		fprintf(stderr, "The impossible happened: parsed the same string twice and got two\ndifferent token counts (%d first time, %d second).\n", json_tokens_len, tokens_parsed);
-		goto fail_free_tokens;
-	}
-
-	/* convert the parsed JSON to our custom type */
-	const jsmntok_t *state = json_tokens;
-	status = jsmn_parse_template(json_string, &state, template);
-
-fail_free_tokens:
-	free(json_tokens);
 fail_unmap:
 	munmap(json_string, fd_stat.st_size);
 fail_close:
@@ -455,37 +515,23 @@ fail_none:
 }
 
 bool jsmn_parse_plaintext_string(const char *const json_string, plaintext *const plaintext) {
-	jsmn_parser parser;
 	jsmntok_t *json_tokens;
-	bool status = false;
-	const size_t json_string_len = strlen(json_string);
-
-	/* first pass: figure out how much stuff is in the string */
-	jsmn_init(&parser);
-	const int json_tokens_len = jsmn_parse(&parser, json_string, json_string_len, NULL, 0);
-	if(json_tokens_len < 1) {
-		fprintf(stderr, "found no JSON tokens\n");
-		goto fail_none;
+	bool status = jsmn_parse_setup(json_string, &json_tokens);
+	if(status) {
+		const jsmntok_t *state = json_tokens;
+		status = jsmn_parse_plaintext(json_string, &state, plaintext);
+		free(json_tokens);
 	}
-	if(ALLOC_FAILS(json_tokens, json_tokens_len)) {
-		fprintf(stderr, "out of memory when allocating tokens in jsmn_parse_plaintext_string\n");
-		goto fail_none;
+	return status;
+}
+
+bool jsmn_parse_ciphertext_mapping_string(const char *const json_string, ciphertext_mapping *const mapping) {
+	jsmntok_t *json_tokens;
+	bool status = jsmn_parse_setup(json_string, &json_tokens);
+	if(status) {
+		const jsmntok_t *state = json_tokens;
+		status = jsmn_parse_ciphertext_mapping(json_string, &state, mapping);
+		free(json_tokens);
 	}
-
-	/* second pass: record the results of parsing */
-	jsmn_init(&parser);
-	const int tokens_parsed = jsmn_parse(&parser, json_string, json_string_len, json_tokens, json_tokens_len);
-	if(tokens_parsed != json_tokens_len) {
-		fprintf(stderr, "The impossible happened: parsed the same string twice and got two\ndifferent token counts (%d first time, %d second).\n", json_tokens_len, tokens_parsed);
-		goto fail_free_tokens;
-	}
-
-	/* convert the parsed JSON to our custom type */
-	const jsmntok_t *state = json_tokens;
-	status = jsmn_parse_plaintext(json_string, &state, plaintext);
-
-fail_free_tokens:
-	free(json_tokens);
-fail_none:
 	return status;
 }
