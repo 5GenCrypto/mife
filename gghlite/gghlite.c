@@ -381,10 +381,14 @@ void _gghlite_sk_sample_h(gghlite_sk_t self, aes_randstate_t randstate) {
   int coprime = 0;
   while(!coprime) {
     uint64_t t = ggh_walltime(0);
+    /* ADDED */ ggh_printf(self->params, "in the coprime loop\n");
     fmpz_poly_sample_sigma(self->h, self->params->n, sqrt_q, randstate);
     self->t_sample += ggh_walltime(t);
     t = ggh_walltime(0);
+
+    /* ADDED */ ggh_printf(self->params, "checking for coprimeness\n");
     coprime = fmpz_poly_oz_coprime(self->g, self->h, self->params->n, 0, primes);
+    /* ADDED */ ggh_printf(self->params, "finished checking for coprimeness\n");
     self->t_coprime +=  ggh_walltime(t);
   }
 
@@ -405,14 +409,13 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate) {
     fmpz_mod_poly_init(self->z[i], self->params->q);
 
     fmpz_mod_poly_randtest_aes(self->z[i], randstate, self->params->n);
-    /* ADDED */ ggh_printf(self->params, "finished randtest for z[%d]:\n", 
-        i);
+    /* ADDED */ ggh_printf(self->params, "finished randtest for z[%d]:\n", i);
     fmpz_mod_poly_oz_ntt_enc(self->z[i], self->z[i], self->params->ntt);
-    /* ADDED */ ggh_printf(self->params, "finished enc for z[%d]:\n");
+    /* ADDED */ ggh_printf(self->params, "finished enc for z[%d]:\n", i);
 
     fmpz_mod_poly_init(self->z_inv[i], self->params->q);
     fmpz_mod_poly_oz_ntt_inv(self->z_inv[i], self->z[i], self->params->n);
-    /* ADDED */ ggh_printf(self->params, "finished inv for z[%d]:\n");
+    /* ADDED */ ggh_printf(self->params, "finished inv for z[%d]:\n", i);
   }
   self->t_sample +=  ggh_walltime(t);
 }
