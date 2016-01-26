@@ -374,7 +374,6 @@ int dgsl_rot_mp_call_identity(fmpz_poly_t rop,  const dgsl_rot_mp_t *self, aes_r
   fmpz_poly_realloc(rop, n);
 
   for(long i=0; i<n; i++) {
-    /* ADDED */ printf("in the D[0]->call statement\n");
     self->D[0]->call(tmp_g, self->D[0], state);
     fmpz_poly_set_coeff_mpz(rop, i, tmp_g);
   }

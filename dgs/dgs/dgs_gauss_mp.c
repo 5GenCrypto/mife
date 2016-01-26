@@ -56,8 +56,6 @@ dgs_disc_gauss_sigma2p_t *dgs_disc_gauss_sigma2p_init() {
 
 void dgs_disc_gauss_sigma2p_mp_call(mpz_t rop, dgs_disc_gauss_sigma2p_t *self, aes_randstate_t state) {
 
-  /* ADDED */ printf("in dgs_disc_gauss_siga2p_mp_call\n");
-
   while(1) {
     if (!dgs_bern_uniform_call(self->B, state)) {
       mpz_set_ui(rop, 0);
@@ -80,7 +78,6 @@ void dgs_disc_gauss_sigma2p_mp_call(mpz_t rop, dgs_disc_gauss_sigma2p_t *self, a
     }
   }
 
-  /* ADDED */ printf("finished dgs_disc_gauss_siga2p_mp_call\n");
 }
 
 long dgs_disc_gauss_sigma2p_dp_call(dgs_disc_gauss_sigma2p_t *self) {
@@ -195,15 +192,12 @@ dgs_disc_gauss_mp_t *dgs_disc_gauss_mp_init(const mpfr_t sigma, const mpfr_t c, 
 
     /* 1. try the uniform algorithm */
     if (2*ceil(sigma_*self->tau) * sizeof(double) <= DGS_DISC_GAUSS_MAX_TABLE_SIZE_BYTES) {
-      /* ADDED */ printf("uniform algorithm\n");
       algorithm = DGS_DISC_GAUSS_UNIFORM_TABLE;
     /* 2. see if sigma2 is close enough */
     } else if(abs(round(k_)-k_) < DGS_DISC_GAUSS_EQUAL_DIFF) {
-      /* ADDED */ printf("equal diff  algorithm\n");
       algorithm = DGS_DISC_GAUSS_SIGMA2_LOGTABLE;
     /* 3. do logtables */
     } else {
-      /* ADDED */ printf("logtables algorithm\n");
       algorithm = DGS_DISC_GAUSS_UNIFORM_LOGTABLE;
     }
   }
@@ -371,18 +365,14 @@ void dgs_disc_gauss_mp_call_uniform_table(mpz_t rop, dgs_disc_gauss_mp_t *self, 
 
 void dgs_disc_gauss_mp_call_uniform_online(mpz_t rop, dgs_disc_gauss_mp_t *self, aes_randstate_t state) {
   do {
-    /* ADDED */ printf("in this deep do-while loop\n");
     mpz_urandomm_aes(self->x, state, self->two_upper_bound_minus_one);
-    /* ADDED */ printf("finished the first aes call to urandomm\n");
     mpz_sub(self->x, self->x, self->upper_bound_minus_one);
     mpfr_set_z(self->z, self->x, MPFR_RNDN);
     mpfr_sub(self->z, self->z, self->c_r, MPFR_RNDN);
     mpfr_mul(self->z, self->z, self->z, MPFR_RNDN);
     mpfr_mul(self->z, self->z, self->f, MPFR_RNDN);
     mpfr_exp(self->z, self->z, MPFR_RNDN);
-    /* ADDED */ printf("starting the last aes call to urandomb\n");
     mpfr_urandomb_aes(self->y, state);
-    /* ADDED */ printf("finished the last aes call to urandomb\n");
   } while (mpfr_cmp(self->y, self->z) >= 0);
 
   mpz_set(rop, self->x);
@@ -402,21 +392,15 @@ void dgs_disc_gauss_mp_call_uniform_logtable(mpz_t rop, dgs_disc_gauss_mp_t *sel
 }
 
 void dgs_disc_gauss_mp_call_sigma2_logtable(mpz_t rop, dgs_disc_gauss_mp_t *self, aes_randstate_t state) {
-  /* ADDED */ printf("starting a big sigma2_logtable call\n");
   do {
-    /* ADDED */ printf("in a big while in sigma2_logtable call\n");
     do {
-      /* ADDED */ printf("in the small while of sigma2_logtable call\n");
       dgs_disc_gauss_sigma2p_mp_call(self->x, self->D2, state);
-      /* ADDED */ printf("starting a urandomm_aes call\n");
       mpz_urandomm_aes(self->y_z, state, self->k);
-      /* ADDED */ printf("finished a urandomm_aes call\n");
       mpz_mul(self->x2, self->k, self->x);
       mpz_mul_ui(self->x2, self->x2, 2);
       mpz_add(self->x2, self->x2, self->y_z);
       mpz_mul(self->x2, self->x2, self->y_z);
     } while (dgs_bern_exp_mp_call(self->Bexp, self->x2, state) == 0);
-    /* ADDED */ printf("exited a do-while in mp_call_sigma2_logtable\n");
     mpz_mul(rop, self->k, self->x);
     mpz_add(rop, rop, self->y_z);
     if (mpz_sgn(rop) == 0) {
@@ -426,11 +410,9 @@ void dgs_disc_gauss_mp_call_sigma2_logtable(mpz_t rop, dgs_disc_gauss_mp_t *self
       break;
     }
   } while (1);
-  /* ADDED */ printf("finished a big while in sigma2_logtable call\n");
   if(dgs_bern_uniform_call(self->B, state))
     mpz_neg(rop, rop);
   mpz_add(rop, rop, self->c_z);
-  /* ADDED */ printf("finished a big sigma2_logtable call\n");
 }
 
 /** GENERAL SIGMA :: CLEAR **/

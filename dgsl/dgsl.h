@@ -176,9 +176,7 @@ static inline void fmpz_poly_sample_sigma(fmpz_poly_t f, long len, mpfr_t sigma,
   fmpz_poly_one(I);
   dgsl_rot_mp_t *D = dgsl_rot_mp_init(len, I, sigma, NULL, DGSL_IDENTITY, OZ_VERBOSE);
 
-  /* ADDED */ printf("calling sample_D\n");
   fmpz_poly_sample_D(f, D, randstate);
-  /* ADDED */ printf("finished calling sample_D\n");
 
   dgsl_rot_mp_clear(D);
   fmpz_poly_clear(I);

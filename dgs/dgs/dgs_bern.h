@@ -128,9 +128,7 @@ static inline unsigned long dgs_bern_uniform_call(dgs_bern_uniform_t *self, aes_
   assert(state != NULL);
 
   if (__DGS_UNLIKELY(self->count == self->length)) {
-    /* ADDED */ printf("in dgs_bern_uniform_call\n");
     mpz_urandomb_aes(self->tmp, state, self->length);
-    /* ADDED */ printf("finished random in dgs_bern_uniform_call\n");
     self->pool = mpz_get_ui(self->tmp);
     self->count = 0;
   }

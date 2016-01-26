@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <gmp.h>
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-defs.h>
@@ -11,7 +10,6 @@
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
 int NUM_ENCODINGS_TOTAL;
-uint64_t T;
 
 typedef enum {
   //!< default behaviour

@@ -22,6 +22,9 @@ static inline void ggh_die(const char *msg, ...) {
 #include <sys/time.h>
 #include <unistd.h>
 
+int PRINT_TIMERS;
+uint64_t T; /* global var for keeping track of time */
+
 static inline uint64_t ggh_walltime(uint64_t t0) {
   static time_t base_sec;
   struct timeval tp;
@@ -33,6 +36,24 @@ static inline uint64_t ggh_walltime(uint64_t t0) {
 
 static inline double ggh_seconds(uint64_t t) {
   return t/1000000.0;
+}
+
+static inline void start_timer() {
+  T = ggh_walltime(0);
+}
+
+static inline void timer_printf(const char *msg, ...) {
+  if(PRINT_TIMERS) {
+    va_list lst;
+    va_start(lst, msg);
+    vfprintf(stdout, msg, lst);
+    va_end(lst);
+    fflush(0);
+  }
+}
+
+static inline void print_timer() {
+  timer_printf("%8.2fs", ggh_seconds(ggh_walltime(T)));
 }
 
 #include <gghlite/gghlite-defs.h>

@@ -304,8 +304,6 @@ void _gghlite_sk_sample_g(gghlite_sk_t self, aes_randstate_t randstate) {
 
   ggh_printf(self->params, "\n");
   
-  /* ADDED */ ggh_printf(self->params, "finished computing g\n");
-
   mpfr_clear(norm);
   mpfr_clear(sqrtn_sigma);
   mpfr_clear(g_inv_norm);
@@ -331,10 +329,15 @@ void _gghlite_sk_set_pzt(gghlite_sk_t self) {
   } else {
 
     fmpz_mod_poly_oz_ntt_set_ui(z_kappa, 1, self->params->n);
+    uint64_t t = ggh_walltime(0);
     for(size_t i=0; i<self->params->gamma; i++) {
       assert(!fmpz_mod_poly_is_zero(self->z[i]));
       fmpz_mod_poly_oz_ntt_mul(z_kappa, z_kappa, self->z[i], self->params->n);
+      timer_printf("\r    Progress: [%lu / %lu] %8.2fs", i+1,
+          self->params->gamma, ggh_seconds(ggh_walltime(t)));
+      fflush(stdout);
     }
+    timer_printf("\n");
 
   }
 
@@ -381,14 +384,11 @@ void _gghlite_sk_sample_h(gghlite_sk_t self, aes_randstate_t randstate) {
   int coprime = 0;
   while(!coprime) {
     uint64_t t = ggh_walltime(0);
-    /* ADDED */ ggh_printf(self->params, "in the coprime loop\n");
     fmpz_poly_sample_sigma(self->h, self->params->n, sqrt_q, randstate);
     self->t_sample += ggh_walltime(t);
     t = ggh_walltime(0);
 
-    /* ADDED */ ggh_printf(self->params, "checking for coprimeness\n");
     coprime = fmpz_poly_oz_coprime(self->g, self->h, self->params->n, 0, primes);
-    /* ADDED */ ggh_printf(self->params, "finished checking for coprimeness\n");
     self->t_coprime +=  ggh_walltime(t);
   }
 
@@ -403,21 +403,33 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate) {
   assert(fmpz_cmp_ui(self->params->q, 0)>0);
 
   const size_t bound = (gghlite_sk_is_symmetric(self)) ? 1 : self->params->gamma;
-  uint64_t t = ggh_walltime(0);
+  
+  /* do not parallelize calls to randomness generation! */  
+  uint64_t t_init = ggh_walltime(0);
   for(size_t i=0; i<bound; i++) {
-    /* ADDED */ ggh_printf(self->params, "sampling z[%d]:\n", i);
     fmpz_mod_poly_init(self->z[i], self->params->q);
-
     fmpz_mod_poly_randtest_aes(self->z[i], randstate, self->params->n);
-    /* ADDED */ ggh_printf(self->params, "finished randtest for z[%d]:\n", i);
+    timer_printf("\r    Init Progress: [%lu / %lu] %8.2fs", i+1,
+        bound, ggh_seconds(ggh_walltime(t_init)));
+  }
+  timer_printf("\n");
+
+  int progress_count_approx = 0;
+  float progress_time_approx = 0.0;
+#pragma omp parallel for
+  for(size_t i = 0; i < bound; i++) {
+    uint64_t t = ggh_walltime(0);
     fmpz_mod_poly_oz_ntt_enc(self->z[i], self->z[i], self->params->ntt);
-    /* ADDED */ ggh_printf(self->params, "finished enc for z[%d]:\n", i);
 
     fmpz_mod_poly_init(self->z_inv[i], self->params->q);
     fmpz_mod_poly_oz_ntt_inv(self->z_inv[i], self->z[i], self->params->n);
-    /* ADDED */ ggh_printf(self->params, "finished inv for z[%d]:\n", i);
+    
+    progress_count_approx++;
+    progress_time_approx += ggh_seconds(ggh_walltime(t));
+    timer_printf("\r    Computation Progress (Parallel): [%lu / %lu] %8.2fs",
+        progress_count_approx, bound, progress_time_approx);
   }
-  self->t_sample +=  ggh_walltime(t);
+  timer_printf("\n");
 }
 
 void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
@@ -447,31 +459,61 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
 
   fmpz_mod_poly_oz_ntt_precomp_init(self->params->ntt, self->params->n, self->params->q);
 
+  start_timer();
+  timer_printf("Starting sampling g...\n");
   _gghlite_sk_sample_g(self, randstate);
-  /* ADDED */ ggh_printf(self->params, "starting to sample z\n");
+  timer_printf("Finished sampling g");
+  print_timer();
+  timer_printf("\n");
+  
+  start_timer();
+  timer_printf("Starting sampling z...\n");
   _gghlite_sk_sample_z(self, randstate);
-  /* ADDED */ ggh_printf(self->params, "finished sampling z, starting h\n");
+  timer_printf("Finished sampling z");
+  print_timer();
+  timer_printf("\n");
+  
+  start_timer();
+  timer_printf("Starting sampling h...\n");
   _gghlite_sk_sample_h(self, randstate);
+  timer_printf("Finished sampling h");
+  print_timer();
+  timer_printf("\n");
 
-  /* ADDED */ ggh_printf(self->params, "finished sampling g, z, and h\n");
-
+  start_timer();
+  timer_printf("Starting setting D_g...\n");
   gghlite_sk_set_D_g(self);
+  timer_printf("Finished setting D_g");
+  print_timer();
+  timer_printf("\n");
 
+  /* these don't do anything */
   _gghlite_sk_sample_b(self, randstate);
   _gghlite_sk_sample_a(self, randstate);
-
-  /* ADDED */ ggh_printf(self->params, "finished sampling b, \n");
-  
   _gghlite_sk_set_y(self);
   _gghlite_sk_set_x(self);
+
+  start_timer();
+  timer_printf("Starting setting pzt...\n");
   _gghlite_sk_set_pzt(self);
+  timer_printf("Finished setting pzt");
+  print_timer();
+  timer_printf("\n");
 
-  /* ADDED */ ggh_printf(self->params, "finished setting pzt\n");
-
+  start_timer();
+  timer_printf("Starting setting D_sigma_p...\n");
   _gghlite_params_set_D_sigma_p(self->params);
+  timer_printf("Finished setting D_sigma_p");
+  print_timer();
+  timer_printf("\n");
+
+  start_timer();
+  timer_printf("Starting setting D_sigma_s...\n");
   _gghlite_params_set_D_sigma_s(self->params);
-  
-  /* ADDED */ ggh_printf(self->params, "finished calling sk_init\n");
+  timer_printf("Finished setting D_sigma_s");
+  print_timer();
+  timer_printf("\n");
+
 }
 
 void gghlite_params_set_D_sigmas(gghlite_params_t params) {
@@ -484,6 +526,7 @@ void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa,
                   const uint64_t rerand_mask, const gghlite_flag_t flags, aes_randstate_t randstate) {
   _gghlite_zero(self);
   gghlite_params_init_gamma(self->params, lambda, kappa, gamma, rerand_mask, flags);
+  
   gghlite_sk_init(self, randstate);
 }
 

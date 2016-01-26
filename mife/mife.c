@@ -510,17 +510,15 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
 
   //printf("kappa: %d\n", pp->kappa);
 
-  reset_T();
-  debug_printf("starting calling jigsaw_init_gamma: %d %d %d\n", lambda, pp->kappa, pp->gamma);
-  printf("%8.2f\n", get_T());
+  timer_printf("Starting calling jigsaw_init_gamma: %d %d %d...\n",
+      lambda, pp->kappa, pp->gamma);
   gghlite_jigsaw_init_gamma(sk->self,
                       lambda,
                       pp->kappa,
                       pp->gamma,
                       ggh_flags,
                       randstate);
-  debug_printf("finished calling jigsaw_init_gamma\n");
-  printf("%8.2f\n", get_T());
+  timer_printf("Finished calling jigsaw_init_gamma\n");
 
   pp->params_ref = &(sk->self->params);
 
@@ -529,12 +527,13 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   printf("of length %d, with gamma = %d\n\n", pp->bitstr_len, pp->gamma);
   */
   
-  debug_printf("setting p\n");
-  printf("%8.2f\n", get_T());
+  timer_printf("Starting setting p...\n");
+  start_timer();
   fmpz_init(pp->p);
   fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
-  debug_printf("finished setting p\n");
-  printf("%8.2f\n", get_T());
+  timer_printf("Finished setting p");
+  print_timer();
+  timer_printf("\n");
 
   // set the kilian randomizers in sk
   pp->numR = pp->kappa - 1;
@@ -545,25 +544,47 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
   sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
 
-  debug_printf("setting kilian matrices\n");
-  printf("%8.2f\n", get_T());
+  timer_printf("Starting setting Kilian matrices...\n");
+  start_timer();
+
+  /* do not parallelize calls to randomness generation! */  
+  uint64_t t_init = ggh_walltime(0);
+  int count = 0;
+  int total = 0;
+  /* compute total */
+  for (int k = 0; k < pp->numR; k++) {
+    total += dims[k] * dims[k];
+  } 
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
     for (int i = 0; i < dims[k]; i++) {
       for(int j = 0; j < dims[k]; j++) {
         fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), randstate, pp->p);
+        count++;
+        timer_printf("\r    Init Progress: [%d / %d] %8.2fs", count,
+            total, ggh_seconds(ggh_walltime(t_init)));
       }
     }
-	
-    fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
-    debug_printf("computing an inverse\n");
-    printf("%8.2f\n", get_T());
-    fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
-    debug_printf("finished computing an inverse\n");
-    printf("%8.2f\n", get_T());
   }
-  debug_printf("finished setting kilian\n");
-  printf("%8.2f\n", get_T());
+  timer_printf("\n");
+  
+  int progress_count_approx = 0;
+  float progress_time_approx = 0.0;
+#pragma omp parallel for
+  for (int k = 0; k < pp->numR; k++) {
+    uint64_t t = ggh_walltime(0);
+    fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
+    fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    progress_count_approx++;
+    progress_time_approx += ggh_seconds(ggh_walltime(t));
+    timer_printf("\r    Inverse Computation Progress (Parallel): \
+        [%lu / %lu] %8.2fs",
+        progress_count_approx, pp->numR, progress_time_approx);
+  }
+  timer_printf("\n");
+  timer_printf("Finished setting Kilian matrices");
+  print_timer();
+  timer_printf("\n");
 
   free(dims);
 }

@@ -32,12 +32,25 @@ int main(int argc, char **argv) {
 	template_stats stats;
 	bool success;
 
+  PRINT_TIMERS = 1; /* prints timing/progress info */
+
 	parse_cmdline(argc, argv, &ins, &outs);
 	if(!template_to_mife_pp(pp, &ins.template, &stats)) return -1;
 	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
+  timer_printf("Finished calling mife_setup. Starting to write outputs...\n");
+  start_timer();
 	success = print_outputs(outs, pp, sk);
+  timer_printf("Finished writing outputs");
+  print_timer();
+  timer_printf("\n");
 
+  timer_printf("Starting cleanup...\n");
+  start_timer();
 	cleanup(&ins, &outs, pp, sk);
+  timer_printf("Finished cleanup");
+  print_timer();
+  timer_printf("\n");
+
 	return success ? 0 : -1;
 }
 
