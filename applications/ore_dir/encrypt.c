@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
 	return success ? 0 : -1;
 }
 
+/* TODO: would be nice to specify partition and id separately */
 void usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");

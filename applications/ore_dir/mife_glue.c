@@ -7,23 +7,25 @@ void template_stats_free(template_stats stats) {
 	free(stats.position_index);
 	free(stats.local_index);
 	free(stats.step_lens);
+	free(stats.positions);
 }
 
 bool template_to_template_stats(const template *const template, template_stats *stats) {
 	int i, j;
 	const int len = template->steps_len;
-	char **positions = NULL;
-	*stats = (template_stats) { 0, NULL, NULL, NULL, NULL };
+	*stats = (template_stats) { 0, NULL, NULL, NULL, NULL, NULL };
 
-	if(ALLOC_FAILS(positions            , len) ||
+	if(ALLOC_FAILS(stats->positions     , len) ||
 	   ALLOC_FAILS(stats->position_index, len) ||
 	   ALLOC_FAILS(stats->local_index   , len) ||
-	   ALLOC_FAILS(stats->step_lens     , len))
-		goto fail;
+	   ALLOC_FAILS(stats->step_lens     , len)) {
+		template_stats_free(*stats);
+		return false;
+	}
 
 	for(i = 0; i < len; i++) {
 		for(j = 0; j < stats->positions_len; j++)
-			if(!strcmp(template->steps[i].position, positions[j]))
+			if(!strcmp(template->steps[i].position, stats->positions[j]))
 				break;
 
 		stats->step_lens[i] = 0;
@@ -32,17 +34,11 @@ bool template_to_template_stats(const template *const template, template_stats *
 
 		if(j == stats->positions_len)
 			/* never seen this position before, record it */
-			positions[stats->positions_len++] = template->steps[i].position;
+			stats->positions[stats->positions_len++] = template->steps[i].position;
 	}
 
 	stats->template = template;
-	free(positions);
 	return true;
-
-fail:
-	free(positions);
-	template_stats_free(*stats);
-	return false;
 }
 
 int template_stats_to_params(mife_pp_t pp, int i) {
