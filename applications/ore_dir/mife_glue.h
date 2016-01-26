@@ -7,7 +7,8 @@
 /* the template field is not owned by the template_stats structure, so don't
  * use it after the template it was constructed from is free'd! */
 typedef struct {
-	int positions_len;   /* what is the arity of the function being encoded? */
+	unsigned int positions_len;
+	                     /* what is the arity of the function being encoded? */
 	int *position_index; /* for each step, map its position to a number from 0 to positions_len-1 */
 	int *local_index;    /* for each step, how many previous steps had the same position? */
 	int *step_lens;      /* for each function position, how many steps use that position? */
