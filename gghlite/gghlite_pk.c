@@ -530,6 +530,9 @@ void gghlite_params_init_gamma(gghlite_params_t self, size_t lambda, size_t kapp
   self->rerand_mask = rerand_mask;
   self->flags = flags;
 
+  start_timer();
+  timer_printf("Starting setting q...\n");
+  int count = 0;
   for(int log_n = 7; ; log_n++) {
     self->n = ((long)1)<<log_n;
     _gghlite_params_set_sigma(self);
@@ -540,9 +543,16 @@ void gghlite_params_init_gamma(gghlite_params_t self, size_t lambda, size_t kapp
     _gghlite_params_set_sigma_s(self);
     _gghlite_params_set_q(self);
 
+    timer_printf("    Attempt #%d at setting q", ++count);
+    print_timer();
+    timer_printf("\n"); 
+
     if (gghlite_params_check_sec(self))
       break;
   }
+  timer_printf("Finished setting q");
+  print_timer();
+  timer_printf("\n");
 }
 
 void gghlite_params_clear(gghlite_params_t self) {
