@@ -113,9 +113,10 @@ void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
   fclose(fp);
 }
 
-// TODO remove writing z, it is unnecessary
 void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
+	uint64_t t = ggh_walltime(0);
   FILE *fp = fopen(filepath, "w");
+	timer_printf("Starting writing Kilian matrices...\n");
   fprintf(fp, "%d\n", sk->numR);
   for(int i = 0; i < sk->numR; i++) {
     fprintf(fp, "%ld %ld\n", sk->R[i]->r, sk->R[i]->c);
@@ -124,20 +125,40 @@ void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
     fprintf(fp, "%ld %ld\n", sk->R_inv[i]->r, sk->R_inv[i]->c);
     fmpz_mat_fprint(fp, sk->R_inv[i]);
     fprintf(fp, "\n");
+	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+		i, sk->numR, ggh_seconds(ggh_walltime(t)));
+
   }
+	timer_printf("Finished writing Kilian matrices %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting writing gghlite params...\n");
   fwrite_gghlite_params(fp, sk->self->params);
   fprintf(fp, "\n");
+	timer_printf("Finished writing gghlite params %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting writing g, g_inv, h...\n");
   fmpz_poly_fprint(fp, sk->self->g);
   fprintf(fp, "\n");
   fmpq_poly_fprint(fp, sk->self->g_inv);
   fprintf(fp, "\n");
   fmpz_poly_fprint(fp, sk->self->h);
   fprintf(fp, "\n");
+	timer_printf("Finished writing g, g_inv, h %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting writing z_inv, a, b...\n");
   for(int i = 0; i < sk->self->params->gamma; i++) {
+/*
     fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z[i]));
     fprintf(fp, "\n");
     fmpz_mod_poly_fprint(fp, sk->self->z[i]);
     fprintf(fp, "\n");
+*/
     fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z_inv[i]));
     fprintf(fp, "\n");
     fmpz_mod_poly_fprint(fp, sk->self->z_inv[i]);
@@ -150,14 +171,21 @@ void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
       fmpz_poly_fprint(fp, sk->self->b[i][j][1]);
       fprintf(fp, "\n");
     }
+	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+		i, sk->self->params->gamma, ggh_seconds(ggh_walltime(t)));
   }
+	timer_printf("\n");
+	timer_printf("Finished writing z_inv, a, b %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
 
   fclose(fp);
 
 }
 
 void fread_mife_sk(mife_sk_t sk, char *filepath) {
+	uint64_t t = ggh_walltime(0);
   FILE *fp = fopen(filepath, "r");
+	timer_printf("Starting reading Kilian matrices...\n");
   CHECK(fscanf(fp, "%d\n", &sk->numR));
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
   sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
@@ -172,9 +200,21 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
     fmpz_mat_init(sk->R_inv[i], r2, c2);
     fmpz_mat_fread(fp, sk->R_inv[i]);
     CHECK(fscanf(fp, "\n"));
+	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+		i, sk->numR, ggh_seconds(ggh_walltime(t)));
   }
+	timer_printf("Finished reading Kilian matrices %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting reading gghlite params...\n");
   fread_gghlite_params(fp, sk->self->params);
   CHECK(fscanf(fp, "\n"));
+	timer_printf("Finished reading gghlite params %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting reading g, g_inv, h...\n");
   fmpz_poly_init(sk->self->g);
   fmpz_poly_fread(fp, sk->self->g);
   CHECK(fscanf(fp, "\n"));
@@ -184,7 +224,11 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
   fmpz_poly_init(sk->self->h);
   fmpz_poly_fread(fp, sk->self->h);
   CHECK(fscanf(fp, "\n"));
-  
+  	timer_printf("Finished reading g, g_inv, h %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
+
+	t = ggh_walltime(0);
+	timer_printf("Starting reading z_inv, a, b...\n");
   sk->self->z = malloc(sk->self->params->gamma * sizeof(gghlite_enc_t));
   sk->self->z_inv = malloc(sk->self->params->gamma * sizeof(gghlite_enc_t));
   sk->self->a = malloc(sk->self->params->gamma * sizeof(gghlite_clr_t));
@@ -193,11 +237,13 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
     fmpz_t p1, p2;
     fmpz_init(p1);
     fmpz_init(p2);
+/*
     fmpz_fread(fp, p1);
     CHECK(fscanf(fp, "\n"));
     fmpz_mod_poly_init(sk->self->z[i], p1);
     fmpz_mod_poly_fread(fp, sk->self->z[i]);
     CHECK(fscanf(fp, "\n"));
+*/
     fmpz_fread(fp, p2);
     CHECK(fscanf(fp, "\n"));
     fmpz_mod_poly_init(sk->self->z_inv[i], p2);
@@ -218,9 +264,18 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
     }
     fmpz_clear(p1);
     fmpz_clear(p2);
+	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+		i, sk->self->params->gamma, ggh_seconds(ggh_walltime(t)));
   }
+	timer_printf("\n");
+	timer_printf("Finished reading z_inv, a, b %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
 
+	t = ggh_walltime(0);
+	timer_printf("Starting setting D_g...\n");
   gghlite_sk_set_D_g(sk->self);
+	timer_printf("Finished setting D_g %8.2fs\n",
+		ggh_seconds(ggh_walltime(t)));
   fclose(fp);
 }
 
@@ -720,7 +775,7 @@ void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
           randstate);
       NUM_ENCODINGS_GENERATED++;
       if(PRINT_ENCODING_PROGRESS) {
-        printf("Generated encoding %d / %d (Time elapsed: %8.2f s)\n",
+        timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
             NUM_ENCODINGS_GENERATED,
             get_NUM_ENC(),
             get_T());

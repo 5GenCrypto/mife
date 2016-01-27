@@ -49,4 +49,4 @@ arr = map(lambda elem: dary_repr(int(elem, base), 2,
 
 arr = str(arr).replace('\'','"')
 
-call(['applications/ore_dir/encrypt', str(arr)])
+call(['./encrypt', str(arr)])
