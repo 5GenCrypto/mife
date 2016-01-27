@@ -574,7 +574,10 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   for (int k = 0; k < pp->numR; k++) {
     uint64_t t = ggh_walltime(0);
     fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
+    timer_printf("    Starting an inverse computation [%d]\n", k);
     fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    timer_printf("    Finished computing an inverse [%d] %8.2f\n", k,
+        ggh_seconds(ggh_walltime(t)));
     progress_count_approx++;
     progress_time_approx += ggh_seconds(ggh_walltime(t));
     timer_printf("\r    Inverse Computation Progress (Parallel): \

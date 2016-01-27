@@ -22,7 +22,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
 void cleanup(keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
 
-const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_GOOD_G_INV;
+const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_GOOD_G_INV | GGHLITE_FLAGS_QUIET;
 
 int main(int argc, char **argv) {
 	keygen_inputs ins;

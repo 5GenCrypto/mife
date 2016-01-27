@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+from subprocess import call
+import math, sys
+
+num = int(sys.argv[1])
+base = 4
+bitstr_len = 17
+
+def digit_to_char(digit):
+    if digit < 10:
+        return str(digit)
+    return chr(ord('a') + digit - 10)
+
+def str_base(number,base):
+    if number < 0:
+        return '-' + str_base(-number, base)
+    (d, m) = divmod(number, base)
+    if d > 0:
+        return str_base(d, base) + digit_to_char(m)
+    return digit_to_char(m)
+
+def dary_repr(number, d, n):
+    repr = list(str(str_base(number, d)))
+    repr = (['0'] * (n - len(repr))) + repr
+    return "".join(repr)
+
+def pinch(L, start):
+    i = start
+    while i+2 <= len(L):
+        L[i:i+2] = [''.join(L[i:i+2])]
+        i += 1
+    return L
+
+def interleave(A, B):
+    C = A + B
+    C[::2] = A
+    C[1::2] = B
+    return C
+
+repr = dary_repr(num, base, bitstr_len)
+
+left = pinch(list(repr), 1)
+right = pinch(list(repr), 0)
+arr = interleave(left, right)
+
+arr = map(lambda elem: dary_repr(int(elem, base), 2,
+    len(elem) * int(math.ceil(math.log(base, 2)))), arr)
+
+arr = str(arr).replace('\'','"')
+
+call(['applications/ore_dir/encrypt', str(arr)])

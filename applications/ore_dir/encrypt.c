@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
 
 	parse_cmdline(argc, argv, &ins, &database_location);
 	mife_encrypt_setup(ins.pp, ins.uid, &ins.pt, clr, &partitions);
+
+#pragma omp parallel for collapse(3)
 	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
 		gghlite_enc_mat_t ct;
 		mife_encrypt_single(ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);

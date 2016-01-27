@@ -91,6 +91,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 		for (int r = 0; r < self->params->gamma; r++) {
 			if (group[r]) {
 				if(gghlite_sk_is_symmetric(self)) {
+#pragma omp parallel for
 					for(size_t j=0; j<k; j++) // divide by z_i^k
 						fmpz_mod_poly_oz_ntt_mul(rop, rop, self->z_inv[r], self->params->n);
 					break;
