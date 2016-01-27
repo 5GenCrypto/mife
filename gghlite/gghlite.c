@@ -415,19 +415,17 @@ void _gghlite_sk_sample_z(gghlite_sk_t self, aes_randstate_t randstate) {
   timer_printf("\n");
 
   int progress_count_approx = 0;
-  float progress_time_approx = 0.0;
+  uint64_t t = ggh_walltime(0);
 #pragma omp parallel for
   for(size_t i = 0; i < bound; i++) {
-    uint64_t t = ggh_walltime(0);
     fmpz_mod_poly_oz_ntt_enc(self->z[i], self->z[i], self->params->ntt);
 
     fmpz_mod_poly_init(self->z_inv[i], self->params->q);
     fmpz_mod_poly_oz_ntt_inv(self->z_inv[i], self->z[i], self->params->n);
     
     progress_count_approx++;
-    progress_time_approx += ggh_seconds(ggh_walltime(t));
     timer_printf("\r    Computation Progress (Parallel): [%lu / %lu] %8.2fs",
-        progress_count_approx, bound, progress_time_approx);
+        progress_count_approx, bound, ggh_seconds(ggh_walltime(t)));
   }
   timer_printf("\n");
 }
@@ -456,8 +454,13 @@ void gghlite_sk_init(gghlite_sk_t self, aes_randstate_t randstate) {
       memset(self->b[i][j], 0, 2 * sizeof(gghlite_enc_t));
     }
   }
-
+  
+  start_timer();
+  timer_printf("Starting precomp init...\n");
   fmpz_mod_poly_oz_ntt_precomp_init(self->params->ntt, self->params->n, self->params->q);
+  timer_printf("Finished precomp init");
+  print_timer();
+  timer_printf("\n");
 
   start_timer();
   timer_printf("Starting sampling g...\n");
