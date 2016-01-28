@@ -2,38 +2,14 @@
 #define _MATRIX_H
 
 #include <stdbool.h>
+#include "mife.h"
 
-/* A brief note about this comment: there are two meanings of "field"
- * appropriate here; one is the mathematical term for a structured set, and the
- * other is the C term for a part of a struct. We will use "math field" for the
- * former, and "C field" for the latter.
- *
- * Naming convention: matrix branching programs over a given math field are
- * called <math field>_mbp, matrices are called <math field>_matrix, and the C
- * fields are named <math field>_foo. The math fields include (at least) f2 and
- * ggh. The C fields are:
- *
- * * unsigned int num_rows, num_cols: the number of rows and columns in a
- *   matrix
- * * <math field> **elems: a two-dimensional array of the appropriate
- *   dimensions (row index first, then column index)
- * * unsigned int matrices_len: how many matrices there are in the program
- * * <math field>_matrix *matrices: the matrices in the program; an invariant
- *   is that `matrices[i].num_cols == matrices[i+1].num_rows`
- */
-typedef struct {
-	unsigned int num_rows, num_cols;
-	bool **elems;
-} f2_matrix;
-
+/* an invariant is that `matrices[i].num_cols == matrices[i+1].num_rows` */
 typedef struct {
 	unsigned int matrices_len;
 	f2_matrix *matrices;
 } f2_mbp;
 
-/* returns true iff dest is successfully initialized to the contents of src */
-bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
-void f2_matrix_free(f2_matrix m);
 void f2_mbp_free(f2_mbp mbp);
 
 /* A template describes how to choose an MBP from a plaintext. A template has:

@@ -1,6 +1,7 @@
 #ifndef _MIFE_H_
 #define _MIFE_H_
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <gmp.h>
@@ -54,6 +55,16 @@ struct _mife_sk_struct {
 };
 
 typedef struct _mife_sk_struct mife_sk_t[1];
+
+typedef struct {
+  unsigned int num_rows, num_cols;
+  bool **elems;
+} f2_matrix;
+
+/* returns true iff dest is successfully initialized to the contents of src */
+bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
+bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols);
+void f2_matrix_free(f2_matrix m);
 
 struct _mife_pp_struct {
   int num_inputs; // the arity of the MBP (for comparisons, this is 2).

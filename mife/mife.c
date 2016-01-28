@@ -1,7 +1,50 @@
 #include "mife.h"
 
+#define ALLOC_FAILS(path, len) (NULL == ((path) = malloc((len) * sizeof(*(path)))))
 #define CHECK(x) if(x < 0) { assert(0); }
 #define debug_printf printf
+
+bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
+  if(ALLOC_FAILS(dest->elems, src.num_rows))
+    return false;
+  int *i = &dest->num_rows; /* to shorten some lines */
+  int j;
+  for(*i = 0; *i < src.num_rows; (*i)++) {
+    if(ALLOC_FAILS(dest->elems[*i], src.num_cols)) {
+      f2_matrix_free(*dest);
+      return false;
+    }
+
+    for(j = 0; j < src.num_cols; j++)
+      dest->elems[*i][j] = src.elems[*i][j];
+  }
+  dest->num_cols = src.num_cols;
+}
+
+bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols) {
+  if(ALLOC_FAILS(dest->elems, num_rows))
+    return false;
+  int j, *i = &dest->num_rows;
+  for(*i = 0; *i < num_rows; (*i)++) {
+    if(ALLOC_FAILS(dest->elems[*i], num_cols)) {
+      f2_matrix_free(*dest);
+      return false;
+    }
+
+    for(j = 0; j < num_cols; j++)
+      dest->elems[*i][j] = false;
+  }
+  dest->num_cols = num_cols;
+}
+
+void f2_matrix_free(f2_matrix m) {
+  int i;
+  if(NULL != m.elems) {
+    for(i = 0; i < m.num_rows; i++)
+      free(m.elems[i]);
+    free(m.elems);
+  }
+}
 
 
 /**
