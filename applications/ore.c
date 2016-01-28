@@ -849,12 +849,12 @@ void ore_mbp_ordering(mife_pp_t pp, int index, int *ip, int *jp) {
   *jp = index / 2;
 }
 
-int ore_mbp_parse(mife_pp_t pp, char **m) {
-  if(m[0][0] + m[0][1] + m[0][2] != 1)
+int ore_mbp_parse(mife_pp_t pp, f2_matrix m) {
+  if(m.elems[0][0] + m.elems[0][1] + m.elems[0][2] != 1)
     return -1;
 
   for(int i = 0; i < 3; i++) {
-    if(m[0][i] == 1)
+    if(m.elems[0][i] == 1)
       return i;
   }
 

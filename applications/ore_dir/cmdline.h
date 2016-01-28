@@ -2,7 +2,7 @@
 #define _ORE_CMDLINE_H
 
 #include <gghlite/gghlite.h>
-#include "matrix.h"
+#include "types.h"
 #include "mife.h"
 #include "mife_glue.h"
 #include "util.h"

@@ -1,6 +1,7 @@
 #ifndef _MIFE_H_
 #define _MIFE_H_
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <gmp.h>
@@ -55,6 +56,16 @@ struct _mife_sk_struct {
 
 typedef struct _mife_sk_struct mife_sk_t[1];
 
+typedef struct {
+  unsigned int num_rows, num_cols;
+  bool **elems;
+} f2_matrix;
+
+/* returns true iff dest is successfully initialized to the contents of src */
+bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
+bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols);
+void f2_matrix_free(f2_matrix m);
+
 struct _mife_pp_struct {
   int num_inputs; // the arity of the MBP (for comparisons, this is 2).
   int *n; // of length num_inputs
@@ -73,7 +84,7 @@ struct _mife_pp_struct {
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn) (struct _mife_pp_struct *, int, int *, int *); // function pointer for MBP ordering
   void (*setfn)   (struct _mife_pp_struct *, mife_mat_clr_t, void *);
-  int (*parsefn)  (struct _mife_pp_struct *, char **); // function pointer for parsing output 
+  int (*parsefn)  (struct _mife_pp_struct *, f2_matrix); // function pointer for parsing output
 };
 
 typedef struct _mife_pp_struct mife_pp_t[1];
@@ -89,7 +100,7 @@ void mife_mbp_set(
     void (*kilianfn)(mife_pp_t, int *),
     void (*orderfn) (mife_pp_t, int, int *, int *),
     void (*setfn)   (mife_pp_t, mife_mat_clr_t, void *),
-    int (*parsefn)  (mife_pp_t, char **)
+    int (*parsefn)  (mife_pp_t, f2_matrix)
     );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, aes_randstate_t randstate);
@@ -104,6 +115,7 @@ void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
     gghlite_enc_mat_t out_ct);
 void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
+f2_matrix mife_zt_all(const mife_pp_t pp, gghlite_enc_mat_t m);
 
 /* MIFE internal functions */
 void reset_T();
@@ -143,7 +155,7 @@ void fread_mife_sk(mife_sk_t sk, char *filepath);
 void fwrite_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath);
 void fwrite_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
 void fread_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath);
-void fread_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
+void fread_gghlite_enc_mat(const mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
 
 /* functions dealing with fmpz types and matrix multiplications mod fmpz_t */
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);

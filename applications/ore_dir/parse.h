@@ -4,7 +4,7 @@
 #include <jsmn.h>
 #include <stdbool.h>
 
-#include "matrix.h"
+#include "types.h"
 #include "util.h"
 
 /* bool return type: whether the parse succeeded

@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "cmdline.h"
-#include "matrix.h"
+#include "types.h"
 #include "mife.h"
 #include "mife_glue.h"
 #include "parse.h"
