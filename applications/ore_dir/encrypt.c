@@ -32,11 +32,11 @@ int main(int argc, char **argv) {
 	int i, ***partitions;
 	bool success = true;
 
+  PRINT_TIMERS = 1; /* prints timing/progress info */
 	parse_cmdline(argc, argv, &ins, &database_location);
 	mife_encrypt_setup(ins.pp, ins.uid, &ins.pt, clr, &partitions);
 
 	reset_T();
-#pragma omp parallel for collapse(3)
 	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
 		gghlite_enc_mat_t ct;
 		mife_encrypt_single(ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
