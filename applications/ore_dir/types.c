@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "matrix.h"
+#include "types.h"
 #include "util.h"
 
 void f2_mbp_free(f2_mbp mbp) {

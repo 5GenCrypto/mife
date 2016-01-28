@@ -1,7 +1,7 @@
 #ifndef _MIFE_GLUE_H
 #define _MIFE_GLUE_H
 
-#include "matrix.h"
+#include "types.h"
 #include "mife.h"
 
 /* the template field and elements of the positions field are not owned by the
