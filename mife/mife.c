@@ -577,7 +577,7 @@ void mife_mbp_set(
     void (*kilianfn)(mife_pp_t, int *),
     void (*orderfn) (mife_pp_t, int, int *, int *),
     void (*setfn)   (mife_pp_t, mife_mat_clr_t, void *),
-    int (*parsefn)  (mife_pp_t, char **)
+    int (*parsefn)  (mife_pp_t, f2_matrix)
     ) {
   pp->mbp_params = mbp_params;
   pp->num_inputs = num_inputs;
@@ -1000,21 +1000,18 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
     gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
   }
 
-  char **result = malloc(tmp->nrows * sizeof(char *));
+  f2_matrix result;
+  f2_matrix_zero(&result, tmp->nrows, tmp->ncols);
   for(int i = 0; i < tmp->nrows; i++) {
-    result[i] = malloc(tmp->ncols * sizeof(char));
     for(int j = 0; j < tmp->ncols; j++) {
-      result[i][j] = 1 - gghlite_enc_is_zero(*pp->params_ref, tmp->m[i][j]);
+      result.elems[i][j] = !gghlite_enc_is_zero(*pp->params_ref, tmp->m[i][j]);
     }
   }
   gghlite_enc_mat_clear(tmp);
 
   int ret = pp->parsefn(pp, result);
 
-  for(int i = 0; i < tmp->nrows; i++) {
-    free(result[i]);
-  }
-  free(result);
+  f2_matrix_free(result);
 
   return ret;
 }

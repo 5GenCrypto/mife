@@ -99,11 +99,11 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 /* TODO: hm! maybe the outputs should be a matrix rather than an array */
 /* TODO: are we sure that templates handed to us will produce just one output
  *       every time? */
-int template_stats_to_result(mife_pp_t pp, char **raw_result) {
+int template_stats_to_result(mife_pp_t pp, f2_matrix raw_result) {
 	const template_stats *const stats = pp->mbp_params;
 	int i, result, num_nonzeros = 0;
 	for(i = 0; i < stats->template->outputs_len; i++)
-		if(raw_result[0][i]) {
+		if(raw_result.elems[0][i]) {
 			result = i;
 			num_nonzeros++;
 		}

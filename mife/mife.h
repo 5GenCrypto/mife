@@ -84,7 +84,7 @@ struct _mife_pp_struct {
   void (*kilianfn)(struct _mife_pp_struct *, int *); // set kilian dimensions
   void (*orderfn) (struct _mife_pp_struct *, int, int *, int *); // function pointer for MBP ordering
   void (*setfn)   (struct _mife_pp_struct *, mife_mat_clr_t, void *);
-  int (*parsefn)  (struct _mife_pp_struct *, char **); // function pointer for parsing output 
+  int (*parsefn)  (struct _mife_pp_struct *, f2_matrix); // function pointer for parsing output
 };
 
 typedef struct _mife_pp_struct mife_pp_t[1];
@@ -100,7 +100,7 @@ void mife_mbp_set(
     void (*kilianfn)(mife_pp_t, int *),
     void (*orderfn) (mife_pp_t, int, int *, int *),
     void (*setfn)   (mife_pp_t, mife_mat_clr_t, void *),
-    int (*parsefn)  (mife_pp_t, char **)
+    int (*parsefn)  (mife_pp_t, f2_matrix)
     );
 void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     gghlite_flag_t ggh_flags, aes_randstate_t randstate);

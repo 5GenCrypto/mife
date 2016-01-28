@@ -83,7 +83,7 @@ int ore_mbp_param(mife_pp_t pp, int index);
 void ore_mbp_kilian(mife_pp_t pp, int *dims);
 void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, void *message_untyped);
 void ore_mbp_ordering(mife_pp_t pp, int index, int *ip, int *jp);
-int ore_mbp_parse(mife_pp_t pp, char **m);
+int ore_mbp_parse(mife_pp_t pp, f2_matrix m);
 
 /* test functions */
 void run_tests();
