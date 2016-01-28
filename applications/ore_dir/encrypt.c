@@ -97,7 +97,7 @@ bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
 	if(num_bits >= 0) {
 		int c = fgetc(file);
 		if(EOF == c) return false;
-		c = c & (1 << num_bits);
+		c = c % (1 << num_bits);
 		fmpz_mul_ui(n, n, 1 << num_bits);
 		fmpz_add_ui(n, n, c);
 	}
