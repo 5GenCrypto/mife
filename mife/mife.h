@@ -115,6 +115,7 @@ void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
     gghlite_enc_mat_t out_ct);
 void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
+f2_matrix mife_zt_all(const mife_pp_t pp, gghlite_enc_mat_t m);
 
 /* MIFE internal functions */
 void reset_T();
@@ -154,7 +155,7 @@ void fread_mife_sk(mife_sk_t sk, char *filepath);
 void fwrite_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath);
 void fwrite_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
 void fread_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath);
-void fread_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
+void fread_gghlite_enc_mat(const mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp);
 
 /* functions dealing with fmpz types and matrix multiplications mod fmpz_t */
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);

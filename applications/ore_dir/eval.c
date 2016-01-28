@@ -13,17 +13,26 @@ typedef struct {
 	ciphertext_mapping mapping;
 } eval_inputs;
 
+const template_stats *template_stats_from_eval_inputs(const eval_inputs ins) { return ins.pp->mbp_params; }
+const template       *template_from_eval_inputs      (const eval_inputs ins) { return template_stats_from_eval_inputs(ins)->template; }
+
 void parse_cmdline(int argc, char **argv, eval_inputs *const ins);
-void cleanup(eval_inputs *const ins);
+f2_matrix evaluate(const eval_inputs ins);
+void print_outputs(const template t, const f2_matrix m);
+void cleanup(eval_inputs ins, f2_matrix m);
 
 int main(int argc, char **argv) {
 	eval_inputs ins;
+	f2_matrix m;
+	bool success;
 
 	parse_cmdline(argc, argv, &ins);
-	/* TODO: evaluate */
-	cleanup(&ins);
+	m = evaluate(ins);
+	success = NULL != m.elems;
+	if(success) print_outputs(*template_from_eval_inputs(ins), m);
+	cleanup(ins, m);
 
-	return 0;
+	return success ? 0 : -1;
 }
 
 void usage(const int code) {
@@ -35,6 +44,10 @@ void usage(const int code) {
 		"of the function being computed. The mapping should be a JSON object whose\n"
 		"field names should be positions from the public function template, and whose\n"
 		"values should be strings giving uids of database records.\n"
+		"\n"
+		"Prints one line for each non-zero in the result matrix. The line will contain\n"
+		"the appropriate string from the `outputs` field of the function template.\n"
+		"\n"
 		"Brackets indicate default values for each argument.\n"
 		"\n"
 		"Common options:\n"
@@ -156,12 +169,90 @@ void parse_cmdline(int argc, char **argv, eval_inputs *const ins) {
 	if(position_missing) usage(6);
 }
 
-void cleanup(eval_inputs *const ins) {
-	template_stats *stats = ins->pp->mbp_params;
+bool load_matrix(const eval_inputs ins, unsigned int global_index, gghlite_enc_mat_t out_m) {
+	const template_stats *const stats    = ins.pp->mbp_params;
+	const template       *const template = stats->template;
+	const int local_index      = stats->local_index[global_index];
+	const char *const position = stats->positions[stats->position_index[global_index]];
+	const char *const uid      = uid_from_position(ins.mapping, position);
+	const char *const db_path  = ins.database_location.path;
+	const int path_len  = snprintf(NULL, 0, "%s/%s/%s/%d.bin", db_path, uid, position, local_index);
+	const int path_size = path_len+1;
+	bool result = false;
+	char *path;
+
+	if(ALLOC_FAILS(path, path_size)) {
+		fprintf(stderr, "out of memory trying to construct path:\n\t%s/%s/%s/%d.bin\n", db_path, uid, position, local_index);
+		goto done;
+	}
+
+	int tmp = snprintf(path, path_size, "%s/%s/%s/%d.bin", db_path, uid, position, local_index);
+	if(tmp != path_len) {
+		fprintf(stderr, "The impossible happened: snprintf produced strings of two different lengths on two calls with all the same arguments.\n\t(%d first time, %d second)\n", path_len, tmp);
+		goto free_path;
+	}
+
+	FILE *file = fopen(path, "rb");
+	if(NULL == file) {
+		fprintf(stderr, "Could not open ciphertext chunk at location\n\t%s\n", path);
+		goto free_path;
+	}
+
+	/* TODO: would be nice to have some error checking here */
+	fread_gghlite_enc_mat(ins.pp, out_m, file);
+	result = true;
+
+fclose:
+	fclose(file);
+free_path:
+	free(path);
+done:
+	return result;
+}
+
+f2_matrix evaluate(const eval_inputs ins) {
+	f2_matrix result = { .num_rows = 0, .num_cols = 0, .elems = NULL };
+	const template *const template = template_from_eval_inputs(ins);
+	gghlite_enc_mat_t product, multiplicand;
+	int i;
+
+	/* if there are no steps to evaluate, I guess we're done */
+	if(template->steps_len < 1) goto done;
+	if(!load_matrix(ins, 0, product)) goto done;
+	for(i = 1; i < template->steps_len; i++) {
+		if(!load_matrix(ins, i, multiplicand)) goto clear_product;
+		gghlite_enc_mat_mul(*ins.pp->params_ref, product, product, multiplicand);
+		gghlite_enc_mat_clear(multiplicand);
+	}
+
+	result = mife_zt_all(ins.pp, product);
+clear_product:
+	gghlite_enc_mat_clear(product);
+done:
+	return result;
+}
+
+/* TODO: hm! maybe the outputs should be a matrix rather than an array */
+void print_outputs(const template t, const f2_matrix m) {
+	if(m.num_rows < 1) {
+		printf("No output!\n");
+		return;
+	}
+
+	const int max = m.num_cols < t.outputs_len ? m.num_cols : t.outputs_len;
+	int i;
+	for(i = 0; i < max; i++)
+		if(m.elems[0][i])
+			printf("%s\n", t.outputs[i]);
+}
+
+void cleanup(eval_inputs ins, f2_matrix m) {
+	template_stats *stats = ins.pp->mbp_params;
 	template *templ = (template *)stats->template;
 	template_stats_free(*stats); free(stats);
 	template_free(*templ); free(templ);
-	mife_clear_pp_read(ins->pp);
-	location_free(ins->database_location);
-	ciphertext_mapping_free(ins->mapping);
+	mife_clear_pp_read(ins.pp);
+	location_free(ins.database_location);
+	ciphertext_mapping_free(ins.mapping);
+	f2_matrix_free(m);
 }

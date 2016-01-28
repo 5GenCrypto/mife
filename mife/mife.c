@@ -444,7 +444,7 @@ void fread_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath) {
   fclose(fp);
 }
 
-void fread_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
+void fread_gghlite_enc_mat(const mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
   int check1 = fscanf(fp, " %d ", &m->nrows);
   int check2 = fscanf(fp, " %d ", &m->ncols);
   assert(check1 == 1 && check2 == 1);
@@ -979,6 +979,20 @@ void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
   gghlite_enc_clear(tmp);
 }
 
+f2_matrix mife_zt_all(const mife_pp_t pp, gghlite_enc_mat_t ct) {
+  f2_matrix pt;
+  if(!f2_matrix_zero(&pt, ct->nrows, ct->ncols))
+    return pt;
+
+  for(int i = 0; i < ct->nrows; i++) {
+    for(int j = 0; j < ct->ncols; j++) {
+      pt.elems[i][j] = !gghlite_enc_is_zero(*pp->params_ref, ct->m[i][j]);
+    }
+  }
+
+  return pt;
+}
+
 int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
   gghlite_enc_mat_t tmp;
 
@@ -1000,17 +1014,9 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
     gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
   }
 
-  f2_matrix result;
-  f2_matrix_zero(&result, tmp->nrows, tmp->ncols);
-  for(int i = 0; i < tmp->nrows; i++) {
-    for(int j = 0; j < tmp->ncols; j++) {
-      result.elems[i][j] = !gghlite_enc_is_zero(*pp->params_ref, tmp->m[i][j]);
-    }
-  }
+  f2_matrix result = mife_zt_all(pp, tmp);
   gghlite_enc_mat_clear(tmp);
-
   int ret = pp->parsefn(pp, result);
-
   f2_matrix_free(result);
 
   return ret;
