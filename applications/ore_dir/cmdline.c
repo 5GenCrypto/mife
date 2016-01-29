@@ -1,11 +1,5 @@
 #include "cmdline.h"
 
-/* one way to generate the seed:
- * > cat /dev/urandom | head -c 1024 | sha256sum | head -c 64 > private/seed.bin
- * 
- */
-
-
 const mife_flag_t mife_flags = MIFE_DEFAULT;
 
 bool template_to_mife_pp(mife_pp_t pp, const template *const template, template_stats *const stats) {
@@ -31,8 +25,8 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 		result = PARSE_OUT_OF_MEMORY;
 		goto fail_none;
 	}
-	if(NULL == (src = fopen(seed_location.path, "r")) &&
-	   NULL == (src = fopen("/dev/urandom"    , "r"))) {
+	if(NULL == (src = fopen(seed_location.path, "rb")) &&
+	   NULL == (src = fopen("/dev/urandom"    , "rb"))) {
 		fprintf(stderr, "could not seed for reading; attempted to read:\n");
 		fprintf(stderr, "\t%s\n\t/dev/urandom\n", seed_location.path);
 		result = PARSE_IO_ERROR;
