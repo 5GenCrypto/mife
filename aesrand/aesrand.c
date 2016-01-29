@@ -117,6 +117,14 @@ void gen_random_bytes(unsigned char *buf, mp_bitcnt_t n) {
 
 }
 
+void fmpz_randbits_aes(fmpz_t out, aes_randstate_t state, mp_bitcnt_t bits) {
+  mpz_t rop;
+  mpz_init(rop);
+  mpz_urandomb_aes(rop, state, bits);
+  fmpz_set_mpz(out, rop);
+  mpz_clear(rop);
+}
+
 void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   mp_bitcnt_t nb = n/8+1; // number of bytes
   int TRY_MAX = 1000000000; // number of times to attempt getting good randomness
