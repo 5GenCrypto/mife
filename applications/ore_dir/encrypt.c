@@ -68,7 +68,8 @@ void usage(const int code) {
 		"\n"
 		"Encryption-specific options:\n"
 		"  -i, --uid                A string that uniquely identifies this record and\n"
-		"                           will be publically visible [insecurely random]\n"
+		"                           will be publically visible [insecurely random,\n"
+		"                           reported on stdout]\n"
 		"  -a, --partition          A number that uniquely identifies this record and\n"
 		"                           is at most the database size specified during\n"
 		"                           the keygen phase; not published by this tool (but\n"
@@ -266,7 +267,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 			exit(-1);
 		}
 
-		/* TODO: print the chosen uid */
+		printf("%s\n", uid);
 	}
 
 	/* initialize the random seed */
