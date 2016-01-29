@@ -3,7 +3,8 @@
 from subprocess import call
 import math, sys, os
 
-num = int(sys.argv[1])
+num = int(sys.argv[-1])
+
 base = 4
 bitstr_len = 17
 
@@ -49,4 +50,8 @@ arr = map(lambda elem: dary_repr(int(elem, base), 2,
 
 arr = str(arr).replace('\'','"')
 
-os.system('./encrypt ' + '\'' + str(arr) + '\'')
+cmd = sys.argv[:]
+cmd[0] = './encrypt'
+cmd[-1] = '\'' + str(arr) + '\''
+
+os.system(" ".join(cmd))
