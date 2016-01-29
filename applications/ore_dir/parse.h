@@ -22,6 +22,11 @@ int  jsmn_parse_f2_row   (const char *const json_string, const jsmntok_t **const
 bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const json_tokens, f2_matrix *const matrix);
 bool jsmn_parse_f2_mbp   (const char *const json_string, const jsmntok_t **const json_tokens, f2_mbp    *const mbp   );
 bool jsmn_parse_string   (const char *const json_string, const jsmntok_t **const json_tokens, char     **const string);
+int  jsmn_parse_string_row
+                         (const char *const json_string, const jsmntok_t **const json_tokens, char    ***const row   , int expected_num_cols);
+bool jsmn_parse_string_matrix
+                         (const char *const json_string, const jsmntok_t **const json_tokens, string_matrix
+                                                                                                        *const matrix);
 bool jsmn_parse_step     (const char *const json_string, const jsmntok_t **const json_tokens, step      *const step  );
 bool jsmn_parse_template (const char *const json_string, const jsmntok_t **const json_tokens, template  *const templ );
 bool jsmn_parse_plaintext(const char *const json_string, const jsmntok_t **const json_tokens, plaintext *const pt    );

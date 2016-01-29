@@ -12,6 +12,20 @@ void f2_mbp_free(f2_mbp mbp) {
 	}
 }
 
+void string_matrix_free(string_matrix m) {
+	int i, j;
+	if(NULL != m.elems) {
+		for(i = 0; i < m.num_rows; i++) {
+			if(NULL != m.elems[i]) {
+				for(j = 0; j < m.num_cols; j++)
+					free(m.elems[i][j]);
+				free(m.elems[i]);
+			}
+		}
+	free(m.elems);
+	}
+}
+
 void step_free(step s) {
 	int i;
 	if(NULL != s.symbols) {
@@ -35,12 +49,7 @@ void template_free(template t) {
 			step_free(t.steps[i]);
 		free(t.steps);
 	}
-	if(NULL != t.outputs) {
-		for(i = 0; i < t.outputs_len; i++)
-			if(NULL != t.outputs[i])
-				free(t.outputs[i]);
-		free(t.outputs);
-	}
+	string_matrix_free(t.outputs);
 }
 
 void plaintext_free(plaintext pt) {

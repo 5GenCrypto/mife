@@ -96,16 +96,16 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 	f2_mbp_free(mbp);
 }
 
-/* TODO: hm! maybe the outputs should be a matrix rather than an array */
 /* TODO: are we sure that templates handed to us will produce just one output
  *       every time? */
 int template_stats_to_result(mife_pp_t pp, f2_matrix raw_result) {
-	const template_stats *const stats = pp->mbp_params;
-	int i, result, num_nonzeros = 0;
-	for(i = 0; i < stats->template->outputs_len; i++)
-		if(raw_result.elems[0][i]) {
-			result = i;
-			num_nonzeros++;
-		}
+	int i, j, result, num_nonzeros = 0;
+	fprintf(stderr, "The impossible happened! Deprecated mife_glue function template_stats_to_result with insufficiently expressive type was called. We'll do our best, but something is wrong.\n");
+	for(i = 0; i < raw_result.num_rows; i++)
+		for(j = 0; j < raw_result.num_cols; j++)
+			if(raw_result.elems[i][j]) {
+				result = i*raw_result.num_cols + j;
+				num_nonzeros++;
+			}
 	return (1 == num_nonzeros) ? result : -1;
 }

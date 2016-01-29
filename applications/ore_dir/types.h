@@ -12,6 +12,13 @@ typedef struct {
 
 void f2_mbp_free(f2_mbp mbp);
 
+typedef struct {
+	unsigned int num_rows, num_cols;
+	char ***elems;
+} string_matrix;
+
+void string_matrix_free(string_matrix m);
+
 /* A template describes how to choose an MBP from a plaintext. A template has:
  * * a sequence of steps
  * * a description of the result of the computation
@@ -33,9 +40,9 @@ typedef struct {
 } step;
 
 typedef struct {
-	unsigned int steps_len, outputs_len;
+	unsigned int steps_len;
 	step *steps;
-	char **outputs;
+	string_matrix outputs;
 } template;
 
 void step_free(step s);

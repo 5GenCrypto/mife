@@ -232,18 +232,18 @@ done:
 	return result;
 }
 
-/* TODO: hm! maybe the outputs should be a matrix rather than an array */
-void print_outputs(const template t, const f2_matrix m) {
-	if(m.num_rows < 1) {
-		printf("No output!\n");
-		return;
-	}
+unsigned int minui(const unsigned int l, const unsigned int r) {
+	return l < r ? l : r;
+}
 
-	const int max = m.num_cols < t.outputs_len ? m.num_cols : t.outputs_len;
-	int i;
-	for(i = 0; i < max; i++)
-		if(m.elems[0][i])
-			printf("%s\n", t.outputs[i]);
+void print_outputs(const template t, const f2_matrix m) {
+	const unsigned int num_rows = minui(m.num_rows, t.outputs.num_rows);
+	const unsigned int num_cols = minui(m.num_cols, t.outputs.num_cols);
+	int i, j;
+	for(i = 0; i < num_rows; i++)
+		for(j = 0; j < num_cols; j++)
+			if(m.elems[i][j])
+				printf("%s\n", t.outputs.elems[i][j]);
 }
 
 void cleanup(eval_inputs ins, f2_matrix m) {
