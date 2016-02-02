@@ -13,23 +13,22 @@ void aes_randinit(aes_randstate_t state) {
 }
 
 void aes_randinit_seed(aes_randstate_t state, char *seed, char *additional) {
+  if(additional == NULL) {
+    additional = "";
+  }
+  aes_randinit_seedn(state, seed, strlen(seed), additional, strlen(additional));
+}
+
+void aes_randinit_seedn(aes_randstate_t state, char *seed, size_t seed_len, char *additional, size_t additional_len) {
   state->aes_init = 1;
   state->ctr = 0;
   state->iv = malloc(EVP_CIPHER_iv_length(AES_ALGORITHM));
   memset(state->iv, 0, EVP_CIPHER_iv_length(AES_ALGORITHM));
 
-  if(additional == NULL) {
-    additional = "";
-  }
-
-  char *digest = malloc(strlen(seed) + strlen(additional) + 1);
-  digest[0] = 0;
-  strcat(digest, seed);
-  strcat(digest, additional);
-
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
-  SHA256_Update(&sha256, digest, strlen(digest));
+  SHA256_Update(&sha256, seed, seed_len);
+  SHA256_Update(&sha256, additional, additional_len);
   SHA256_Final(state->key, &sha256);
 }
 

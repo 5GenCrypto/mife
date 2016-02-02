@@ -16,7 +16,7 @@ bool template_to_mife_pp(mife_pp_t pp, const template *const template, template_
 
 parse_result load_seed(location private_location, char *context, aes_randstate_t seed) {
 	FILE *src;
-	char dest[SEED_SIZE+1];
+	char dest[SEED_SIZE];
 	parse_result result;
 	location seed_location = location_append(private_location, "seed.bin");
 
@@ -33,7 +33,6 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 		goto fail_free_location;
 	}
 
-	dest[SEED_SIZE] = '\0';
 	if(fread(dest, sizeof(*dest), SEED_SIZE, src) != SEED_SIZE) {
 		fprintf(stderr, "could not read %d bytes of seed\n", SEED_SIZE);
 		result = PARSE_INVALID;
@@ -41,7 +40,7 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 	}
 
 	/* TODO: error checking */
-	aes_randinit_seed(seed, dest, context);
+	aes_randinit_seedn(seed, dest, SEED_SIZE, context, strlen(context));
 	result = PARSE_SUCCESS;
 
 fail_close_src:
