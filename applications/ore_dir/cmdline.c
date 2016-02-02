@@ -27,7 +27,7 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 	}
 	if(NULL == (src = fopen(seed_location.path, "rb")) &&
 	   NULL == (src = fopen("/dev/urandom"    , "rb"))) {
-		fprintf(stderr, "could not seed for reading; attempted to read:\n");
+		fprintf(stderr, "could not open seed file for reading; attempted to read:\n");
 		fprintf(stderr, "\t%s\n\t/dev/urandom\n", seed_location.path);
 		result = PARSE_IO_ERROR;
 		goto fail_free_location;
