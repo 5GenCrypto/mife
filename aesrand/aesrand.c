@@ -62,7 +62,6 @@ void fmpz_randm_aes(fmpz_t f, aes_randstate_t state, const fmpz_t m) {
 }
 
 void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
-  //printf("calling the mpfr randomness function which is weird...\n");
   unsigned long size = mpfr_get_prec(rop);
 
   mpfr_t num, denom;
@@ -70,14 +69,9 @@ void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
   mpz_init(mpz_num);
   mpz_init(mpz_denom);
 
-  //printf("size: %lu\n", size);
-  //VERBOSE = 1;
   mpz_urandomb_aes(mpz_num, state, size);
-  //VERBOSE = 0;
   mpfr_init_set_z(num, mpz_num, MPFR_RNDN);
 
-  //mpfr_printf("mpz_print for mpz_num: %Zd\n", mpz_num);
-  //mpfr_printf("mpfr_printf for num: %Zd\n", num);
   mpz_ui_pow_ui(mpz_denom, 2, size);
   mpfr_init_set_z(denom, mpz_denom, MPFR_RNDN);
 
@@ -86,7 +80,6 @@ void mpfr_urandomb_aes(mpfr_t rop, aes_randstate_t state) {
   mpz_clear(mpz_denom);
   mpfr_clear(num);
   mpfr_clear(denom);
-  //mpfr_printf("mpfr_printf: %.128Rf\n", rop);
 }
 
 void mpz_urandomm_aes(mpz_t rop, aes_randstate_t state, const mpz_t n) {
@@ -98,22 +91,6 @@ void mpz_urandomm_aes(mpz_t rop, aes_randstate_t state, const mpz_t n) {
       break;
     }
   }
-}
-
-
-void gen_random_bytes(unsigned char *buf, mp_bitcnt_t n) {
-  unsigned long p = 0;
-
-  for( ; p < n; p++) {
-    buf[p] = (unsigned char) (rand() % 256);
-  }
-  /*
-  while(p < n) {
-    unsigned long num_get = (n-p > 256) ? 256 : n-p;
-    syscall(SYS_getrandom, buf+p, num_get, 0);
-    p += num_get;
-  }*/
-
 }
 
 void fmpz_randbits_aes(fmpz_t out, aes_randstate_t state, mp_bitcnt_t bits) {
@@ -162,11 +139,6 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
     outlen = nb; // we will only use nb bytes
   }
 
-/*  
-  outlen = nb;
-  gen_random_bytes(output, nb);
-*/
-  
   mp_bitcnt_t true_len = outlen + 4;
   mp_bitcnt_t bytelen = outlen;
 
@@ -180,15 +152,6 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
     bytelen /= (1 << 8);
   }
 
-/*
-  char *printbuf = malloc(3 * true_len + 1);
-  char *buf_ptr = printbuf;
-  memset(printbuf, 0, 3 * true_len + 1);
-  for(int i = 0; i < true_len; i++) {
-    buf_ptr += sprintf(buf_ptr, "%02x ", buf[i]);
-  }
-  printf("%s\n", printbuf);
-*/  
   // this generates a random n-bit number.
   FILE *fp = fmemopen(buf, true_len, "rb");
   if(!fp) {
@@ -198,8 +161,6 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   if(mpz_inp_raw(rop, fp) == 0) {
     printf("Error in parsing randomness.\n");
   }
-
-  //mpfr_printf("rop: %Zd\n", rop);
 
   fclose(fp); 
   free(output);

@@ -8,8 +8,6 @@
 
 #include "ore.h"
 
-#define CHECK(x) if(x < 0) { assert(0); }
-
 void ore_print_help_and_exit() {
   printf("-l, --lambda   security parameter\n");
   printf("-s, --seed   SHA256 seed\n");
@@ -989,16 +987,6 @@ void test_rand() {
 }
 
 void run_tests() {
-  fmpz_t p;
-  fmpz_init_set_ui(p, 19);
-  aes_randstate_t randstate;
-  aes_randinit(randstate);
-  test_matrix_inv(30, randstate, p);
-  aes_randclear(randstate);
-  
-  test_rand();
-
-  test_dary_conversion();
   test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);
   test_ore(5, 16, 5, 2, 4, ORE_MBP_MC, 0);

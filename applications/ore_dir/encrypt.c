@@ -280,7 +280,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 	}
 	const int tmp = snprintf(context, context_size, "%s%s", function_name, uid);
 	if(context_len != tmp) {
-		fprintf(stderr, "The impossible happened: expecting '%s%s' to have length %u, but snprintf reports it has length %d.\n",
+		fprintf(stderr, "The impossible happened: expecting '%s%s' to have length %lu, but snprintf reports it has length %d.\n",
 			function_name, uid, context_len, tmp);
 		exit(-1);
 	}
