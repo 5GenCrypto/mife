@@ -103,8 +103,6 @@ void fmpz_randbits_aes(fmpz_t out, aes_randstate_t state, mp_bitcnt_t bits) {
 
 void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
   mp_bitcnt_t nb = n/8+1; // number of bytes
-  int TRY_MAX = 1000000000; // number of times to attempt getting good randomness
-  //printf("nb: %lu\n", nb);
 
   // update the internal counter, works at most 2^64 times
   memcpy(state->iv, &state->ctr, sizeof(state->ctr)); 
@@ -114,26 +112,20 @@ void mpz_urandomb_aes(mpz_t rop, aes_randstate_t state, mp_bitcnt_t n) {
 
   unsigned char *output = malloc(2 * (nb + EVP_MAX_IV_LENGTH));
   mp_bitcnt_t outlen = 0;
-  int halt_count = 0;
 
   int in_size = nb;
   unsigned char in[in_size];
   memset(in, 0, in_size);
 
-  while(outlen < nb && halt_count < TRY_MAX) {
+  while(outlen < nb) {
     int buflen = 0;
     EVP_EncryptUpdate(state->ctx, output+outlen, &buflen, in, in_size);
     state->ctr++;
     outlen += buflen;
-    halt_count++;
   }
   int final_len = 0;
   EVP_EncryptFinal(state->ctx, output+outlen, &final_len);
   outlen += final_len;
-
-  if(halt_count == TRY_MAX) {
-    printf("ERROR: randomness being generated is not perfect.\n");
-  }
 
   if(outlen > nb) {
     outlen = nb; // we will only use nb bytes

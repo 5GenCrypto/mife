@@ -135,30 +135,6 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
     return 1;
 }
 
-void gghlite_params_clear_read(gghlite_params_t self) {
-  for(int i = 0; i < self->gamma; i++) {
-    for(int j = 0; j < self->kappa; j++) {
-      free(self->x[i][j]);
-    }
-    free(self->x[i]);
-  }
-  free(self->x);
-  free(self->y);
-
-  dgsl_rot_mp_clear(self->D_sigma_s);
-  dgsl_rot_mp_clear(self->D_sigma_p);
-
-  fmpz_mod_poly_clear(self->pzt);
-  mpfr_clear(self->xi);
-  mpfr_clear(self->sigma_s);
-  mpfr_clear(self->ell_b);
-  mpfr_clear(self->sigma_p);
-  mpfr_clear(self->ell_g);
-  mpfr_clear(self->sigma);
-  fmpz_mod_poly_oz_ntt_precomp_clear(self->ntt);
-  fmpz_clear(self->q);
-}
-
 /**
  * 
  * Members of pp that are not transferred:

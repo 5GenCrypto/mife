@@ -8,7 +8,6 @@
 void fread_gghlite_params(FILE *fp, gghlite_params_t params);
 void fwrite_gghlite_params(FILE *fp, gghlite_params_t params);
 int gghlite_enc_fread(FILE * f, gghlite_enc_t poly);
-void gghlite_params_clear_read(gghlite_params_t self);
 void fwrite_mife_pp(mife_pp_t pp, char *filepath);
 void fread_mife_pp(mife_pp_t pp, char *filepath);
 void fwrite_mife_sk(mife_sk_t sk, char *filepath);

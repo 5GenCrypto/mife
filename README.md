@@ -1,6 +1,6 @@
-# An Implementation of GGHLite #
+# An Implementation of Multi-Input Functional Encryption #
 
-## Prerequisits ##
+## Prerequisites ##
 
 We rely on
 
@@ -12,13 +12,13 @@ We ship these libraries as submodules.
 
 ## Installation ##
 
-    git clone --recursive https://bitbucket.org/malb/gghlite-flint
+    git clone --recursive https://github.com/GaloisInc/gghlite-flint.git
     cd gghlite-flint
     mkdir dgs/m4
     autoreconf -i
     export CFLAGS="-O3"
     ./configure
-    make -j2
+    make -j
 
 ## Usage ##
 
@@ -49,12 +49,3 @@ will run 7-partite NIKE with security level λ=80.
  * **oz** efficient functions for computing in $\\mathbb{Z}[x]/(x^{2^k}+1)$ and $\\mathbb{Z}_q[x]/(x^{2^k}+1)$
  * **tests** correctness tests
 
-## Documentation ##
-
-Doxygen documentation is available [here](http://malb.bitbucket.org/gghlite-flint/).
-
-## Bugs ##
-
-This code has bugs, help us fix them.
-
-[![Build Status](https://drone.io/bitbucket.org/malb/gghlite-flint/status.png)](https://drone.io/bitbucket.org/malb/gghlite-flint/latest)
