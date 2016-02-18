@@ -21,7 +21,7 @@ void fread_gghlite_params(FILE *fp, gghlite_params_t params) {
   params->rerand_mask = rerand_mask;
   params->flags = gghlite_flag_int;
 
-  fmpz_fread(fp, params->q);
+  fmpz_inp_raw(params->q, fp);
   CHECK(fscanf(fp, "\n"), 0);
   mpfr_inp_str(params->sigma, fp, mpfr_base, MPFR_RNDN);
   CHECK(fscanf(fp, "\n"), 0);
@@ -42,16 +42,16 @@ void fread_gghlite_params(FILE *fp, gghlite_params_t params) {
   gghlite_enc_init(params->ntt->phi, params);
   gghlite_enc_init(params->ntt->phi_inv, params);
 
-  gghlite_enc_fread(fp, params->pzt);
+  gghlite_enc_fread_raw(fp, params->pzt);
   CHECK(fscanf(fp, "\n"), 0);
   CHECK(fscanf(fp, "%zd\n", &params->ntt->n), 1);
-  gghlite_enc_fread(fp, params->ntt->w);
+  fmpz_mod_poly_fread_raw(fp, params->ntt->w);
   CHECK(fscanf(fp, "\n"), 0);
-  gghlite_enc_fread(fp, params->ntt->w_inv);
+  fmpz_mod_poly_fread_raw(fp, params->ntt->w_inv);
   CHECK(fscanf(fp, "\n"), 0);
-  gghlite_enc_fread(fp, params->ntt->phi);
+  fmpz_mod_poly_fread_raw(fp, params->ntt->phi);
   CHECK(fscanf(fp, "\n"), 0);
-  gghlite_enc_fread(fp, params->ntt->phi_inv);
+  fmpz_mod_poly_fread_raw(fp, params->ntt->phi_inv);
 
   gghlite_params_set_D_sigmas(params);
 }
@@ -67,7 +67,7 @@ void fwrite_gghlite_params(FILE *fp, gghlite_params_t params) {
     params->rerand_mask,
     params->flags
   );
-  fmpz_fprint(fp, params->q);
+  fmpz_out_raw(fp, params->q);
   fprintf(fp, "\n");
   mpfr_out_str(fp, mpfr_base, 0, params->sigma, MPFR_RNDN);
   fprintf(fp, "\n");
@@ -81,59 +81,18 @@ void fwrite_gghlite_params(FILE *fp, gghlite_params_t params) {
   fprintf(fp, "\n");
   mpfr_out_str(fp, mpfr_base, 0, params->xi, MPFR_RNDN);
   fprintf(fp, "\n");
-  gghlite_enc_fprint(fp, params->pzt);
+  gghlite_enc_fprint_raw(fp, params->pzt);
   fprintf(fp, "\n");
   fprintf(fp, "%zd\n", params->ntt->n);
-  fmpz_mod_poly_fprint(fp, params->ntt->w);
+  fmpz_mod_poly_fprint_raw(fp, params->ntt->w);
   fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, params->ntt->w_inv);
+  fmpz_mod_poly_fprint_raw(fp, params->ntt->w_inv);
   fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, params->ntt->phi);
+  fmpz_mod_poly_fprint_raw(fp, params->ntt->phi);
   fprintf(fp, "\n");
-  fmpz_mod_poly_fprint(fp, params->ntt->phi_inv);
+  fmpz_mod_poly_fprint_raw(fp, params->ntt->phi_inv);
 }
 
-
-/* copied from fmpz_mod_poly_fread, mostly (but fixed) */
-int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
-{
-    slong i, length;
-    fmpz_t coeff;
-    ulong res;
-
-    fmpz_init(coeff);
-    if (flint_fscanf(f, "%wd", &length) != 1) {
-        fmpz_clear(coeff);
-        return 0;
-    }
-
-    fmpz_fread(f,coeff);
-    fmpz_mod_poly_clear(poly);
-    fmpz_mod_poly_init(poly, coeff);
-    fmpz_mod_poly_fit_length(poly, length);
-
-    poly->length = length;
-    flint_fscanf(f, " ");
-  
-    for (i = 0; i < length; i++)
-    {
-        flint_fscanf(f, " ");
-        res = fmpz_fread(f, coeff);
-        fmpz_mod_poly_set_coeff_fmpz(poly,i,coeff);
-
-        if (!res)
-        {
-            poly->length = i;
-            fmpz_clear(coeff);
-            return 0;
-        }
-    }
-
-    fmpz_clear(coeff);
-    _fmpz_mod_poly_normalise(poly);
-
-    return 1;
-}
 
 /**
  * 
@@ -144,7 +103,7 @@ int gghlite_enc_fread(FILE * f, fmpz_mod_poly_t poly)
  * params->D_sigma_s
  */
 void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
-  FILE *fp = fopen(filepath, "w");
+  FILE *fp = fopen(filepath, "wb");
   fprintf(fp, "%d %d %d %d %d %d\n",
     pp->num_inputs,
     pp->L,
@@ -161,7 +120,7 @@ void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
     fprintf(fp, "%d ", pp->gammas[i]);
   }
   fprintf(fp, "\n");
-  fmpz_fprint(fp, pp->p);
+  fmpz_out_raw(fp, pp->p);
   fprintf(fp, "\n");
 
   fwrite_gghlite_params(fp, *pp->params_ref);
@@ -169,7 +128,7 @@ void fwrite_mife_pp(mife_pp_t pp, char *filepath) {
 }
 
 void fread_mife_pp(mife_pp_t pp, char *filepath) {
-  FILE *fp = fopen(filepath, "r");
+  FILE *fp = fopen(filepath, "rb");
   int flag_int;
   CHECK(fscanf(fp, "%d %d %d %d %d %d\n",
     &pp->num_inputs,
@@ -191,7 +150,7 @@ void fread_mife_pp(mife_pp_t pp, char *filepath) {
   CHECK(fscanf(fp, "\n"), 0);
   pp->flags = flag_int;
   fmpz_init(pp->p);
-  fmpz_fread(fp, pp->p);
+  fmpz_inp_raw(pp->p, fp);
   CHECK(fscanf(fp, "\n"), 0);
 
   pp->params_ref = malloc(sizeof(gghlite_params_t));
@@ -201,15 +160,15 @@ void fread_mife_pp(mife_pp_t pp, char *filepath) {
 
 void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
 	uint64_t t = ggh_walltime(0);
-  FILE *fp = fopen(filepath, "w");
+  FILE *fp = fopen(filepath, "wb");
 	timer_printf("Starting writing Kilian matrices...\n");
   fprintf(fp, "%d\n", sk->numR);
   for(int i = 0; i < sk->numR; i++) {
     fprintf(fp, "%ld %ld\n", sk->R[i]->r, sk->R[i]->c);
-    fmpz_mat_fprint(fp, sk->R[i]);
+    fmpz_mat_fprint_raw(fp, sk->R[i]);
     fprintf(fp, "\n");
     fprintf(fp, "%ld %ld\n", sk->R_inv[i]->r, sk->R_inv[i]->c);
-    fmpz_mat_fprint(fp, sk->R_inv[i]);
+    fmpz_mat_fprint_raw(fp, sk->R_inv[i]);
     fprintf(fp, "\n");
 	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
 		i, sk->numR, ggh_seconds(ggh_walltime(t)));
@@ -228,11 +187,11 @@ void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
 
 	t = ggh_walltime(0);
 	timer_printf("Starting writing g, g_inv, h...\n");
-  fmpz_poly_fprint(fp, sk->self->g);
+  fmpz_poly_fprint_raw(fp, sk->self->g);
   fprintf(fp, "\n");
   fmpq_poly_fprint(fp, sk->self->g_inv);
   fprintf(fp, "\n");
-  fmpz_poly_fprint(fp, sk->self->h);
+  fmpz_poly_fprint_raw(fp, sk->self->h);
   fprintf(fp, "\n");
 	timer_printf("Finished writing g, g_inv, h %8.2fs\n",
 		ggh_seconds(ggh_walltime(t)));
@@ -240,20 +199,20 @@ void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
 	t = ggh_walltime(0);
 	timer_printf("Starting writing z, z_inv, a, b...\n");
   for(int i = 0; i < sk->self->params->gamma; i++) {
-    fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z[i]));
+    fmpz_out_raw(fp, fmpz_mod_poly_modulus(sk->self->z[i]));
     fprintf(fp, "\n");
-    fmpz_mod_poly_fprint(fp, sk->self->z[i]);
+    fmpz_mod_poly_fprint_raw(fp, sk->self->z[i]);
     fprintf(fp, "\n");
-    fmpz_fprint(fp, fmpz_mod_poly_modulus(sk->self->z_inv[i]));
+    fmpz_out_raw(fp, fmpz_mod_poly_modulus(sk->self->z_inv[i]));
     fprintf(fp, "\n");
-    fmpz_mod_poly_fprint(fp, sk->self->z_inv[i]);
+    fmpz_mod_poly_fprint_raw(fp, sk->self->z_inv[i]);
     fprintf(fp, "\n");
-    fmpz_poly_fprint(fp, sk->self->a[i]);
+    fmpz_poly_fprint_raw(fp, sk->self->a[i]);
     fprintf(fp, "\n");
     for(int j = 0; j < sk->self->params->kappa; j++) {
-      fmpz_poly_fprint(fp, sk->self->b[i][j][0]);
+      fmpz_poly_fprint_raw(fp, sk->self->b[i][j][0]);
       fprintf(fp, "\n");
-      fmpz_poly_fprint(fp, sk->self->b[i][j][1]);
+      fmpz_poly_fprint_raw(fp, sk->self->b[i][j][1]);
       fprintf(fp, "\n");
     }
 	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
@@ -269,7 +228,7 @@ void fwrite_mife_sk(mife_sk_t sk, char *filepath) {
 
 void fread_mife_sk(mife_sk_t sk, char *filepath) {
 	uint64_t t = ggh_walltime(0);
-  FILE *fp = fopen(filepath, "r");
+  FILE *fp = fopen(filepath, "rb");
 	timer_printf("Starting reading Kilian matrices...\n");
   CHECK(fscanf(fp, "%d\n", &sk->numR), 1);
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
@@ -279,11 +238,11 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
     unsigned long r1, c1, r2, c2;
     CHECK(fscanf(fp, "%ld %ld\n", &r1, &c1), 2);
     fmpz_mat_init(sk->R[i], r1, c1);
-    fmpz_mat_fread(fp, sk->R[i]);
+    fmpz_mat_fread_raw(fp, sk->R[i]);
     CHECK(fscanf(fp, "\n"), 0);
     CHECK(fscanf(fp, "%ld %ld\n", &r2, &c2), 2);
     fmpz_mat_init(sk->R_inv[i], r2, c2);
-    fmpz_mat_fread(fp, sk->R_inv[i]);
+    fmpz_mat_fread_raw(fp, sk->R_inv[i]);
     CHECK(fscanf(fp, "\n"), 0);
 	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
 		i, sk->numR, ggh_seconds(ggh_walltime(t)));
@@ -302,13 +261,13 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
 	t = ggh_walltime(0);
 	timer_printf("Starting reading g, g_inv, h...\n");
   fmpz_poly_init(sk->self->g);
-  fmpz_poly_fread(fp, sk->self->g);
+  fmpz_poly_fread_raw(fp, sk->self->g);
   CHECK(fscanf(fp, "\n"), 0);
   fmpq_poly_init(sk->self->g_inv);
   fmpq_poly_fread(fp, sk->self->g_inv);
   CHECK(fscanf(fp, "\n"), 0);
   fmpz_poly_init(sk->self->h);
-  fmpz_poly_fread(fp, sk->self->h);
+  fmpz_poly_fread_raw(fp, sk->self->h);
   CHECK(fscanf(fp, "\n"), 0);
   	timer_printf("Finished reading g, g_inv, h %8.2fs\n",
 		ggh_seconds(ggh_walltime(t)));
@@ -323,27 +282,27 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
     fmpz_t p1, p2;
     fmpz_init(p1);
     fmpz_init(p2);
-    fmpz_fread(fp, p1);
+    fmpz_inp_raw(p1, fp);
     CHECK(fscanf(fp, "\n"), 0);
     fmpz_mod_poly_init(sk->self->z[i], p1);
-    fmpz_mod_poly_fread(fp, sk->self->z[i]);
+    fmpz_mod_poly_fread_raw(fp, sk->self->z[i]);
     CHECK(fscanf(fp, "\n"), 0);
-    fmpz_fread(fp, p2);
+    fmpz_inp_raw(p2, fp);
     CHECK(fscanf(fp, "\n"), 0);
     fmpz_mod_poly_init(sk->self->z_inv[i], p2);
-    fmpz_mod_poly_fread(fp, sk->self->z_inv[i]);
+    fmpz_mod_poly_fread_raw(fp, sk->self->z_inv[i]);
     CHECK(fscanf(fp, "\n"), 0);
     fmpz_poly_init(sk->self->a[i]);
-    fmpz_poly_fread(fp, sk->self->a[i]);
+    fmpz_poly_fread_raw(fp, sk->self->a[i]);
     CHECK(fscanf(fp, "\n"), 0);
     sk->self->b[i] = malloc(sk->self->params->kappa * sizeof(gghlite_clr_t *));
     for(int j = 0; j < sk->self->params->kappa; j++) {
       sk->self->b[i][j] = malloc(2 * sizeof(gghlite_clr_t));
       fmpz_poly_init(sk->self->b[i][j][0]);
-      fmpz_poly_fread(fp, sk->self->b[i][j][0]);
+      fmpz_poly_fread_raw(fp, sk->self->b[i][j][0]);
       CHECK(fscanf(fp, "\n"), 0);
       fmpz_poly_init(sk->self->b[i][j][1]);
-      fmpz_poly_fread(fp, sk->self->b[i][j][1]);
+      fmpz_poly_fread_raw(fp, sk->self->b[i][j][1]);
       CHECK(fscanf(fp, "\n"), 0);
     }
     fmpz_clear(p1);
@@ -364,7 +323,7 @@ void fread_mife_sk(mife_sk_t sk, char *filepath) {
 }
 
 void fwrite_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath) {
-  FILE *fp = fopen(filepath, "w");
+  FILE *fp = fopen(filepath, "wb");
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int j = 0; j < pp->n[i]; j++) {
       fwrite_gghlite_enc_mat(pp, ct->enc[i][j], fp);
@@ -378,14 +337,14 @@ void fwrite_gghlite_enc_mat(mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
   fprintf(fp, " %d ", m->ncols);
   for(int i = 0; i < m->nrows; i++) {
     for(int j = 0; j < m->ncols; j++) {
-      gghlite_enc_fprint(fp, m->m[i][j]);
+      gghlite_enc_fprint_raw(fp, m->m[i][j]);
       fprintf(fp, "\n");
     }
   }
 }
 
 void fread_mife_ciphertext(mife_pp_t pp, mife_ciphertext_t ct, char *filepath) {
-  FILE *fp = fopen(filepath, "r");
+  FILE *fp = fopen(filepath, "rb");
 
   ct->enc = malloc(pp->num_inputs * sizeof(gghlite_enc_mat_t *));
   for(int i = 0; i < pp->num_inputs; i++) {
@@ -408,7 +367,7 @@ void fread_gghlite_enc_mat(const mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
     assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
       gghlite_enc_init(m->m[i][j], *pp->params_ref);
-      int check3 = gghlite_enc_fread(fp, m->m[i][j]);
+      int check3 = gghlite_enc_fread_raw(fp, m->m[i][j]);
       assert(check3 == 1);
       CHECK(fscanf(fp, "\n"), 0);
     }
