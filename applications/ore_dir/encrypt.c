@@ -36,6 +36,24 @@ int main(int argc, char **argv) {
 	parse_cmdline(argc, argv, &ins);
 	mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
 
+  /**
+   * determine the total # of encodings we need to make for this ciphertext, for 
+   * benchmarking and progress bar purposes
+   */
+  int encoding_count = 0;
+	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
+		gghlite_enc_mat_t ct;
+    int position_index, local_index;
+    ins.pp->orderfn(ins.pp, i, &position_index, &local_index);
+    int rows = clr->clr[position_index][local_index]->r;
+    int cols = clr->clr[position_index][local_index]->c;
+    encoding_count += rows * cols;
+	}
+  
+  set_NUM_ENC(encoding_count);
+
+  // now, perform the actual encryption
+  
 	reset_T();
 	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
 		gghlite_enc_mat_t ct;
