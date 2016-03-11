@@ -36,26 +36,23 @@ int main(int argc, char **argv) {
 	parse_cmdline(argc, argv, &ins);
 	mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
 
-  /**
-   * determine the total # of encodings we need to make for this ciphertext, for 
-   * benchmarking and progress bar purposes
-   */
-  int encoding_count = 0;
-	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
-		gghlite_enc_mat_t ct;
-    int position_index, local_index;
-    ins.pp->orderfn(ins.pp, i, &position_index, &local_index);
-    int rows = clr->clr[position_index][local_index]->r;
-    int cols = clr->clr[position_index][local_index]->c;
-    encoding_count += rows * cols;
+	/**
+	 * determine the total # of encodings we need to make for this ciphertext, for 
+	 * benchmarking and progress bar purposes
+	 */
+	int encoding_count = 0;
+	const template *const template = ((template_stats *)ins.pp->mbp_params)->template;
+	for(i = 0; i < template->steps_len; i++) {
+		const f2_matrix *const m = template->steps[i].matrix;
+		encoding_count += m->num_rows * m->num_cols;
 	}
-  
-  set_NUM_ENC(encoding_count);
 
-  // now, perform the actual encryption
-  
+	set_NUM_ENC(encoding_count);
+	
+	// now, perform the actual encryption
+
 	reset_T();
-	for(i = 0; i < ((template_stats *)ins.pp->mbp_params)->template->steps_len; i++) {
+	for(i = 0; i < template->steps_len; i++) {
 		gghlite_enc_mat_t ct;
 		mife_encrypt_single(ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
 		success &= print_output(ins.pp, i, ct, ins.record_location);
