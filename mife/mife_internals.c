@@ -12,10 +12,10 @@ void fmpz_init_exp(fmpz_t exp, int base, int n) {
   fmpz_clear(tmp);
 }
 
-void mife_ciphertext_clear(mife_pp_t pp, mife_ciphertext_t ct) {
+void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct) {
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int j = 0; j < pp->n[i]; j++) {
-      gghlite_enc_mat_clear(ct->enc[i][j]);
+      gghlite_enc_mat_clear(mmap, ct->enc[i][j]);
     }
     free(ct->enc[i]);
   }
@@ -46,8 +46,8 @@ void gghlite_params_clear_read(gghlite_params_t self) {
   fmpz_clear(self->q);
 }
 
-void mife_clear_pp_read(mife_pp_t pp) {
-  gghlite_params_clear_read(*pp->params_ref);
+void mife_clear_pp_read(const_mmap_vtable mmap, mife_pp_t pp) {
+  mmap->pp->clear(pp->params_ref);
   free(pp->params_ref);
   mife_clear_pp(pp);
 }
@@ -58,8 +58,9 @@ void mife_clear_pp(mife_pp_t pp) {
   free(pp->gammas);
 }
 
-void mife_clear_sk(mife_sk_t sk) {
-  gghlite_sk_clear(sk->self, 1);
+void mife_clear_sk(const_mmap_vtable mmap, mife_sk_t sk) {
+  mmap->sk->clear(sk->self);
+  free(sk->self);
   for(int i = 0; i < sk->numR; i++) {
     fmpz_mat_clear(sk->R[i]);
     fmpz_mat_clear(sk->R_inv[i]);
@@ -181,25 +182,28 @@ void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
   }
 }
 
-void gghlite_enc_mat_init(gghlite_params_t params, gghlite_enc_mat_t m,
+void gghlite_enc_mat_init(const_mmap_vtable mmap, const mmap_pp *const params, gghlite_enc_mat_t m,
     int nrows, int ncols) {
   m->nrows = nrows;
   m->ncols = ncols;
-  m->m = malloc(nrows * sizeof(gghlite_enc_t *));
+  m->m = malloc(nrows * sizeof(mmap_enc **));
   assert(m->m);
   for(int i = 0; i < m->nrows; i++) {
-    m->m[i] = malloc(m->ncols * sizeof(gghlite_enc_t));
+    m->m[i] = malloc(m->ncols * sizeof(mmap_enc *));
     assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
-      gghlite_enc_init(m->m[i][j], params);
+      m->m[i][j] = malloc(mmap->enc->size);
+      assert(m->m[i][j]);
+      mmap->enc->init(m->m[i][j], params);
     }
   }
 }
 
-void gghlite_enc_mat_clear(gghlite_enc_mat_t m) {
+void gghlite_enc_mat_clear(const_mmap_vtable mmap, gghlite_enc_mat_t m) {
   for(int i = 0; i < m->nrows; i++) {
     for(int j = 0; j < m->ncols; j++) {
-      gghlite_enc_clear(m->m[i][j]);
+      mmap->enc->clear(m->m[i][j]);
+      free(m->m[i][j]);
     }
     free(m->m[i]);
   }
@@ -207,15 +211,11 @@ void gghlite_enc_mat_clear(gghlite_enc_mat_t m) {
 }
 
 
-void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
+void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
     fmpz_mat_t m, int *group, aes_randstate_t randstate) {
-  gghlite_clr_t e;
-  gghlite_clr_init(e);
   for(int i = 0; i < enc->nrows; i++) {
     for(int j = 0; j < enc->ncols; j++) {
-      fmpz_poly_set_coeff_fmpz(e, 0, fmpz_mat_entry(m, i, j));
-      gghlite_enc_set_gghlite_clr(enc->m[i][j], sk->self, e, 1, group, 1,
-          randstate);
+      mmap->enc->encode(enc->m[i][j], sk->self, fmpz_mat_entry(m, i, j), group, randstate);
       NUM_ENCODINGS_GENERATED++;
         timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
             NUM_ENCODINGS_GENERATED,
@@ -223,14 +223,13 @@ void mife_mat_encode(mife_pp_t pp, mife_sk_t sk, gghlite_enc_mat_t enc,
             get_T());
     }
   }
-  gghlite_clr_clear(e);
 }
 
-void gghlite_enc_mat_zeros_print(mife_pp_t pp, gghlite_enc_mat_t m) {
+void gghlite_enc_mat_zeros_print(const_mmap_vtable mmap, mife_pp_t pp, gghlite_enc_mat_t m) {
   for(int i = 0; i < m->nrows; i++) {
     printf("[");
     for(int j = 0; j < m->ncols; j++) {
-      printf(gghlite_enc_is_zero(*pp->params_ref, m->m[i][j]) ? "0 " : "x " );
+      printf(mmap->enc->is_zero(m->m[i][j], pp->params_ref) ? "0 " : "x " );
     }
     printf("]\n");
   }
@@ -320,7 +319,7 @@ void mife_apply_kilian(mife_pp_t pp, mife_sk_t sk, fmpz_mat_t m, int global_inde
   fmpz_mat_clear(tmp);
 }
 
-void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
+void mife_set_encodings(const_mmap_vtable mmap, mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
     mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate) {
 
   int ***groups = mife_partitions(pp, index);
@@ -337,11 +336,11 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
   // encode
   ct->enc = malloc(pp->num_inputs * sizeof(gghlite_enc_mat_t *));
   for(int i = 0; i < pp->num_inputs; i++) {
-    ct->enc[i] = malloc(pp->n[i] * sizeof(gghlite_enc_mat_t));
+    ct->enc[i] = malloc(pp->n[i] * mmap->enc->size);
     for(int j = 0; j < pp->n[i]; j++) {
-      gghlite_enc_mat_init(sk->self->params, ct->enc[i][j],
+      gghlite_enc_mat_init(mmap, pp->params_ref, ct->enc[i][j],
           met->clr[i][j]->r, met->clr[i][j]->c);
-      mife_mat_encode(pp, sk, ct->enc[i][j], met->clr[i][j], groups[i][j],
+      mife_mat_encode(mmap, pp, sk, ct->enc[i][j], met->clr[i][j], groups[i][j],
           randstate);
     }
   }
@@ -350,36 +349,38 @@ void mife_set_encodings(mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
   mife_partitions_clear(pp, groups);
 }
 
-void gghlite_enc_mat_mul(gghlite_params_t params, gghlite_enc_mat_t r,
+void gghlite_enc_mat_mul(const_mmap_vtable mmap, const mmap_pp *const params, gghlite_enc_mat_t r,
     gghlite_enc_mat_t m1, gghlite_enc_mat_t m2) {
-  gghlite_enc_t tmp;
-  gghlite_enc_init(tmp, params);
+  mmap_enc *tmp;
+  tmp = malloc(mmap->enc->size);
+  mmap->enc->init(tmp, params);
 
   gghlite_enc_mat_t tmp_mat;
-  gghlite_enc_mat_init(params, tmp_mat, m1->nrows, m2->ncols);
+  gghlite_enc_mat_init(mmap, params, tmp_mat, m1->nrows, m2->ncols);
 
   assert(m1->ncols == m2->nrows);
 
   for(int i = 0; i < m1->nrows; i++) {
     for(int j = 0; j < m2->ncols; j++) {
       for(int k = 0; k < m1->ncols; k++) {
-        gghlite_enc_mul(tmp, params, m1->m[i][k], m2->m[k][j]);
-        gghlite_enc_add(tmp_mat->m[i][j], params, tmp_mat->m[i][j], tmp);
+        mmap->enc->mul(tmp, params, m1->m[i][k], m2->m[k][j]);
+        mmap->enc->add(tmp_mat->m[i][j], params, tmp_mat->m[i][j], tmp);
       }
     }
   }
 
-  gghlite_enc_mat_clear(r);
-  gghlite_enc_mat_init(params, r, m1->nrows, m2->ncols);
+  gghlite_enc_mat_clear(mmap, r);
+  gghlite_enc_mat_init(mmap, params, r, m1->nrows, m2->ncols);
 
   for(int i = 0; i < r->nrows; i++) {
     for(int j = 0; j < r->ncols; j++) {
-      gghlite_enc_set(r->m[i][j], tmp_mat->m[i][j]);
+      mmap->enc->set(r->m[i][j], tmp_mat->m[i][j]);
     }
   }
 
-  gghlite_enc_mat_clear(tmp_mat);
-  gghlite_enc_clear(tmp);
+  gghlite_enc_mat_clear(mmap, tmp_mat);
+  mmap->enc->clear(tmp);
+  free(tmp);
 }
 
 void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p) {

@@ -14,6 +14,63 @@
       "ERROR: fscanf() error encountered when trying to read from file\n" \
     ); }
 
+typedef struct mmap_pp mmap_pp;
+
+/* If we call init or fread, we will call clear. In particular, we will not
+ * call clear on the mmap_pp we retrieve from an mmap_sk. */
+typedef struct {
+  /* kappa: how many multiplications we intend to do
+   * lambda: security parameter
+   * gamma: the size of the universe that we will zero-test things at
+   */
+  void (*const clear)(mmap_pp *const);
+  bool (*const fread)(mmap_pp *const, FILE *const);
+  void (*const fwrite)(const mmap_pp *const, FILE *const);
+  const size_t size;
+} mmap_pp_vtable;
+
+typedef struct mmap_sk mmap_sk;
+
+typedef struct {
+  /* lambda: security parameter
+   * kappa: how many multiplications we intend to do
+   * gamma: the size of the universe that we will zero-test things at
+   */
+  void (*const init)(mmap_sk *const, size_t, size_t, size_t, aes_randstate_t);
+  void (*const clear)(mmap_sk *const);
+  bool (*const fread)(mmap_sk *const, FILE *const);
+  void (*const fwrite)(const mmap_sk *const, FILE *const);
+  const size_t size;
+
+  mmap_pp *(*const pp)(const mmap_sk *const);
+  void (*const plaintext_field)(const mmap_sk *const, fmpz_t);
+} mmap_sk_vtable;
+
+typedef struct mmap_enc mmap_enc;
+
+typedef struct {
+  void (*const init)(mmap_enc *const, const mmap_pp *const);
+  void (*const clear)(mmap_enc *const);
+  bool (*const fread)(mmap_enc *const, FILE *const);
+  void (*const fwrite)(mmap_enc *const, FILE *const);
+  const size_t size;
+
+  void (*const set)(mmap_enc *const, const mmap_enc *const);
+  void (*const add)(mmap_enc *const, const mmap_pp *const, const mmap_enc *const, const mmap_enc *const);
+  void (*const mul)(mmap_enc *const, const mmap_pp *const, const mmap_enc *const, const mmap_enc *const);
+  bool (*const is_zero)(const mmap_enc *const, const mmap_pp *const);
+  /* TODO: should this `int *` be `bool *`? */
+  void (*const encode)(mmap_enc *const, const mmap_sk *const, const fmpz_t, int *, aes_randstate_t);
+} mmap_enc_vtable;
+
+typedef struct {
+  mmap_pp_vtable  *const pp;
+  mmap_sk_vtable  *const sk;
+  mmap_enc_vtable *const enc;
+} mmap_vtable;
+
+typedef const mmap_vtable *const const_mmap_vtable;
+
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
 int NUM_ENCODINGS_TOTAL;
@@ -41,7 +98,7 @@ typedef struct {
 struct _gghlite_enc_mat_struct {
   int nrows; // number of rows in the matrix
   int ncols; // number of columns in the matrix
-  gghlite_enc_t **m;
+  mmap_enc ***m;
 };
 
 typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
@@ -71,7 +128,7 @@ struct _mife_pp_struct {
   int numR; // number of kilian matrices. should be kappa-1
   mife_flag_t flags;
   fmpz_t p; // the prime, the order of the field
-  gghlite_params_t *params_ref; // gghlite's public parameters, by reference
+  mmap_pp *params_ref; // the underlying multilinear map's public parameters
 
   // MBP function pointers
   void *mbp_params; // additional parameters one can pass into the MBP setup
@@ -86,7 +143,7 @@ typedef struct _mife_pp_struct mife_pp_t[1];
 
 struct _mife_sk_struct {
   int numR;
-  gghlite_sk_t self;
+  mmap_sk *self;
   fmpz_mat_t *R;
   fmpz_mat_t *R_inv;
 };

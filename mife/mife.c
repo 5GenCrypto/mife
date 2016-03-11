@@ -42,14 +42,14 @@ void f2_matrix_free(f2_matrix m) {
   }
 }
 
-f2_matrix mife_zt_all(const mife_pp_t pp, gghlite_enc_mat_t ct) {
+f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t ct) {
   f2_matrix pt;
   if(!f2_matrix_zero(&pt, ct->nrows, ct->ncols))
     return pt;
 
   for(int i = 0; i < ct->nrows; i++) {
     for(int j = 0; j < ct->ncols; j++) {
-      pt.elems[i][j] = !gghlite_enc_is_zero(*pp->params_ref, ct->m[i][j]);
+      pt.elems[i][j] = !mmap->enc->is_zero(ct->m[i][j], pp->params_ref);
     }
   }
 
@@ -79,8 +79,8 @@ void mife_mbp_set(
   pp->parsefn = parsefn;
 } 
 
-void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
-    gghlite_flag_t ggh_flags, aes_randstate_t randstate) {
+void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
+    aes_randstate_t randstate) {
 
   pp->n = malloc(pp->num_inputs * sizeof(int));
   pp->kappa = 0;
@@ -97,22 +97,18 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     pp->gamma += pp->gammas[i];
   }
 
-  timer_printf("Starting calling jigsaw_init_gamma: %d %d %d...\n",
+  timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
       lambda, pp->kappa, pp->gamma);
-  gghlite_jigsaw_init_gamma(sk->self,
-                      lambda,
-                      pp->kappa,
-                      pp->gamma,
-                      ggh_flags,
-                      randstate);
-  timer_printf("Finished calling jigsaw_init_gamma\n");
+  sk->self = malloc(mmap->sk->size);
+  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, randstate);
+  timer_printf("Finished MMAP secret key initialization\n");
 
-  pp->params_ref = &(sk->self->params);
+  pp->params_ref = mmap->sk->pp(sk->self);
 
   timer_printf("Starting setting p...\n");
   start_timer();
   fmpz_init(pp->p);
-  fmpz_poly_oz_ideal_norm(pp->p, sk->self->g, sk->self->params->n, 0);
+  mmap->sk->plaintext_field(sk->self, pp->p);
   timer_printf("Finished setting p");
   print_timer();
   timer_printf("\n");
@@ -169,7 +165,7 @@ void mife_setup(mife_pp_t pp, mife_sk_t sk, int L, int lambda,
   free(dims);
 }
 
-void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
+void mife_encrypt(const_mmap_vtable mmap, mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk, aes_randstate_t randstate) {
   // compute a random index in the range [0,2^L]
   fmpz_t index, powL, two;
@@ -188,12 +184,12 @@ void mife_encrypt(mife_ciphertext_t ct, void *message, mife_pp_t pp,
   if(! (pp->flags & MIFE_NO_RANDOMIZERS)) {
     mife_apply_randomizers(met, pp, sk, randstate);
   }
-  mife_set_encodings(ct, met, index, pp, sk, randstate);
+  mife_set_encodings(mmap, ct, met, index, pp, sk, randstate);
   fmpz_clear(index);
   mife_mat_clr_clear(pp, met);
 }
 
-int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
+int mife_evaluate(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t *cts) {
   gghlite_enc_mat_t tmp;
 
   for(int index = 1; index < pp->kappa; index++) {
@@ -204,18 +200,18 @@ int mife_evaluate(mife_pp_t pp, mife_ciphertext_t *cts) {
       // multiply the 0th index with the 1st index
       int i0, j0;
       pp->orderfn(pp, 0, &i0, &j0);
-      gghlite_enc_mat_init(*pp->params_ref, tmp,
+      gghlite_enc_mat_init(mmap, pp->params_ref, tmp,
         cts[i0]->enc[i0][j0]->nrows, cts[i]->enc[i][j]->ncols);
-      gghlite_enc_mat_mul(*pp->params_ref, tmp,
+      gghlite_enc_mat_mul(mmap, pp->params_ref, tmp,
         cts[i0]->enc[i0][j0], cts[i]->enc[i][j]);
       continue;
     }
 
-    gghlite_enc_mat_mul(*pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
+    gghlite_enc_mat_mul(mmap, pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
   }
 
-  f2_matrix result = mife_zt_all(pp, tmp);
-  gghlite_enc_mat_clear(tmp);
+  f2_matrix result = mife_zt_all(mmap, pp, tmp);
+  gghlite_enc_mat_clear(mmap, tmp);
   int ret = pp->parsefn(pp, result);
   f2_matrix_free(result);
 
@@ -228,7 +224,7 @@ void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
   *out_partitions = mife_partitions(pp, uid);
 }
 
-void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
+void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
     gghlite_enc_mat_t dest) {
   int position_index, local_index;
@@ -243,8 +239,8 @@ void mife_encrypt_single(mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
   if(!(pp->flags & MIFE_NO_KILIAN))
     mife_apply_kilian(pp, sk, src, global_index);
 
-  gghlite_enc_mat_init(sk->self->params, dest, src->r, src->c);
-  mife_mat_encode(pp, sk, dest, src, partitions[position_index][local_index], randstate);
+  gghlite_enc_mat_init(mmap, pp->params_ref, dest, src->r, src->c);
+  mife_mat_encode(mmap, pp, sk, dest, src, partitions[position_index][local_index], randstate);
 }
 
 void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***partitions) {
