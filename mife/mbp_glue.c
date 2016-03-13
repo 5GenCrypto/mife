@@ -1,25 +1,25 @@
 #include <fmpz.h>
 
-#include "mife_glue.h"
+#include "mbp_glue.h"
 #include "util.h"
 
-void template_stats_free(template_stats stats) {
+void mbp_template_stats_free(mbp_template_stats stats) {
 	free(stats.position_index);
 	free(stats.local_index);
 	free(stats.step_lens);
 	free(stats.positions);
 }
 
-bool template_to_template_stats(const template *const template, template_stats *stats) {
+bool mbp_template_to_mbp_template_stats(const mbp_template *const template, mbp_template_stats *stats) {
 	int i, j;
 	const int len = template->steps_len;
-	*stats = (template_stats) { 0, NULL, NULL, NULL, NULL, NULL };
+	*stats = (mbp_template_stats) { 0, NULL, NULL, NULL, NULL, NULL };
 
 	if(ALLOC_FAILS(stats->positions     , len) ||
 	   ALLOC_FAILS(stats->position_index, len) ||
 	   ALLOC_FAILS(stats->local_index   , len) ||
 	   ALLOC_FAILS(stats->step_lens     , len)) {
-		template_stats_free(*stats);
+		mbp_template_stats_free(*stats);
 		return false;
 	}
 
@@ -41,34 +41,34 @@ bool template_to_template_stats(const template *const template, template_stats *
 	return true;
 }
 
-int template_stats_to_params(mife_pp_t pp, int i) {
-	const template_stats *const stats = pp->mbp_params;
+int mbp_template_stats_to_params(mife_pp_t pp, int i) {
+	const mbp_template_stats *const stats = pp->mbp_params;
 	assert(i < stats->positions_len);
 	return stats->step_lens[i];
 }
 
-void template_stats_to_dimensions(mife_pp_t pp, int *out) {
-	const template_stats *const stats    = pp->mbp_params;
-	const template       *const template = stats->template;
+void mbp_template_stats_to_dimensions(mife_pp_t pp, int *out) {
+	const mbp_template_stats *const stats    = pp->mbp_params;
+	const mbp_template       *const template = stats->template;
 	int i;
 	for(i = 0; i < template->steps_len-1; i++)
 		out[i] = template->steps[i].matrix[0].num_cols;
 }
 
-void template_stats_to_position(mife_pp_t pp, int global_index, int *out_position, int *out_local) {
-	const template_stats *const stats = pp->mbp_params;
+void mbp_template_stats_to_position(mife_pp_t pp, int global_index, int *out_position, int *out_local) {
+	const mbp_template_stats *const stats = pp->mbp_params;
 	*out_position = stats->position_index[global_index];
 	*out_local    = stats->local_index[global_index];
 }
 
 /* TODO: it would be good to not call assert */
-void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *cleartext_raw_untyped) {
-	const template_stats *const stats = pp->mbp_params;
-	const plaintext      *const cleartext_raw = cleartext_raw_untyped;
+void mbp_template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *cleartext_raw_untyped) {
+	const mbp_template_stats *const stats = pp->mbp_params;
+	const mbp_plaintext      *const cleartext_raw = cleartext_raw_untyped;
 	f2_mbp mbp;
 	int i;
 
-	assert(template_instantiate(stats->template, cleartext_raw, &mbp));
+	assert(mbp_template_instantiate(stats->template, cleartext_raw, &mbp));
 
 	/* except these asserts; the asserts in this block are okay */
 	/* (but should at least print some diagnostic information) */
@@ -98,9 +98,9 @@ void template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, void *c
 
 /* TODO: are we sure that templates handed to us will produce just one output
  *       every time? */
-int template_stats_to_result(mife_pp_t pp, f2_matrix raw_result) {
+int mbp_template_stats_to_result(mife_pp_t pp, f2_matrix raw_result) {
 	int i, j, result, num_nonzeros = 0;
-	fprintf(stderr, "The impossible happened! Deprecated mife_glue function template_stats_to_result with insufficiently expressive type was called. We'll do our best, but something is wrong.\n");
+	fprintf(stderr, "The impossible happened! Deprecated mbp_glue function mbp_template_stats_to_result with insufficiently expressive type was called. We'll do our best, but something is wrong.\n");
 	for(i = 0; i < raw_result.num_rows; i++)
 		for(j = 0; j < raw_result.num_cols; j++)
 			if(raw_result.elems[i][j]) {

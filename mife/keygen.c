@@ -4,14 +4,14 @@
 
 #include "cmdline.h"
 #include "mife.h"
-#include "mife_glue.h"
+#include "mbp_glue.h"
 #include "parse.h"
 #include "util.h"
 
 typedef struct {
 	int sec_param, log_db_size;
 	aes_randstate_t seed;
-	template template;
+	mbp_template template;
 } keygen_inputs;
 
 typedef struct {
@@ -19,34 +19,32 @@ typedef struct {
 } keygen_locations;
 
 void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
-bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
-void cleanup(keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
+bool print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
+void cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
 
-const gghlite_flag_t ggh_flags = GGHLITE_FLAGS_GOOD_G_INV | GGHLITE_FLAGS_QUIET;
-
-int main(int argc, char **argv) {
+int mife_keygen_main(const_mmap_vtable mmap, int argc, char **argv) {
 	keygen_inputs ins;
 	keygen_locations outs;
 	mife_pp_t pp;
 	mife_sk_t sk;
-	template_stats stats;
+	mbp_template_stats stats;
 	bool success;
 
   PRINT_TIMERS = 1; /* prints timing/progress info */
 
 	parse_cmdline(argc, argv, &ins, &outs);
-	if(!template_to_mife_pp(pp, &ins.template, &stats)) return -1;
-	mife_setup(pp, sk, ins.log_db_size, ins.sec_param, ggh_flags, ins.seed);
+	if(!mbp_template_to_mife_pp(pp, &ins.template, &stats)) return -1;
+	mife_setup(mmap, pp, sk, ins.log_db_size, ins.sec_param, ins.seed);
   timer_printf("Finished calling mife_setup. Starting to write outputs...\n");
   start_timer();
-	success = print_outputs(outs, pp, sk);
+	success = print_outputs(mmap, outs, pp, sk);
   timer_printf("Finished writing outputs");
   print_timer();
   timer_printf("\n");
 
   timer_printf("Starting cleanup...\n");
   start_timer();
-	cleanup(&ins, &outs, pp, sk);
+	cleanup(mmap, &ins, &outs, pp, sk);
   timer_printf("Finished cleanup");
   print_timer();
   timer_printf("\n");
@@ -141,7 +139,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		fprintf(stderr, "%s: out of memory when trying to create path to template\n", *argv);
 		exit(-1);
 	}
-	if(!jsmn_parse_template_location(template_location, &ins->template)) {
+	if(!jsmn_parse_mbp_template_location(template_location, &ins->template)) {
 		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program template over the field F_2\n", *argv, template_location.path);
 		usage(7);
 	}
@@ -156,7 +154,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
  * detection, error reporting, versioning and just generally make this tool a
  * bit more robust
  */
-bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
+bool print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	/* the public directory has to exist -- we read template.json out of it! --
 	 * but the private one might not yet */
 	if(!create_directory_if_missing(outs.private.path)) {
@@ -173,20 +171,20 @@ bool print_outputs(keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 		return false;
 	}
 
-	fwrite_mife_pp(pp,  public_location.path);
-	fwrite_mife_sk(sk, private_location.path);
+	fwrite_mife_pp(mmap, pp,  public_location.path);
+	fwrite_mife_sk(mmap, sk, private_location.path);
 
 	location_free( public_location);
 	location_free(private_location);
 	return true;
 }
 
-void cleanup(keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk) {
+void cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk) {
 	aes_randclear(ins->seed);
-	template_stats_free(*(template_stats *)pp->mbp_params);
-	template_free(ins->template);
+	mbp_template_stats_free(*(mbp_template_stats *)pp->mbp_params);
+	mbp_template_free(ins->template);
 	location_free(outs-> public);
 	location_free(outs->private);
 	mife_clear_pp(pp);
-	mife_clear_sk(sk);
+	mife_clear_sk(mmap, sk);
 }

@@ -4,7 +4,7 @@
 #include <jsmn.h>
 #include <stdbool.h>
 
-#include "types.h"
+#include "mbp_types.h"
 #include "util.h"
 
 /* bool return type: whether the parse succeeded
@@ -24,13 +24,13 @@ bool jsmn_parse_f2_mbp            (const char *const json_string, const jsmntok_
 bool jsmn_parse_string            (const char *const json_string, const jsmntok_t **const json_tokens, char              **const string  );
 int  jsmn_parse_string_row        (const char *const json_string, const jsmntok_t **const json_tokens, char             ***const row     , int expected_num_cols);
 bool jsmn_parse_string_matrix     (const char *const json_string, const jsmntok_t **const json_tokens, string_matrix      *const matrix  );
-bool jsmn_parse_step              (const char *const json_string, const jsmntok_t **const json_tokens, step               *const step    );
-bool jsmn_parse_template          (const char *const json_string, const jsmntok_t **const json_tokens, template           *const template);
-bool jsmn_parse_plaintext         (const char *const json_string, const jsmntok_t **const json_tokens, plaintext          *const pt      );
+bool jsmn_parse_mbp_step          (const char *const json_string, const jsmntok_t **const json_tokens, mbp_step           *const step    );
+bool jsmn_parse_mbp_template      (const char *const json_string, const jsmntok_t **const json_tokens, mbp_template       *const template);
+bool jsmn_parse_mbp_plaintext     (const char *const json_string, const jsmntok_t **const json_tokens, mbp_plaintext      *const pt      );
 bool jsmn_parse_ciphertext_mapping(const char *const json_string, const jsmntok_t **const json_tokens, ciphertext_mapping *const mapping );
 
 /* top-level wrappers */
-bool jsmn_parse_template_location(const location loc, template *const template);
-bool jsmn_parse_plaintext_string(const char *const json_string, plaintext *const plaintext);
+bool jsmn_parse_mbp_template_location(const location loc, mbp_template *const template);
+bool jsmn_parse_mbp_plaintext_string(const char *const json_string, mbp_plaintext *const plaintext);
 bool jsmn_parse_ciphertext_mapping_string(const char *const json_string, ciphertext_mapping *const mapping);
 #endif

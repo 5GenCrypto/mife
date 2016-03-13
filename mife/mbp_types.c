@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
+#include "mbp_types.h"
 #include "util.h"
 
 void f2_mbp_free(f2_mbp mbp) {
@@ -26,7 +26,7 @@ void string_matrix_free(string_matrix m) {
 	}
 }
 
-void step_free(step s) {
+void mbp_step_free(mbp_step s) {
 	int i;
 	if(NULL != s.symbols) {
 		for(i = 0; i < s.symbols_len; i++)
@@ -42,17 +42,17 @@ void step_free(step s) {
 	if(NULL != s.position) free(s.position);
 }
 
-void template_free(template t) {
+void mbp_template_free(mbp_template t) {
 	int i;
 	if(NULL != t.steps) {
 		for(i = 0; i < t.steps_len; i++)
-			step_free(t.steps[i]);
+			mbp_step_free(t.steps[i]);
 		free(t.steps);
 	}
 	string_matrix_free(t.outputs);
 }
 
-void plaintext_free(plaintext pt) {
+void mbp_plaintext_free(mbp_plaintext pt) {
 	int i;
 	if(NULL != pt.symbols) {
 		for(i = 0; i < pt.symbols_len; i++)
@@ -61,7 +61,7 @@ void plaintext_free(plaintext pt) {
 	}
 }
 
-bool template_instantiate(const template *const t, const plaintext *const pt, f2_mbp *const mbp) {
+bool mbp_template_instantiate(const mbp_template *const t, const mbp_plaintext *const pt, f2_mbp *const mbp) {
 	if(t->steps_len != pt->symbols_len) return false;
 	if(ALLOC_FAILS(mbp->matrices, t->steps_len))
 		return false;

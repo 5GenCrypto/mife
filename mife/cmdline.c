@@ -2,21 +2,21 @@
 
 const mife_flag_t mife_flags = MIFE_DEFAULT;
 
-bool template_to_mife_pp(mife_pp_t pp, const template *const template, template_stats *const stats) {
-	if(!template_to_template_stats(template, stats)) return false;
+bool mbp_template_to_mife_pp(mife_pp_t pp, const mbp_template *const template, mbp_template_stats *const stats) {
+	if(!mbp_template_to_mbp_template_stats(template, stats)) return false;
 	mife_init_params(pp, mife_flags);
 	mife_mbp_set(stats, pp, stats->positions_len,
-		template_stats_to_params,
-		template_stats_to_dimensions,
-		template_stats_to_position,
-		template_stats_to_cleartext,
-		template_stats_to_result);
+		mbp_template_stats_to_params,
+		mbp_template_stats_to_dimensions,
+		mbp_template_stats_to_position,
+		mbp_template_stats_to_cleartext,
+		mbp_template_stats_to_result);
 	return true;
 }
 
 parse_result load_seed(location private_location, char *context, aes_randstate_t seed) {
 	FILE *src;
-	char dest[SEED_SIZE];
+	char dest[AES_SEED_BYTE_SIZE];
 	parse_result result;
 	location seed_location = location_append(private_location, "seed.bin");
 
@@ -33,14 +33,14 @@ parse_result load_seed(location private_location, char *context, aes_randstate_t
 		goto fail_free_location;
 	}
 
-	if(fread(dest, sizeof(*dest), SEED_SIZE, src) != SEED_SIZE) {
-		fprintf(stderr, "could not read %d bytes of seed\n", SEED_SIZE);
+	if(fread(dest, sizeof(*dest), AES_SEED_BYTE_SIZE, src) != AES_SEED_BYTE_SIZE) {
+		fprintf(stderr, "could not read %d bytes of seed\n", AES_SEED_BYTE_SIZE);
 		result = PARSE_INVALID;
 		goto fail_close_src;
 	}
 
 	/* TODO: error checking */
-	aes_randinit_seedn(seed, dest, SEED_SIZE, context, strlen(context));
+	aes_randinit_seedn(seed, dest, AES_SEED_BYTE_SIZE, context, strlen(context));
 	result = PARSE_SUCCESS;
 
 fail_close_src:

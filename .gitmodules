@@ -2,5 +2,5 @@
 	path = flint
   url = https://github.com/wbhart/flint2.git
 [submodule "applications/ore_dir/jsmn"]
-	path = applications/ore_dir/jsmn
+	path = mife/jsmn
   url = https://github.com/zserge/jsmn.git

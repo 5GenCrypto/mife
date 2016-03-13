@@ -4,6 +4,9 @@
 #include "mife_internals.h"
 #include "mife_io.h"
 
+/* front end functions which handle command line parsing, file IO, and all */
+int mife_keygen_main(const_mmap_vtable mmap, int argc, char **argv);
+
 /* returns true iff dest is successfully initialized to the contents of src */
 bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
 bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols);

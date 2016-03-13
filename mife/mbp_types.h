@@ -37,16 +37,16 @@ typedef struct {
 	char *position;
 	char **symbols;
 	f2_matrix *matrix;
-} step;
+} mbp_step;
 
 typedef struct {
 	unsigned int steps_len;
-	step *steps;
+	mbp_step *steps;
 	string_matrix outputs;
-} template;
+} mbp_template;
 
-void step_free(step s);
-void template_free(template t);
+void mbp_step_free(mbp_step s);
+void mbp_template_free(mbp_template t);
 
 /* For our purposes, a plaintext is a sequence of symbols and nothing more.
  * Particular applications may wish to provide an application-specific
@@ -73,9 +73,9 @@ void template_free(template t);
 typedef struct {
 	unsigned int symbols_len;
 	char **symbols;
-} plaintext;
+} mbp_plaintext;
 
-void plaintext_free(plaintext pt);
+void mbp_plaintext_free(mbp_plaintext pt);
 
 /* Choose the matrices from a template that correspond to a particular plaintext.
  * Inputs a template t and plaintext pt.
@@ -84,7 +84,7 @@ void plaintext_free(plaintext pt);
  * 	mbp is initialized; otherwise leaves the mbp uninitialized and returns
  * 	false.
  */
-bool template_instantiate(const template *const t, const plaintext *const pt, f2_mbp *const mbp);
+bool mbp_template_instantiate(const mbp_template *const t, const mbp_plaintext *const pt, f2_mbp *const mbp);
 
 /* A ciphertext mapping assigns a uid to each position, which can be used to
  * locate the particular matrices necessary for evaluation.

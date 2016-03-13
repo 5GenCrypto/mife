@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define ALLOC_FAILS(path, len) (NULL == ((path) = malloc((len) * sizeof(*(path)))))
-#define SEED_SIZE 32
+#define AES_SEED_BYTE_SIZE 32
 
 typedef struct {
 	char *path;
