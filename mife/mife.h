@@ -37,6 +37,6 @@ void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
 void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
     gghlite_enc_mat_t out_ct);
-void mife_encrypt_cleanup(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
+void mife_encrypt_clear(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
 
 #endif /* _MIFE_H_ */

@@ -4,9 +4,9 @@
 #include <unistd.h>
 
 #include "cmdline.h"
-#include "types.h"
+#include "mbp_types.h"
+#include "mbp_glue.h"
 #include "mife.h"
-#include "mife_glue.h"
 #include "parse.h"
 #include "util.h"
 
@@ -14,7 +14,7 @@
 #define INT_STR_LEN (3 * sizeof(int))
 
 typedef struct {
-	plaintext pt;
+	mbp_plaintext pt;
 	location record_location;
 	fmpz_t partition;
 	mife_sk_t sk;
@@ -22,18 +22,18 @@ typedef struct {
 	aes_randstate_t seed;
 } encrypt_inputs;
 
-void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins);
-bool print_output(mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location);
-void cleanup(encrypt_inputs *const ins);
+void mife_encrypt_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, encrypt_inputs *const ins);
+bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location);
+void mife_encrypt_cleanup(const_mmap_vtable mmap, encrypt_inputs *const ins);
 
-int main(int argc, char **argv) {
+int mife_encrypt_main(const_mmap_vtable mmap, int argc, char **argv) {
 	encrypt_inputs ins;
 	mife_mat_clr_t clr;
 	int i, ***partitions;
 	bool success = true;
 
 	PRINT_TIMERS = 1; /* prints timing/progress info */
-	parse_cmdline(argc, argv, &ins);
+	mife_encrypt_parse_cmdline(mmap, argc, argv, &ins);
 	mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
 
 	/**
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 	 * benchmarking and progress bar purposes
 	 */
 	int encoding_count = 0;
-	const template *const template = ((template_stats *)ins.pp->mbp_params)->template;
+	const mbp_template *const template = ((mbp_template_stats *)ins.pp->mbp_params)->template;
 	for(i = 0; i < template->steps_len; i++) {
 		const f2_matrix *const m = template->steps[i].matrix;
 		encoding_count += m->num_rows * m->num_cols;
@@ -54,18 +54,18 @@ int main(int argc, char **argv) {
 	reset_T();
 	for(i = 0; i < template->steps_len; i++) {
 		gghlite_enc_mat_t ct;
-		mife_encrypt_single(ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
-		success &= print_output(ins.pp, i, ct, ins.record_location);
-		gghlite_enc_mat_clear(ct);
+		mife_encrypt_single(mmap, ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
+		success &= mife_encrypt_print_output(mmap, ins.pp, i, ct, ins.record_location);
+		gghlite_enc_mat_clear(mmap, ct);
 	}
 	timer_printf("\n");
-	mife_encrypt_cleanup(ins.pp, clr, partitions);
+	mife_encrypt_clear(ins.pp, clr, partitions);
 
-	cleanup(&ins);
+	mife_encrypt_cleanup(mmap, &ins);
 	return success ? 0 : -1;
 }
 
-void usage(const int code) {
+void mife_encrypt_usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
 	printf(
@@ -123,7 +123,7 @@ bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
 	return true;
 }
 
-void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
+void mife_encrypt_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, encrypt_inputs *const ins) {
 	int i, j;
 	bool done = false;
 	char *uid = NULL;
@@ -150,12 +150,12 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 		switch(c) {
 			case  -1: done = true; break;
 			case   0: break; /* a long option with non-NULL flag; should never happen */
-			case '?': usage(1); break; /* braking is good defensive driving */
+			case '?': mife_encrypt_usage(1); break; /* braking is good defensive driving */
 			case 'a':
 				if(have_partition) fmpz_clear(ins->partition);
 				if(0 != fmpz_set_str(ins->partition, optarg, 10)) {
 					fprintf(stderr, "%s: could not read %s as a base-10 number\n", *argv, optarg);
-					usage(2);
+					mife_encrypt_usage(2);
 				}
 				have_partition = true;
 				break;
@@ -163,7 +163,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 				location_free(database_location);
 				database_location = (location) { .path = optarg, .stack_allocated = true };
 				break;
-			case 'h': usage(0); break;
+			case 'h': mife_encrypt_usage(0); break;
 			case 'i':
 				uid = optarg;
 				break;
@@ -185,26 +185,26 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 	/* read the plaintext */
 	if(optind != argc-1) {
 		fprintf(stderr, "%s: specify exactly one plaintext (found %d)\n", *argv, argc-optind);
-		usage(2);
+		mife_encrypt_usage(2);
 	}
-	if(!jsmn_parse_plaintext_string(argv[optind], &ins->pt)) {
+	if(!jsmn_parse_mbp_plaintext_string(argv[optind], &ins->pt)) {
 		fprintf(stderr, "%s: could not parse plaintext as JSON array of strings\n", *argv);
-		usage(3);
+		mife_encrypt_usage(3);
 	}
 
 	/* read the template */
 	location template_location = location_append(public_location, "template.json");
-	template *template = NULL;
-	template_stats *stats = NULL;
+	mbp_template *template = NULL;
+	mbp_template_stats *stats = NULL;
 	if(template_location.path == NULL || ALLOC_FAILS(template, 1) || ALLOC_FAILS(stats, 1)) {
 		fprintf(stderr, "%s: out of memory while loading template\n", *argv);
 		exit(-1);
 	}
-	if(!jsmn_parse_template_location(template_location, template)) {
+	if(!jsmn_parse_mbp_template_location(template_location, template)) {
 		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program template over the field F_2\n", *argv, template_location.path);
-		usage(4);
+		mife_encrypt_usage(4);
 	}
-	if(!template_to_mife_pp(ins->pp, template, stats)) {
+	if(!mbp_template_to_mife_pp(ins->pp, template, stats)) {
 		fprintf(stderr, "%s: internal error while computing statistics for template\n", *argv);
 		exit(-1);
 	}
@@ -217,7 +217,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 		exit(-1);
 	}
 	/* TODO: some error-checking would be nice here */
-	fread_mife_pp(ins->pp, pp_location.path);
+	fread_mife_pp(mmap, ins->pp, pp_location.path);
 	location_free(pp_location);
 
 	/* read the secret key */
@@ -227,7 +227,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 		exit(-1);
 	}
 	/* TODO: error-checking */
-	fread_mife_sk(ins->sk, sk_location.path);
+	fread_mife_sk(mmap, ins->sk, sk_location.path);
 	location_free(sk_location);
 
 	/* initialize record_path, ensuring uid is initialized as a side effect */
@@ -299,7 +299,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 			function_name, uid, context_len, tmp);
 		exit(-1);
 	}
-	check_parse_result(load_seed(private_location, context, ins->seed), usage, 5);
+	check_parse_result(load_seed(private_location, context, ins->seed), mife_encrypt_usage, 5);
 
 	/* initialize partition if it wasn't specified on the command line */
 	if(!have_partition)
@@ -314,14 +314,14 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 	/* check that the partition is in range */
 	if(fmpz_sizeinbase(ins->partition, 2) > (size_t)ins->pp->L) {
 		fprintf(stderr, "partition uses %zu bits, but the current key supports only up to %d bits\n", fmpz_sizeinbase(ins->partition, 2), ins->pp->L);
-		usage(6);
+		mife_encrypt_usage(6);
 	}
 
 	/* check that the template and plaintext have the same length */
 	if(template->steps_len != ins->pt.symbols_len) {
 		fprintf(stderr, "the number of symbols in the plaintext (%d)\ndoes not match the number of steps in the template (%d)\n",
 		        ins->pt.symbols_len, template->steps_len);
-		usage(7);
+		mife_encrypt_usage(7);
 	}
 
 	/* check that the template and plaintext match up appropriately */
@@ -339,7 +339,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 		}
 		match_everywhere &= match_here;
 	}
-	if(!match_everywhere) usage(8);
+	if(!match_everywhere) mife_encrypt_usage(8);
 
 	/* TODO: check that `ins->pp` and `stats` match up */
 	/* TODO: check that the secret key is appropriately dimensioned */
@@ -350,7 +350,7 @@ void parse_cmdline(int argc, char **argv, encrypt_inputs *const ins) {
 	location_free(private_location);
 }
 
-FILE *fopen_bin(const location record_location, const char *const position, const int local_index) {
+FILE *mife_encrypt_fopen_bin(const location record_location, const char *const position, const int local_index) {
 	char *dir, *path;
 	const size_t  dir_len = strlen(record_location.path) + 1 + strlen(position), dir_size = dir_len + 1;
 	const size_t path_len = dir_len + 1 + INT_STR_LEN + 4, path_size = path_len + 1;
@@ -371,31 +371,31 @@ done:
 	return result;
 }
 
-bool print_output(mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location) {
-	const template_stats *const stats    = pp->mbp_params;
-	const template       *const template = stats->template;
+bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location) {
+	const mbp_template_stats *const stats    = pp->mbp_params;
+	const mbp_template       *const template = stats->template;
 
 	const int local_index = stats->local_index[global_index];
 	const char *const position = template->steps[global_index].position;
-	FILE *dest = fopen_bin(record_location, position, local_index);
+	FILE *dest = mife_encrypt_fopen_bin(record_location, position, local_index);
 	if(NULL == dest) {
 		fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
 		return false;
 	}
-	fwrite_gghlite_enc_mat(/* TODO: why is pp needed? */ pp, ct, dest);
+	fwrite_gghlite_enc_mat(mmap, /* TODO: why is pp needed? */ pp, ct, dest);
 	fclose(dest);
 	return true;
 }
 
-void cleanup(encrypt_inputs *const ins) {
-	plaintext_free(ins->pt);
+void mife_encrypt_cleanup(const_mmap_vtable mmap, encrypt_inputs *const ins) {
+	mbp_plaintext_free(ins->pt);
 	location_free(ins->record_location);
 	fmpz_clear(ins->partition);
-	mife_clear_sk(ins->sk);
-	template_stats *stats = ins->pp->mbp_params;
-	template *templ = (template *)stats->template;
-	template_stats_free(*stats); free(stats);
-	template_free(*templ); free(templ);
-	mife_clear_pp_read(ins->pp);
+	mife_clear_sk(mmap, ins->sk);
+	mbp_template_stats *stats = ins->pp->mbp_params;
+	mbp_template *templ = (mbp_template *)stats->template;
+	mbp_template_stats_free(*stats); free(stats);
+	mbp_template_free(*templ); free(templ);
+	mife_clear_pp_read(mmap, ins->pp);
 	aes_randclear(ins->seed);
 }

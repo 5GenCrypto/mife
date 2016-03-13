@@ -3,8 +3,8 @@
 #include <sys/stat.h>
 
 #include "cmdline.h"
-#include "mife.h"
 #include "mbp_glue.h"
+#include "mife.h"
 #include "parse.h"
 #include "util.h"
 
@@ -18,9 +18,9 @@ typedef struct {
 	location public, private;
 } keygen_locations;
 
-void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
-bool print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
-void cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
+void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs);
+bool mife_keygen_print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
+void mife_keygen_cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
 
 int mife_keygen_main(const_mmap_vtable mmap, int argc, char **argv) {
 	keygen_inputs ins;
@@ -32,19 +32,19 @@ int mife_keygen_main(const_mmap_vtable mmap, int argc, char **argv) {
 
   PRINT_TIMERS = 1; /* prints timing/progress info */
 
-	parse_cmdline(argc, argv, &ins, &outs);
+	mife_keygen_parse_cmdline(argc, argv, &ins, &outs);
 	if(!mbp_template_to_mife_pp(pp, &ins.template, &stats)) return -1;
 	mife_setup(mmap, pp, sk, ins.log_db_size, ins.sec_param, ins.seed);
   timer_printf("Finished calling mife_setup. Starting to write outputs...\n");
   start_timer();
-	success = print_outputs(mmap, outs, pp, sk);
+	success = mife_keygen_print_outputs(mmap, outs, pp, sk);
   timer_printf("Finished writing outputs");
   print_timer();
   timer_printf("\n");
 
   timer_printf("Starting cleanup...\n");
   start_timer();
-	cleanup(mmap, &ins, &outs, pp, sk);
+	mife_keygen_cleanup(mmap, &ins, &outs, pp, sk);
   timer_printf("Finished cleanup");
   print_timer();
   timer_printf("\n");
@@ -52,7 +52,7 @@ int mife_keygen_main(const_mmap_vtable mmap, int argc, char **argv) {
 	return success ? 0 : -1;
 }
 
-void usage(const int code) {
+void mife_keygen_usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
 	printf(
@@ -79,7 +79,7 @@ void usage(const int code) {
 	exit(code);
 }
 
-void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
+void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs) {
 	bool done = false;
 
 	/* set defaults */
@@ -101,12 +101,12 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 		switch(c) {
 			case  -1: done = true; break;
 			case   0: break; /* a long option with non-NULL flag; should never happen */
-			case '?': usage(1); break; /* braking is good defensive driving */
-			case 'h': usage(0); break;
+			case '?': mife_keygen_usage(1); break; /* braking is good defensive driving */
+			case 'h': mife_keygen_usage(0); break;
 			case 'n':
 				if((ins->log_db_size = atoi(optarg)) < 1) {
 					fprintf(stderr, "%s: unparseable database size '%s', should be positive number\n", *argv, optarg);
-					usage(2);
+					mife_keygen_usage(2);
 				}
 				break;
 			case 'r':
@@ -115,7 +115,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 			case 's':
 				if((ins->sec_param = atoi(optarg)) < 1) {
 					fprintf(stderr, "%s: unparseable security parameter '%s', should be positive number\n", *argv, optarg);
-					usage(3);
+					mife_keygen_usage(3);
 				}
 				break;
 			case 'u':
@@ -141,12 +141,12 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
 	}
 	if(!jsmn_parse_mbp_template_location(template_location, &ins->template)) {
 		fprintf(stderr, "%s: could not parse '%s' as a\nJSON representation of a matrix branching program template over the field F_2\n", *argv, template_location.path);
-		usage(7);
+		mife_keygen_usage(7);
 	}
 	location_free(template_location);
 
 	/* read seed */
-	check_parse_result(load_seed(outs->private, "keygen", ins->seed), usage, 8);
+	check_parse_result(load_seed(outs->private, "keygen", ins->seed), mife_keygen_usage, 8);
 }
 
 /* for now, use the mife library's custom format; would be good to upgrade this
@@ -154,7 +154,7 @@ void parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locat
  * detection, error reporting, versioning and just generally make this tool a
  * bit more robust
  */
-bool print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
+bool mife_keygen_print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk) {
 	/* the public directory has to exist -- we read template.json out of it! --
 	 * but the private one might not yet */
 	if(!create_directory_if_missing(outs.private.path)) {
@@ -179,7 +179,7 @@ bool print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, 
 	return true;
 }
 
-void cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk) {
+void mife_keygen_cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk) {
 	aes_randclear(ins->seed);
 	mbp_template_stats_free(*(mbp_template_stats *)pp->mbp_params);
 	mbp_template_free(ins->template);

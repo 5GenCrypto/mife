@@ -7,7 +7,7 @@ lib_LTLIBRARIES=libmife.la
 
 MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 
-libmife_la_SOURCES = mife.c mife_io.c mife_internals.c flint_raw_io.c parse.c mbp_glue.c util.c cmdline.c keygen.c
+libmife_la_SOURCES = mife.c mife_io.c mife_internals.c flint_raw_io.c parse.c mbp_glue.c util.c cmdline.c keygen.c encrypt.c eval.c
 libmife_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 libmife_la_INCLUDEDOR = $(includedir)/mife
 libmife_la_LIBADD = $(top_builddir)/gghlite/libgghlite.la \
