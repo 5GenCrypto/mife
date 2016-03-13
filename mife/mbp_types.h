@@ -1,5 +1,5 @@
-#ifndef _MATRIX_H
-#define _MATRIX_H
+#ifndef _MBP_TYPES_H
+#define _MBP_TYPES_H
 
 #include <stdbool.h>
 #include "mife.h"
@@ -101,4 +101,4 @@ void ciphertext_mapping_free(ciphertext_mapping m);
  * isn't assigned to any uid */
 char *uid_from_position(const ciphertext_mapping m, const char *const position);
 
-#endif
+#endif /* ifndef _MBP_TYPES_H */

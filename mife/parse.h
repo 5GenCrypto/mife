@@ -1,5 +1,5 @@
-#ifndef _PARSE_H
-#define _PARSE_H
+#ifndef _MIFE_PARSE_H
+#define _MIFE_PARSE_H
 
 #include <jsmn.h>
 #include <stdbool.h>
@@ -33,4 +33,4 @@ bool jsmn_parse_ciphertext_mapping(const char *const json_string, const jsmntok_
 bool jsmn_parse_mbp_template_location(const location loc, mbp_template *const template);
 bool jsmn_parse_mbp_plaintext_string(const char *const json_string, mbp_plaintext *const plaintext);
 bool jsmn_parse_ciphertext_mapping_string(const char *const json_string, ciphertext_mapping *const mapping);
-#endif
+#endif /* ifndef _MIFE_PARSE_H */

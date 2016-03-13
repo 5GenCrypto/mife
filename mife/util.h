@@ -1,5 +1,5 @@
-#ifndef _ORE_UTILS_H
-#define _ORE_UTILS_H
+#ifndef _MIFE_UTILS_H
+#define _MIFE_UTILS_H
 
 #include <stdbool.h>
 
@@ -24,4 +24,4 @@ typedef enum {
 void check_parse_result(parse_result result, void usage(int), int problem);
 bool create_directory_if_missing(char *dir);
 
-#endif /* ifndef _ORE_UTILS_H */
+#endif /* ifndef _MIFE_UTILS_H */

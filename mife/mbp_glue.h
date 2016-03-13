@@ -1,5 +1,5 @@
-#ifndef _MIFE_GLUE_H
-#define _MIFE_GLUE_H
+#ifndef _MBP_GLUE_H
+#define _MBP_GLUE_H
 
 #include "mbp_types.h"
 #include "mife.h"
@@ -25,4 +25,4 @@ void mbp_template_stats_to_dimensions(mife_pp_t pp, int *out);
 void mbp_template_stats_to_position  (mife_pp_t pp, int global_index, int *out_position, int *out_local_index);
 void mbp_template_stats_to_cleartext (mife_pp_t pp, mife_mat_clr_t cleartext, void *cleartext_raw_untyped);
 int  mbp_template_stats_to_result    (mife_pp_t pp, f2_matrix raw_result);
-#endif
+#endif /* ifndef _MBP_GLUE_H */
