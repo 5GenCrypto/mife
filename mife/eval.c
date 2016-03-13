@@ -239,29 +239,13 @@ unsigned int minui(const unsigned int l, const unsigned int r) {
 void mife_eval_print_outputs(const mbp_template t, const f2_matrix m) {
 	const unsigned int num_rows = minui(m.num_rows, t.outputs.num_rows);
 	const unsigned int num_cols = minui(m.num_cols, t.outputs.num_cols);
-	int printi, printj;
-  bool printed = false;
-  char *error_msg = "ERROR: Evaluation could not determine the correct output.";
 	for(int i = 0; i < num_rows; i++) {
 		for(int j = 0; j < num_cols; j++) {
 			if(m.elems[i][j]) {
-        if(printed) {
-          printf("%s\n", error_msg);
-          return;
-        }
-        printed = true;
-        printi = i;
-        printj = j;
-      }
-    }
-  }
-  
-  if(!printed) {
-    printf("%s\n", error_msg);
-    return;
-  }
-
-  printf("%s\n", t.outputs.elems[printi][printj]);
+				printf("%s\n", t.outputs.elems[i][j]);
+			}
+		}
+	}
 }
 
 void mife_eval_cleanup(const_mmap_vtable mmap, eval_inputs ins, f2_matrix m) {
