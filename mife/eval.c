@@ -17,7 +17,7 @@ const mbp_template_stats *mbp_template_stats_from_eval_inputs(const eval_inputs 
 const mbp_template       *mbp_template_from_eval_inputs      (const eval_inputs ins) { return mbp_template_stats_from_eval_inputs(ins)->template; }
 
 void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval_inputs *const ins);
-f2_matrix evaluate(const_mmap_vtable mmap, const eval_inputs ins);
+f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins);
 void mife_eval_print_outputs(const mbp_template t, const f2_matrix m);
 void mife_eval_cleanup(const_mmap_vtable mmap, eval_inputs ins, f2_matrix m);
 
@@ -27,7 +27,7 @@ int mife_eval_main(const_mmap_vtable mmap, int argc, char **argv) {
 	bool success;
 
 	mife_eval_parse_cmdline(mmap, argc, argv, &ins);
-	m = evaluate(mmap, ins);
+	m = mife_eval_evaluate(mmap, ins);
 	success = NULL != m.elems;
 	if(success) mife_eval_print_outputs(*mbp_template_from_eval_inputs(ins), m);
 	mife_eval_cleanup(mmap, ins, m);
