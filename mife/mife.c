@@ -103,7 +103,13 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, randstate);
   timer_printf("Finished MMAP secret key initialization\n");
 
-  pp->params_ref = mmap->sk->pp(sk->self);
+  /* For const correctness, we should probably have two separate
+   * _mife_pp_struct types, one for pp's read from disk and one for pp's
+   * produced by picking a new keypair. Instead we keep only an informal
+   * (non-compiler-checked) invariant that we do not call read or clear on
+   * params_ref's produced from a new keypair generation.
+   */
+  pp->params_ref = (mmap_pp *)mmap->sk->pp(sk->self);
 
   timer_printf("Starting setting p...\n");
   start_timer();
