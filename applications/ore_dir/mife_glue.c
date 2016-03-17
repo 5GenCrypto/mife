@@ -69,7 +69,7 @@ void gghlite_enc_clear_wrapper(mmap_enc *const enc)
 
 void gghlite_enc_fread_raw_wrapper(mmap_enc *const enc, FILE *const fp) {
   const int tmp = gghlite_enc_fread_raw(fp, enc->self);
-  assert(tmp);
+  assert(tmp > 0);
 }
 
 void gghlite_enc_fprint_raw_wrapper(const mmap_enc *const enc, FILE *const fp)
