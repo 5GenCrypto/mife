@@ -73,8 +73,9 @@ void mife_keygen_usage(const int code) {
 		"                                     encrypted\n"
 		"  <public>/mife.pub        W custom  public parameters for evaluating\n"
 		"  <private>/mife.priv      W custom  private parameters for encrypting\n"
-		"  <private>/seed.bin      R  binary  32-byte seed for PRNG\n"
+		"  <private>/seed.bin      R  binary  %d-byte seed for PRNG\n"
 		"  /dev/urandom            R  binary  used in case above file is missing\n"
+		, AES_SEED_BYTE_SIZE
 		);
 	exit(code);
 }
