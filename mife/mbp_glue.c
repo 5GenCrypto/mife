@@ -68,16 +68,19 @@ void mbp_template_stats_to_cleartext(mife_pp_t pp, mife_mat_clr_t cleartext, voi
 	f2_mbp mbp;
 	int i;
 
-	assert(mbp_template_instantiate(stats->template, cleartext_raw, &mbp));
+	bool tmp;
+	tmp = mbp_template_instantiate(stats->template, cleartext_raw, &mbp);
+	assert(tmp);
 
 	/* except these asserts; the asserts in this block are okay */
 	/* (but should at least print some diagnostic information) */
 	assert(pp->num_inputs == stats->positions_len);
 	assert(mbp.matrices_len == stats->template->steps_len);
 
-	assert(!ALLOC_FAILS(cleartext->clr, pp->num_inputs));
+	if(ALLOC_FAILS(cleartext->clr, pp->num_inputs)) assert(false);
 	for(i = 0; i < stats->positions_len; i++)
-		assert(!ALLOC_FAILS(cleartext->clr[i], pp->n[i]));
+		if(ALLOC_FAILS(cleartext->clr[i], pp->n[i]))
+			assert(false);
 
 	for(i = 0; i < mbp.matrices_len; i++) {
 		int j, k;

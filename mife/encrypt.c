@@ -352,6 +352,7 @@ void mife_encrypt_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, e
 }
 
 FILE *mife_encrypt_fopen_bin(const location record_location, const char *const position, const int local_index) {
+	int tmp;
 	char *dir, *path;
 	const size_t  dir_len = strlen(record_location.path) + 1 + strlen(position), dir_size = dir_len + 1;
 	const size_t path_len = dir_len + 1 + INT_STR_LEN + 4, path_size = path_len + 1;
@@ -359,8 +360,10 @@ FILE *mife_encrypt_fopen_bin(const location record_location, const char *const p
 
 	if(ALLOC_FAILS( dir,  dir_size)) goto done;
 	if(ALLOC_FAILS(path, path_size)) goto free_dir;
-	assert(snprintf( dir,  dir_size, "%s/%s"    , record_location.path, position) < dir_size);
-	assert(snprintf(path, path_size, "%s/%d.bin", dir, local_index) < path_size);
+	tmp = snprintf( dir,  dir_size, "%s/%s"    , record_location.path, position);
+	assert(tmp < dir_size);
+	tmp = snprintf(path, path_size, "%s/%d.bin", dir, local_index);
+	assert(tmp < path_size);
 	if(!create_directory_if_missing(dir)) goto free_path;
 	result = fopen(path, "wb");
 

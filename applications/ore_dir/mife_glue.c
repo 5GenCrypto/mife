@@ -66,8 +66,12 @@ void gghlite_enc_init_wrapper(mmap_enc *const enc, const mmap_pp *const pp)
   { gghlite_enc_init(enc->self, pp->self); }
 void gghlite_enc_clear_wrapper(mmap_enc *const enc)
   { gghlite_enc_clear(enc->self); }
-void gghlite_enc_fread_raw_wrapper(mmap_enc *const enc, FILE *const fp)
-  { assert(gghlite_enc_fread_raw(fp, enc->self)); }
+
+void gghlite_enc_fread_raw_wrapper(mmap_enc *const enc, FILE *const fp) {
+  const int tmp = gghlite_enc_fread_raw(fp, enc->self);
+  assert(tmp);
+}
+
 void gghlite_enc_fprint_raw_wrapper(const mmap_enc *const enc, FILE *const fp)
   { gghlite_enc_fprint_raw(fp, enc->self); }
 void gghlite_enc_set_wrapper(mmap_enc *const dest, const mmap_enc *const src)
