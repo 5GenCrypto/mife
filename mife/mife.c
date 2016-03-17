@@ -15,6 +15,7 @@ bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
       dest->elems[*i][j] = src.elems[*i][j];
   }
   dest->num_cols = src.num_cols;
+  return true;
 }
 
 bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols) {
@@ -31,6 +32,7 @@ bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const un
       dest->elems[*i][j] = false;
   }
   dest->num_cols = num_cols;
+  return true;
 }
 
 void f2_matrix_free(f2_matrix m) {
