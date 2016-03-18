@@ -125,13 +125,13 @@ void fwrite_mife_ciphertext(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertex
   FILE *fp = fopen(filepath, "wb");
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int j = 0; j < pp->n[i]; j++) {
-      fwrite_gghlite_enc_mat(mmap, pp, ct->enc[i][j], fp);
+      fwrite_gghlite_enc_mat(mmap, ct->enc[i][j], fp);
     }
   }
   fclose(fp);
 }
 
-void fwrite_gghlite_enc_mat(const_mmap_vtable mmap, mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
+void fwrite_gghlite_enc_mat(const_mmap_vtable mmap, gghlite_enc_mat_t m, FILE *fp) {
   fprintf(fp, " %d ", m->nrows);
   fprintf(fp, " %d ", m->ncols);
   for(int i = 0; i < m->nrows; i++) {
@@ -149,13 +149,13 @@ void fread_mife_ciphertext(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext
   for(int i = 0; i < pp->num_inputs; i++) {
     ct->enc[i] = malloc(pp->n[i] * sizeof(gghlite_enc_mat_t));
     for(int j = 0; j < pp->n[i]; j++) {
-      fread_gghlite_enc_mat(mmap, pp, ct->enc[i][j], fp);
+      fread_gghlite_enc_mat(mmap, ct->enc[i][j], fp);
     }
   }
   fclose(fp);
 }
 
-void fread_gghlite_enc_mat(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t m, FILE *fp) {
+void fread_gghlite_enc_mat(const_mmap_vtable mmap, gghlite_enc_mat_t m, FILE *fp) {
   int check1 = fscanf(fp, " %d ", &m->nrows);
   int check2 = fscanf(fp, " %d ", &m->ncols);
   assert(check1 == 1 && check2 == 1);

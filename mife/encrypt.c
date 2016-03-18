@@ -386,7 +386,7 @@ bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_
 		fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
 		return false;
 	}
-	fwrite_gghlite_enc_mat(mmap, /* TODO: why is pp needed? */ pp, ct, dest);
+	fwrite_gghlite_enc_mat(mmap, ct, dest);
 	fclose(dest);
 	return true;
 }

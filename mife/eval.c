@@ -199,7 +199,7 @@ bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsign
 	}
 
 	/* TODO: would be nice to have some error checking here */
-	fread_gghlite_enc_mat(mmap, ins.pp, out_m, file);
+	fread_gghlite_enc_mat(mmap, out_m, file);
 	result = true;
 
 fclose:
