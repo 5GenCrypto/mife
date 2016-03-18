@@ -7,7 +7,7 @@
 struct mmap_pp  { gghlite_params_t self; };
 struct mmap_sk  { gghlite_sk_t     self; };
 struct mmap_enc { gghlite_enc_t    self; };
-const mmap_vtable gghlite_vtable;
+extern const mmap_vtable gghlite_vtable;
 
 void gghlite_params_clear_read_wrapper(mmap_pp *pp);
 void fread_gghlite_params_wrapper(mmap_pp *const pp, FILE *const fp);
