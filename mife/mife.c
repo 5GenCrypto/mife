@@ -1,6 +1,6 @@
 #include "mife.h"
 
-f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t ct) {
+f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, mmap_enc_mat_t ct) {
   f2_matrix pt;
   if(!f2_matrix_zero(&pt, ct->nrows, ct->ncols))
     return pt;
@@ -154,7 +154,7 @@ void mife_encrypt(const_mmap_vtable mmap, mife_ciphertext_t ct, void *message, m
 }
 
 int mife_evaluate(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t *cts) {
-  gghlite_enc_mat_t tmp;
+  mmap_enc_mat_t tmp;
 
   for(int index = 1; index < pp->kappa; index++) {
     int i, j;
@@ -164,18 +164,18 @@ int mife_evaluate(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t *cts) 
       // multiply the 0th index with the 1st index
       int i0, j0;
       pp->orderfn(pp, 0, &i0, &j0);
-      gghlite_enc_mat_init(mmap, pp->params_ref, tmp,
+      mmap_enc_mat_init(mmap, pp->params_ref, tmp,
         cts[i0]->enc[i0][j0]->nrows, cts[i]->enc[i][j]->ncols);
-      gghlite_enc_mat_mul(mmap, pp->params_ref, tmp,
+      mmap_enc_mat_mul(mmap, pp->params_ref, tmp,
         cts[i0]->enc[i0][j0], cts[i]->enc[i][j]);
       continue;
     }
 
-    gghlite_enc_mat_mul(mmap, pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
+    mmap_enc_mat_mul(mmap, pp->params_ref, tmp, tmp, cts[i]->enc[i][j]);
   }
 
   f2_matrix result = mife_zt_all(mmap, pp, tmp);
-  gghlite_enc_mat_clear(mmap, tmp);
+  mmap_enc_mat_clear(mmap, tmp);
   int ret = pp->parsefn(pp, result);
   f2_matrix_free(result);
 
@@ -190,7 +190,7 @@ void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
 
 void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
-    gghlite_enc_mat_t dest) {
+    mmap_enc_mat_t dest) {
   int position_index, local_index;
   fmpz_mat_t src;
 
@@ -203,7 +203,7 @@ void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes
   if(!(pp->flags & MIFE_NO_KILIAN))
     mife_apply_kilian(pp, sk, src, global_index);
 
-  gghlite_enc_mat_init(mmap, pp->params_ref, dest, src->r, src->c);
+  mmap_enc_mat_init(mmap, pp->params_ref, dest, src->r, src->c);
   mife_mat_encode(mmap, pp, sk, dest, src, partitions[position_index][local_index], randstate);
 }
 

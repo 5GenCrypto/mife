@@ -32,8 +32,8 @@ void mife_encrypt_setup(mife_pp_t pp, fmpz_t uid, void *message,
     mife_mat_clr_t out_clr, int ****out_partitions);
 void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes_randstate_t randstate,
     int global_index, mife_mat_clr_t clr, int ***partitions,
-    gghlite_enc_mat_t out_ct);
+    mmap_enc_mat_t out_ct);
 void mife_encrypt_clear(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
-f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t m);
+f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, mmap_enc_mat_t m);
 
 #endif /* _MIFE_H_ */

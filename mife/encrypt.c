@@ -23,7 +23,7 @@ typedef struct {
 } encrypt_inputs;
 
 void mife_encrypt_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, encrypt_inputs *const ins);
-bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location);
+bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, mmap_enc_mat_t ct, location record_location);
 void mife_encrypt_cleanup(const_mmap_vtable mmap, encrypt_inputs *const ins);
 
 int mife_encrypt_main(const_mmap_vtable mmap, int argc, char **argv) {
@@ -53,10 +53,10 @@ int mife_encrypt_main(const_mmap_vtable mmap, int argc, char **argv) {
 
 	reset_T();
 	for(i = 0; i < template->steps_len; i++) {
-		gghlite_enc_mat_t ct;
+		mmap_enc_mat_t ct;
 		mife_encrypt_single(mmap, ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
 		success &= mife_encrypt_print_output(mmap, ins.pp, i, ct, ins.record_location);
-		gghlite_enc_mat_clear(mmap, ct);
+		mmap_enc_mat_clear(mmap, ct);
 	}
 	timer_printf("\n");
 	mife_encrypt_clear(ins.pp, clr, partitions);
@@ -375,7 +375,7 @@ done:
 	return result;
 }
 
-bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, gghlite_enc_mat_t ct, location record_location) {
+bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_index, mmap_enc_mat_t ct, location record_location) {
 	const mbp_template_stats *const stats    = pp->mbp_params;
 	const mbp_template       *const template = stats->template;
 
@@ -386,7 +386,7 @@ bool mife_encrypt_print_output(const_mmap_vtable mmap, mife_pp_t pp, int global_
 		fprintf(stderr, "could not write %s/%d.bin\n", position, local_index);
 		return false;
 	}
-	fwrite_gghlite_enc_mat(mmap, ct, dest);
+	fwrite_mmap_enc_mat(mmap, ct, dest);
 	fclose(dest);
 	return true;
 }

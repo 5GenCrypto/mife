@@ -169,7 +169,7 @@ void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval
 	if(position_missing) mife_eval_usage(6);
 }
 
-bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsigned int global_index, gghlite_enc_mat_t out_m) {
+bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsigned int global_index, mmap_enc_mat_t out_m) {
 	const mbp_template_stats *const stats    = ins.pp->mbp_params;
 	const mbp_template       *const template = stats->template;
 	const int local_index      = stats->local_index[global_index];
@@ -199,7 +199,7 @@ bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsign
 	}
 
 	/* TODO: would be nice to have some error checking here */
-	fread_gghlite_enc_mat(mmap, out_m, file);
+	fread_mmap_enc_mat(mmap, out_m, file);
 	result = true;
 
 fclose:
@@ -213,7 +213,7 @@ done:
 f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins) {
 	f2_matrix result = { .num_rows = 0, .num_cols = 0, .elems = NULL };
 	const mbp_template *const template = mbp_template_from_eval_inputs(ins);
-	gghlite_enc_mat_t product, multiplicand;
+	mmap_enc_mat_t product, multiplicand;
 	int i;
 
 	/* if there are no steps to evaluate, I guess we're done */
@@ -221,13 +221,13 @@ f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins) {
 	if(!mife_eval_load_matrix(mmap, ins, 0, product)) goto done;
 	for(i = 1; i < template->steps_len; i++) {
 		if(!mife_eval_load_matrix(mmap, ins, i, multiplicand)) goto clear_product;
-		gghlite_enc_mat_mul(mmap, ins.pp->params_ref, product, product, multiplicand);
-		gghlite_enc_mat_clear(mmap, multiplicand);
+		mmap_enc_mat_mul(mmap, ins.pp->params_ref, product, product, multiplicand);
+		mmap_enc_mat_clear(mmap, multiplicand);
 	}
 
 	result = mife_zt_all(mmap, ins.pp, product);
 clear_product:
-	gghlite_enc_mat_clear(mmap, product);
+	mmap_enc_mat_clear(mmap, product);
 done:
 	return result;
 }

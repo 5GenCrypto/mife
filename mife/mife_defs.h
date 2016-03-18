@@ -86,13 +86,13 @@ typedef enum {
   MIFE_SIMPLE_PARTITIONS  = 0x04,
 } mife_flag_t;
 
-struct _gghlite_enc_mat_struct {
+struct _mmap_enc_mat_struct {
   int nrows; // number of rows in the matrix
   int ncols; // number of columns in the matrix
   mmap_enc ***m;
 };
 
-typedef struct _gghlite_enc_mat_struct gghlite_enc_mat_t[1];
+typedef struct _mmap_enc_mat_struct mmap_enc_mat_t[1];
 
 struct _mife_mat_clr_struct {
   fmpz_mat_t **clr;
@@ -101,7 +101,7 @@ struct _mife_mat_clr_struct {
 typedef struct _mife_mat_clr_struct mife_mat_clr_t[1];
 
 struct _mife_ciphertext_struct {
-  gghlite_enc_mat_t **enc;
+  mmap_enc_mat_t **enc;
 };
 
 typedef struct _mife_ciphertext_struct mife_ciphertext_t[1];
@@ -115,7 +115,7 @@ struct _mife_pp_struct {
   int *gammas; // gamma for each input
   int L; // log # of plaintexts we can support
   int gamma; // should be sum of gammas[i] 
-  int kappa; // the kappa for gghlite (degree of multilinearity)
+  int kappa; // the degree of multilinearity
   int numR; // number of kilian matrices. should be kappa-1
   mife_flag_t flags;
   fmpz_t p; // the prime, the order of the field
