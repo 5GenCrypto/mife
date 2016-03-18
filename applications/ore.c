@@ -7,6 +7,7 @@
  */
 
 #include "ore.h"
+#include "ore_dir/mife_glue.h"
 
 void ore_print_help_and_exit() {
   printf("-l, --lambda   security parameter\n");
@@ -128,14 +129,14 @@ int main(int argc, char *argv[]) {
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
   mife_pp_t pp;
   mife_ciphertext_t *cts = malloc(2 * sizeof(mife_ciphertext_t));
-  fread_mife_pp(pp, pp_file);
-  fread_mife_ciphertext(pp, cts[0], ct1_file);
-  fread_mife_ciphertext(pp, cts[1], ct2_file);
-  int ret = mife_evaluate(pp, cts);
-  mife_ciphertext_clear(pp, cts[0]);
-  mife_ciphertext_clear(pp, cts[1]);
+  fread_mife_pp(&gghlite_vtable, pp, pp_file);
+  fread_mife_ciphertext(&gghlite_vtable, pp, cts[0], ct1_file);
+  fread_mife_ciphertext(&gghlite_vtable, pp, cts[1], ct2_file);
+  int ret = mife_evaluate(&gghlite_vtable, pp, cts);
+  mife_ciphertext_clear(&gghlite_vtable, pp, cts[0]);
+  mife_ciphertext_clear(&gghlite_vtable, pp, cts[1]);
   free(cts);
-  mife_clear_pp_read(pp);
+  mife_clear_pp_read(&gghlite_vtable, pp);
   return ret;
 }
 
@@ -197,17 +198,16 @@ void ore_pp_sk_gen(char *pp_file, char *sk_file, int lambda, int d, int n,
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
-  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, seed, "setup");
-  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
+  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
-  fwrite_mife_pp(pp, pp_file);
-  fwrite_mife_sk(sk, sk_file);
+  fwrite_mife_pp(&gghlite_vtable, pp, pp_file);
+  fwrite_mife_sk(&gghlite_vtable, sk, sk_file);
   mife_clear_pp(pp);
-  mife_clear_sk(sk);
+  mife_clear_sk(&gghlite_vtable, sk);
   aes_randclear(randstate);
   mpfr_free_cache();
   flint_cleanup();
@@ -251,14 +251,13 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
   mife_mbp_set(params, pp, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
 
-  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_DEFAULT | GGHLITE_FLAGS_GOOD_G_INV;
   reset_T();
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, seed, "setup");
-  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
-  fwrite_mife_sk(sk, "sk_test.out");
-  mife_clear_sk(sk);
-  fread_mife_sk(sk, "sk_test.out");
+  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
+  fwrite_mife_sk(&gghlite_vtable, sk, "sk_test.out");
+  mife_clear_sk(&gghlite_vtable, sk);
+  fread_mife_sk(&gghlite_vtable, sk, "sk_test.out");
   aes_randclear(randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
@@ -274,12 +273,12 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
       char str_i[100];
       sprintf(str_i, "%d", i+1);
       aes_randinit_seed(encrypt_randstate, seed, str_i);
-      mife_encrypt(ciphertexts[i], messages[i], pp, sk, encrypt_randstate);
+      mife_encrypt(&gghlite_vtable, ciphertexts[i], messages[i], pp, sk, encrypt_randstate);
       aes_randclear(encrypt_randstate);
       char str[100];
       sprintf(str, "ct%d.out", i+1);
-      fwrite_mife_ciphertext(pp, ciphertexts[i], str);
-      mife_ciphertext_clear(pp, ciphertexts[i]);
+      fwrite_mife_ciphertext(&gghlite_vtable, pp, ciphertexts[i], str);
+      mife_ciphertext_clear(&gghlite_vtable, pp, ciphertexts[i]);
     }
   }
   PRINT_ENCODING_PROGRESS = 0;
@@ -290,7 +289,7 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
   }
 
   mife_clear_pp(pp);
-  mife_clear_sk(sk);
+  mife_clear_sk(&gghlite_vtable, sk);
   mpfr_free_cache();
   flint_cleanup();
   free(params);
@@ -878,18 +877,17 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, DEFAULT_SHA_SEED, NULL);
-  gghlite_flag_t ggh_flags = GGHLITE_FLAGS_QUIET | GGHLITE_FLAGS_GOOD_G_INV;
-  mife_setup(pp, sk, L, lambda, ggh_flags, randstate);
+  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
 
-  fwrite_mife_pp(pp, "pp_test.out");
+  fwrite_mife_pp(&gghlite_vtable, pp, "pp_test.out");
   mife_clear_pp(pp);
   mife_pp_t pp2;
-  fread_mife_pp(pp2, "pp_test.out");
+  fread_mife_pp(&gghlite_vtable, pp2, "pp_test.out");
 
-  fwrite_mife_sk(sk, "sk_test.out");
-  mife_clear_sk(sk);
+  fwrite_mife_sk(&gghlite_vtable, sk, "sk_test.out");
+  mife_clear_sk(&gghlite_vtable, sk);
   mife_sk_t sk2;
-  fread_mife_sk(sk2, "sk_test.out");
+  fread_mife_sk(&gghlite_vtable, sk2, "sk_test.out");
 
   mife_mbp_set(params, pp2, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
@@ -909,7 +907,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   mife_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(mife_ciphertext_t));
   for(int i = 0; i < num_messages; i++) {
-    mife_encrypt(ciphertexts[i], messages[i], pp2, sk2, randstate);
+    mife_encrypt(&gghlite_vtable, ciphertexts[i], messages[i], pp2, sk2, randstate);
   }
 
   for(int i = 0; i < num_messages; i++) {
@@ -918,7 +916,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
       memcpy(cts[0], ciphertexts[i], sizeof(mife_ciphertext_t));
       memcpy(cts[1], ciphertexts[j], sizeof(mife_ciphertext_t));
 
-      int compare = mife_evaluate(pp2, cts);
+      int compare = mife_evaluate(&gghlite_vtable, pp2, cts);
       fmpz_t modi, modj, true_mspace_size, fmpzd;
       fmpz_init(modi);
       fmpz_init(modj);
@@ -952,13 +950,13 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   }
 
   for(int i = 0; i < num_messages; i++) {
-    mife_ciphertext_clear(pp2, ciphertexts[i]);
+    mife_ciphertext_clear(&gghlite_vtable, pp2, ciphertexts[i]);
   }
   free(ciphertexts);
   free(messages);
 
-  mife_clear_pp_read(pp2);
-  mife_clear_sk(sk2);
+  mife_clear_pp_read(&gghlite_vtable, pp2);
+  mife_clear_sk(&gghlite_vtable, sk2);
   free(params);
   aes_randclear(randstate);
   

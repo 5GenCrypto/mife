@@ -11,6 +11,7 @@ LDADD = $(top_builddir)/aesrand/libaesrand.la \
 	$(top_builddir)/gghlite/libgghlite.la \
         $(top_builddir)/dgsl/libdgsl.la \
 	-L$(top_builddir)/flint -lflint \
+	-L$(top_builddir)/mife/jsmn -ljsmn \
         -lgmp -lmpfr -lm -lssl -lcrypto
 
 LDFLAGS = -no-install
@@ -28,3 +29,5 @@ bin_PROGRAMS = gghlite_params \
                bench_invert \
                bench_co_prime \
                bench_rem
+
+ore_SOURCES = ore.h ore.c ore_dir/mife_glue.h ore_dir/mife_glue.c
