@@ -2,7 +2,7 @@
 #define _MIFE_GLUE_H
 
 #include <gghlite/gghlite-defs.h>
-#include "mife_defs.h"
+#include <mife/mife_defs.h>
 
 struct mmap_pp  { gghlite_params_t self; };
 struct mmap_sk  { gghlite_sk_t     self; };
