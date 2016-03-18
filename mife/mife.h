@@ -9,12 +9,6 @@ int mife_keygen_main (const_mmap_vtable mmap, int argc, char **argv);
 int mife_encrypt_main(const_mmap_vtable mmap, int argc, char **argv);
 int mife_eval_main   (const_mmap_vtable mmap, int argc, char **argv);
 
-/* returns true iff dest is successfully initialized to the contents of src */
-bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
-bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols);
-void f2_matrix_free(f2_matrix m);
-f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t m);
-
 /* MIFE interface */
 void mife_init_params(mife_pp_t pp, mife_flag_t flags);
 void mife_mbp_set(
@@ -40,5 +34,6 @@ void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes
     int global_index, mife_mat_clr_t clr, int ***partitions,
     gghlite_enc_mat_t out_ct);
 void mife_encrypt_clear(mife_pp_t pp, mife_mat_clr_t clr, int ***out_partitions);
+f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, gghlite_enc_mat_t m);
 
 #endif /* _MIFE_H_ */

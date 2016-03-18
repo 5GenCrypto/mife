@@ -2,7 +2,16 @@
 #define _MBP_TYPES_H
 
 #include <stdbool.h>
-#include "mife.h"
+
+typedef struct {
+  unsigned int num_rows, num_cols;
+  bool **elems;
+} f2_matrix;
+
+/* returns true iff dest is successfully initialized to the contents of src */
+bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src);
+bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols);
+void f2_matrix_free(f2_matrix m);
 
 /* an invariant is that `matrices[i].num_cols == matrices[i+1].num_rows` */
 typedef struct {

@@ -7,8 +7,8 @@
 #include <gmp.h>
 #include <gghlite/gghlite.h>
 #include <gghlite/gghlite-defs.h>
+#include "mbp_types.h"
 
-#define ALLOC_FAILS(path, len) (NULL == ((path) = malloc((len) * sizeof(*(path)))))
 #define debug_printf printf
 #define CHECK(x, y) if((x) < (y)) { debug_printf( \
       "ERROR: fscanf() error encountered when trying to read from file\n" \
@@ -85,11 +85,6 @@ typedef enum {
   //are encoded at the empty set.)
   MIFE_SIMPLE_PARTITIONS  = 0x04,
 } mife_flag_t;
-
-typedef struct {
-  unsigned int num_rows, num_cols;
-  bool **elems;
-} f2_matrix;
 
 struct _gghlite_enc_mat_struct {
   int nrows; // number of rows in the matrix
