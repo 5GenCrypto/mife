@@ -1,6 +1,7 @@
 #ifndef _MIFE_GLUE_H
 #define _MIFE_GLUE_H
 
+#include <gghlite/gghlite.h>
 #include <gghlite/gghlite-defs.h>
 #include <mife/mife_defs.h>
 

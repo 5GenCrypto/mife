@@ -1,12 +1,12 @@
 #ifndef _MIFE_DEFS_H_
 #define _MIFE_DEFS_H_
 
+#include <aesrand/aesrand.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <gmp.h>
-#include <gghlite/gghlite.h>
-#include <gghlite/gghlite-defs.h>
+#include <gghlite/misc.h>
 #include "mbp_types.h"
 
 #define debug_printf printf

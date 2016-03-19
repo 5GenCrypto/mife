@@ -1,7 +1,6 @@
 #ifndef _MIFE_CMDLINE_H
 #define _MIFE_CMDLINE_H
 
-#include <gghlite/gghlite.h>
 #include "mbp_types.h"
 #include "mife.h"
 #include "mbp_glue.h"
