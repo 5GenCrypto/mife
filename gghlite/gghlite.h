@@ -22,6 +22,10 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <dgsl/dgsl.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpq_poly.h>
@@ -72,7 +76,8 @@ static inline void gghlite_params_init(gghlite_params_t self, size_t lambda, siz
 
 
 static inline void gghlite_jigsaw_params_init(gghlite_params_t self, size_t lambda, size_t kappa, size_t gamma, gghlite_flag_t flags) {
-  gghlite_params_init_gamma(self, lambda, kappa, gamma, 0x0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV);
+    gghlite_params_init_gamma(self, lambda, kappa, gamma, 0x0,
+                              (gghlite_flag_t) ((int) flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV));
 }
 
 /**
@@ -124,7 +129,8 @@ void gghlite_init(gghlite_sk_t self, const size_t lambda, const size_t kappa, co
 
 static inline void gghlite_jigsaw_init_gamma(gghlite_sk_t self, size_t lambda, size_t kappa, size_t gamma,
                                        gghlite_flag_t flags, aes_randstate_t randstate) {
-  gghlite_init(self, lambda, kappa, gamma, 0x0, flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV,
+  gghlite_init(self, lambda, kappa, gamma, 0x0,
+               (gghlite_flag_t) ((int) flags | GGHLITE_FLAGS_ASYMMETRIC | GGHLITE_FLAGS_GOOD_G_INV),
                randstate);
 }
 
@@ -434,7 +440,7 @@ void gghlite_enc_set_gghlite_clr(gghlite_enc_t rop, const gghlite_sk_t self, con
 
 static inline void gghlite_enc_set_gghlite_clr0(gghlite_enc_t rop, const gghlite_sk_t self, const gghlite_clr_t f,
                                                 aes_randstate_t randstate) {
-	int *group = malloc(self->params->gamma * sizeof(int));
+	int *group = (int *) malloc(self->params->gamma * sizeof(int));
 	memset(group, 0, self->params->gamma * sizeof(int));
 	group[0] = 1;
   gghlite_enc_set_gghlite_clr(rop, self, f, 0, group, 0, randstate);
@@ -507,5 +513,8 @@ void gghlite_enc_extract(fmpz_poly_t rop, const gghlite_params_t self, const ggh
 
 int gghlite_enc_is_zero(const gghlite_params_t self, const gghlite_enc_t op);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GGHLITE_H_

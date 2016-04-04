@@ -22,8 +22,8 @@ static inline void ggh_die(const char *msg, ...) {
 #include <sys/time.h>
 #include <unistd.h>
 
-int PRINT_TIMERS;
-uint64_t T; /* global var for keeping track of time */
+extern int PRINT_TIMERS;
+extern uint64_t T; /* global var for keeping track of time */
 
 static inline uint64_t ggh_walltime(uint64_t t0) {
   static time_t base_sec;
