@@ -22,6 +22,10 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <dgsl/dgsl.h>
 #include <flint/fmpz_poly.h>
 #include <flint/fmpq_poly.h>
@@ -508,5 +512,9 @@ void gghlite_enc_extract(fmpz_poly_t rop, const gghlite_params_t self, const ggh
 */
 
 int gghlite_enc_is_zero(const gghlite_params_t self, const gghlite_enc_t op);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_GGHLITE_H_
