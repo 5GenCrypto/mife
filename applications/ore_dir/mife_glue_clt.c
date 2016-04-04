@@ -86,13 +86,13 @@ void clt_pp_save_wrapper (const mmap_pp *const pp, FILE *const fp)
     fwrite_clt_pp(fp, &(pp->self));
 }
 
-void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate)
+void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t rng)
 {
     int *pows = malloc(gamma * sizeof(int));
     for (int i = 0; i < gamma; i++) {
         pows[i] = 1;
     }
-    clt_state_init(&(sk->self), kappa, lambda, gamma, pows);
+    clt_state_init(&(sk->self), kappa, lambda, gamma, pows, rng);
     free(pows);
 }
 
@@ -135,12 +135,12 @@ void clt_enc_clear_wrapper (mmap_enc *const enc)
 
 void clt_enc_fread_wrapper (mmap_enc *enc, FILE *const fp)
 {
-    mpz_out_raw(fp, enc->self);
+    mpz_inp_raw(enc->self, fp);
 }
 
 void clt_enc_fwrite_wrapper (const mmap_enc *const enc, FILE *const fp)
 {
-    mpz_inp_raw(enc->self, fp);
+    mpz_out_raw(fp, enc->self);
 }
 
 void clt_enc_set_wrapper (mmap_enc *const dest, const mmap_enc *const src)
@@ -165,16 +165,13 @@ bool clt_enc_is_zero_wrapper (const mmap_enc *const enc, const mmap_pp *const pp
     clt_is_zero(&(pp->self), enc->self);
 }
 
-void clt_encode_wrapper (
-    mmap_enc *const enc,
-    const mmap_sk *const sk,
-    const fmpz_t plaintext,
-    int *group,
-    aes_randstate_t randstate
-) {
+void
+clt_encode_wrapper (mmap_enc *const enc, const mmap_sk *const sk,
+                    const fmpz_t plaintext, int *group, aes_randstate_t rng)
+{
     mpz_t ins[1];
     mpz_init(ins[0]);
     fmpz_get_mpz(ins[0], plaintext);
-    clt_encode(enc->self, sk, 1, ins, group);
+    clt_encode(enc->self, &(sk->self), 1, ins, group, rng);
     mpz_clear(ins[0]);
 }
