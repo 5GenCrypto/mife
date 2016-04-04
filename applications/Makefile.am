@@ -12,7 +12,7 @@ LDADD = $(top_builddir)/aesrand/libaesrand.la \
         $(top_builddir)/dgsl/libdgsl.la \
 	-L$(top_builddir)/flint -lflint \
 	-L$(top_builddir)/mife/jsmn -ljsmn \
-        -lgmp -lmpfr -lm -lssl -lcrypto
+        -lgmp -lmpfr -lm -lssl -lcrypto -lclt13
 
 LDFLAGS = -no-install
 
