@@ -10,7 +10,7 @@
 #include <oz/oz.h>
 #include "gso.h"
 
-#include <aesrand/aesrand.h>
+#include <aesrand.h>
 
 /**
    Sampling algorithms

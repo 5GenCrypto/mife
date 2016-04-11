@@ -7,9 +7,7 @@ LDADD = $(top_builddir)/gghlite/libgghlite.la \
         $(top_builddir)/dgs/libdgs.la \
         $(top_builddir)/oz/liboz.la \
         $(top_builddir)/dgsl/libdgsl.la \
-        $(top_builddir)/aesrand/libaesrand.la \
-        -lflint \
-        -lgmp -lmpfr -lm 
+		-laesrand -lflint -lgmp -lmpfr -lm 
 
 LDFLAGS = -no-install
 

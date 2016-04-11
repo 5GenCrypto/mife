@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "../aesrand/aesrand.h"
+#include <aesrand.h>
 
 /** A hack around the missing random() and drand48 in Windows */
 #ifndef lrand48

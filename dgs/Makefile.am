@@ -16,8 +16,7 @@ pkgincludesub_HEADERS = dgs/dgs_bern.h \
 	dgs/dgs_misc.h
 
 libdgs_la_LDFLAGS = -release 0.0.$(RELEASE) -no-undefined
-libdgs_la_LIBADD = ../aesrand/libaesrand.la \
- -lmpfr -lgmp -lm
+libdgs_la_LIBADD = -laesrand -lmpfr -lgmp -lm
 
 check_PROGRAMS=test_gauss_z
 test_gauss_z_SOURCES=tests/test_gauss_z.c

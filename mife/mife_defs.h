@@ -1,7 +1,7 @@
 #ifndef _MIFE_DEFS_H_
 #define _MIFE_DEFS_H_
 
-#include <aesrand/aesrand.h>
+#include <aesrand.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
