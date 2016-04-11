@@ -78,21 +78,23 @@ void clt_pp_clear_wrapper (mmap_pp *pp)
 
 void clt_pp_read_wrapper (mmap_pp *const pp, FILE *const fp)
 {
-    fread_clt_pp(fp, &(pp->self));
+    clt_pp_fread(fp, &(pp->self));
 }
 
 void clt_pp_save_wrapper (const mmap_pp *const pp, FILE *const fp)
 {
-    fwrite_clt_pp(fp, &(pp->self));
+    clt_pp_fsave(fp, &(pp->self));
 }
 
-void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t rng)
+void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa,
+                             size_t gamma, aes_randstate_t rng)
 {
     int *pows = malloc(gamma * sizeof(int));
     for (int i = 0; i < gamma; i++) {
         pows[i] = 1;
     }
-    clt_state_init(&(sk->self), kappa, lambda, gamma, pows, rng);
+    clt_state_init(&(sk->self), kappa, lambda, gamma, pows,
+                   CLT_FLAG_DEFAULT & CLT_FLAG_OPT_PARALLEL_ENCODE, rng);
     free(pows);
 }
 
@@ -103,12 +105,12 @@ void clt_state_clear_wrapper (mmap_sk *const sk)
 
 void clt_state_read_wrapper (mmap_sk *const sk, FILE *const fp)
 {
-    fread_clt_state(fp, &(sk->self));
+    clt_state_fread(fp, &(sk->self));
 }
 
 void clt_state_save_wrapper (const mmap_sk *const sk, FILE *const fp)
 {
-    fwrite_clt_state(fp, &(sk->self));
+    clt_state_fsave(fp, &(sk->self));
 }
 
 void clt_state_get_modulus (const mmap_sk *const sk, fmpz_t p_out)
