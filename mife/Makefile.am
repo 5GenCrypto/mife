@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign -Wall
 SUBDIRS = jsmn
 
-AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -I$(top_srcdir)/flint -I$(top_srcdir)/mife/jsmn -fopenmp
+AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -I$(top_srcdir)/mife/jsmn -fopenmp
 
 lib_LTLIBRARIES=libmife.la
 
@@ -14,7 +14,7 @@ libmife_la_LIBADD = \
 	$(top_builddir)/dgs/libdgs.la \
 	$(top_builddir)/oz/liboz.la \
         $(top_builddir)/dgsl/libdgsl.la \
-	-L$(top_builddir)/flint -lflint \
+	-lflint \
         -lgmp -lmpfr -lm
 
 

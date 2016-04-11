@@ -18,7 +18,7 @@ libgghlite_la_SOURCES = gghlite.c \
                         ggh-internals.h \
                         api.c
 libgghlite_la_LIBADD = -lgmp -lmpfr \
-                       -L$(top_builddir)/flint/ -lflint \
+                       -lflint \
                        $(top_builddir)/oz/liboz.la \
                        $(top_builddir)/dgs/libdgs.la \
                        $(top_builddir)/dgsl/libdgsl.la

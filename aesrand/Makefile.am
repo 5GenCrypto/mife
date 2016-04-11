@@ -9,7 +9,7 @@ MY_LIB_LDFLAGS=-release 0.0.$(RELEASE) -no-undefined
 libaesrand_la_SOURCES = aesrand.c
 libaesrand_la_LDFLAGS = $(MY_LIB_LDFLAGS)
 libaesrand_la_INCLUDEDOR = $(includedir)/aesrand
-libaesrand_la_LIBADD = -L../flint -lflint \
+libaesrand_la_LIBADD = -lflint \
         -lgmp -lmpfr -lm -lssl -lcrypto
 
 

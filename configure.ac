@@ -49,10 +49,10 @@ AC_CONFIG_SUBDIRS([dgs])
 # configure FLINT by hand because it doesn't support all options autotools might
 # throw at it
 
-AC_ARG_VAR(FLINT, [If set to no then calling configure on FLINT is skipped])
+dnl AC_ARG_VAR(FLINT, [If set to no then calling configure on FLINT is skipped])
 
-if test "x$FLINT" != "xno"; then
-   cd flint && ./configure --prefix=${prefix} && cd ..
-fi   
+dnl if test "x$FLINT" != "xno"; then
+dnl    cd flint && ./configure --prefix=${prefix} && cd ..
+dnl fi   
 
 AC_OUTPUT

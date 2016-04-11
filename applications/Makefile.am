@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = ore_dir
 AM_CFLAGS = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -fopenmp -Wall -g
 
-AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint
+# AM_LDFLAGS = -Wl,-rpath -Wl,$(abs_top_builddir)/flint
 
 LDADD = $(top_builddir)/aesrand/libaesrand.la \
 	$(top_builddir)/mife/libmife.la \
@@ -10,7 +10,7 @@ LDADD = $(top_builddir)/aesrand/libaesrand.la \
 	$(top_builddir)/oz/liboz.la \
 	$(top_builddir)/gghlite/libgghlite.la \
         $(top_builddir)/dgsl/libdgsl.la \
-	-L$(top_builddir)/flint -lflint \
+	-lflint \
 	-L$(top_builddir)/mife/jsmn -ljsmn \
         -lgmp -lmpfr -lm -lssl -lcrypto -lclt13
 
