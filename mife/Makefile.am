@@ -17,6 +17,6 @@ libmife_la_LIBADD = \
 	-lflint \
         -lgmp -lmpfr -lm
 
-
-
-include_HEADERS = mife.h mife_io.h mife_internals.h flint_raw_io.h mife_defs.h parse.h mbp_glue.h util.h cmdline.h mbp_types.h
+pkgincludesubdir = $(includedir)/mife
+pkgincludesub_HEADERS = mife.h mife_io.h mife_internals.h flint_raw_io.h \
+	mife_defs.h parse.h mbp_glue.h util.h cmdline.h mbp_types.h

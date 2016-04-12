@@ -182,11 +182,11 @@ int fmpz_poly_oz_coprime(const fmpz_poly_t b0, const fmpz_poly_t b1, const long 
 int fmpz_poly_oz_coprime_det(const fmpz_poly_t b0, const fmpz_t det_b1, const long n,
                              const int sloppy, const mp_limb_t *primes);
 
-#include "mul.h"
-#include "ntt.h"
-#include "invert.h"
-#include "sqrt.h"
-#include "norm.h"
-#include "rem.h"
+#include <oz/mul.h>
+#include <oz/ntt.h>
+#include <oz/invert.h>
+#include <oz/sqrt.h>
+#include <oz/norm.h>
+#include <oz/rem.h>
 
 #endif /* _OZ_H_ */

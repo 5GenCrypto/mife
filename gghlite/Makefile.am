@@ -3,10 +3,12 @@ AM_CFLAGS = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs -fopenmp
 
 lib_LTLIBRARIES = libgghlite.la
 
-include_HEADERS = gghlite.h \
-                  gghlite-defs.h \
-                  gghlite-internals.h \
-                  misc.h
+pkgincludesubdir = $(includedir)/gghlite
+
+include_HEADERS = gghlite.h
+pkgincludesub_HEADERS = config.h gghlite-defs.h \
+                        gghlite-internals.h \
+                        misc.h
 
 libgghlite_la_SOURCES = gghlite.c \
                         gghlite_pk.c \
