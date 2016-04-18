@@ -74,14 +74,14 @@ int NUM_ENCODINGS_TOTAL;
 typedef enum {
   //!< default behaviour
   MIFE_DEFAULT = 0x00,
-  
+
   //!< do not multiply kilian randomizers into the encodings
-  MIFE_NO_KILIAN    = 0x01, 
-  
+  MIFE_NO_KILIAN    = 0x01,
+
   //!< do not multiply the scalar randomizers into the encodings
   MIFE_NO_RANDOMIZERS    = 0x02,
 
-  //!< pick a simple partitioning (x[0] is encoded at the universe, all others 
+  //!< pick a simple partitioning (x[0] is encoded at the universe, all others
   //are encoded at the empty set.)
   MIFE_SIMPLE_PARTITIONS  = 0x04,
 } mife_flag_t;
@@ -114,7 +114,7 @@ struct _mife_pp_struct {
   int *n; // of length num_inputs
   int *gammas; // gamma for each input
   int L; // log # of plaintexts we can support
-  int gamma; // should be sum of gammas[i] 
+  int gamma; // should be sum of gammas[i]
   int kappa; // the degree of multilinearity
   int numR; // number of kilian matrices. should be kappa-1
   mife_flag_t flags;

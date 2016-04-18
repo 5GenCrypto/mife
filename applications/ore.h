@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <gmp.h>
-#include <gghlite/gghlite.h>
-#include <gghlite/gghlite-defs.h>
 #include <mife/mife.h>
 
 /* these are used for get_matrix_bit() */
@@ -20,15 +18,17 @@
 
 int CT_SIZE;
 
+extern mmap_vtable mmap;
+
 typedef enum {
    //!< the MBP produced is a series of 2n (d+3) x (d+3) matrices
   ORE_MBP_NORMAL = 0x08,
 
-  //!< the MBP produced is degree-compressed by reading the input as: x0 (y0 y1) 
+  //!< the MBP produced is degree-compressed by reading the input as: x0 (y0 y1)
   //(x1 x2) (y2 y3) ...
   ORE_MBP_DC = 0x10,
 
-  //!< the MBP produced is matrix-compressed, with dimensions 3 x d. This is not 
+  //!< the MBP produced is matrix-compressed, with dimensions 3 x d. This is not
   //compatible with ORE_MBP_DC, though.
   ORE_MBP_MC = 0x20,
 
@@ -43,6 +43,7 @@ typedef struct _ore_params_struct {
 } ore_params_t;
 
 typedef struct ore_cmdline {
+  int use_clt13;
   int lambda;
   int d1;
   int d2;

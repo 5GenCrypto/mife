@@ -7,12 +7,16 @@
  */
 
 #include "ore.h"
-#include "ore_dir/mife_glue.h"
+#include "ore_dir/mife_glue_gghlite.h"
+#include "ore_dir/mife_glue_clt.h"
+
+mmap_vtable *the_mmap;
 
 void ore_print_help_and_exit() {
+  printf("-C, --clt13   use clt13 as the underlying multilinear map\n");
   printf("-l, --lambda   security parameter\n");
   printf("-s, --seed   SHA256 seed\n");
-	printf("-d, --domain   specify twice for base and exponent (i.e., -d 2 -d 5 for 2^5 messages)\n");
+  printf("-d, --domain   specify twice for base and exponent (i.e., -d 2 -d 5 for 2^5 messages)\n");
   printf("-c, --ciphertext-gen   the index of the ciphertext to generate to a file (specify with -c index -c message_file_name), gets placed in ct{index}.out\n");
   printf("-f, --file   file name, can be used multiple times to specify multiple files\n");
   printf("-m, --num-messages   the number of messages (use -f filename to specify file name)\n");
@@ -27,10 +31,12 @@ void ore_print_help_and_exit() {
 void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params) {
   memset(params, 0, sizeof(ore_cmdline_t));
   params->seed = DEFAULT_SHA_SEED;
+  params->use_clt13 = 0;
 
   int c;
-  const char *short_opt = "l:c:s:f:d:p:qteh";
+  const char *short_opt = "l:c:s:f:d:p:Cqteh";
   struct option long_opt[] = {
+    {"clt13", no_argument, NULL, 'C'},
     {"lambda", required_argument, NULL, 'l'},
     {"ciphertext-gen", required_argument, NULL, 'c'},
     {"seed", required_argument, NULL, 's'},
@@ -48,6 +54,9 @@ void ore_parse_cmdline(int argc, char *argv[], ore_cmdline_t params) {
   while((c = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
     switch(c) {
       case 0: break;
+      case 'C':
+        params->use_clt13 = 1;
+        break;
       case 'l':
         params->lambda = atoi(optarg);
         break;
@@ -109,6 +118,12 @@ int main(int argc, char *argv[]) {
   ore_cmdline_t params;
   ore_parse_cmdline(argc, argv, params);
 
+  if(params->use_clt13) {
+    the_mmap = &clt13_vtable;
+  } else {
+    the_mmap = &gghlite_vtable;
+  }
+
   if(params->is_tests_only) {
     run_tests();
   } else if(params->is_pp_gen) {
@@ -120,7 +135,7 @@ int main(int argc, char *argv[]) {
         params->seed);
   }
 
-  //print_random_matrices_with_inverse(atoi(argv[1]), argv[2], argv[3], 
+  //print_random_matrices_with_inverse(atoi(argv[1]), argv[2], argv[3],
   //argv[4]);
 
   return 0;
@@ -129,14 +144,14 @@ int main(int argc, char *argv[]) {
 int test_ciphertexts(char *pp_file, char *ct1_file, char *ct2_file) {
   mife_pp_t pp;
   mife_ciphertext_t *cts = malloc(2 * sizeof(mife_ciphertext_t));
-  fread_mife_pp(&gghlite_vtable, pp, pp_file);
-  fread_mife_ciphertext(&gghlite_vtable, pp, cts[0], ct1_file);
-  fread_mife_ciphertext(&gghlite_vtable, pp, cts[1], ct2_file);
-  int ret = mife_evaluate(&gghlite_vtable, pp, cts);
-  mife_ciphertext_clear(&gghlite_vtable, pp, cts[0]);
-  mife_ciphertext_clear(&gghlite_vtable, pp, cts[1]);
+  fread_mife_pp(the_mmap, pp, pp_file);
+  fread_mife_ciphertext(the_mmap, pp, cts[0], ct1_file);
+  fread_mife_ciphertext(the_mmap, pp, cts[1], ct2_file);
+  int ret = mife_evaluate(the_mmap, pp, cts);
+  mife_ciphertext_clear(the_mmap, pp, cts[0]);
+  mife_ciphertext_clear(the_mmap, pp, cts[1]);
   free(cts);
-  mife_clear_pp_read(&gghlite_vtable, pp);
+  mife_clear_pp_read(the_mmap, pp);
   return ret;
 }
 
@@ -161,8 +176,8 @@ void test_all_ciphertexts(char *pp_file, int n) {
 }
 
 void generate_plaintexts(int num_messages, int d, int n, char *seed) {
-  printf("Using SHA256 seed: %s\n", seed);  
-  
+  printf("Using SHA256 seed: %s\n", seed);
+
   fmpz_t message_space_size;
   fmpz_init_exp(message_space_size, d, n);
 
@@ -201,13 +216,13 @@ void ore_pp_sk_gen(char *pp_file, char *sk_file, int lambda, int d, int n,
   reset_T();
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, seed, "setup");
-  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
+  mife_setup(the_mmap, pp, sk, L, lambda, randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
-  fwrite_mife_pp(&gghlite_vtable, pp, pp_file);
-  fwrite_mife_sk(&gghlite_vtable, sk, sk_file);
+  fwrite_mife_pp(the_mmap, pp, pp_file);
+  fwrite_mife_sk(the_mmap, sk, sk_file);
   mife_clear_pp(pp);
-  mife_clear_sk(&gghlite_vtable, sk);
+  mife_clear_sk(the_mmap, sk);
   aes_randclear(randstate);
   mpfr_free_cache();
   flint_cleanup();
@@ -234,7 +249,7 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
     printf("ERROR: Could not find file %s\n", m_file);
     exit(1);
   }
- 
+
   fmpz_t *messages = malloc(sizeof(fmpz_t));
   unsigned long m;
   int num_messages = 0;
@@ -254,10 +269,10 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
   reset_T();
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, seed, "setup");
-  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
-  fwrite_mife_sk(&gghlite_vtable, sk, "sk_test.out");
-  mife_clear_sk(&gghlite_vtable, sk);
-  fread_mife_sk(&gghlite_vtable, sk, "sk_test.out");
+  mife_setup(the_mmap, pp, sk, L, lambda, randstate);
+  fwrite_mife_sk(the_mmap, sk, "sk_test.out");
+  mife_clear_sk(the_mmap, sk);
+  fread_mife_sk(the_mmap, sk, "sk_test.out");
   aes_randclear(randstate);
   printf("Completed MIFE setup. (Time elapsed: %8.2f s)\n", get_T());
 
@@ -273,12 +288,12 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
       char str_i[100];
       sprintf(str_i, "%d", i+1);
       aes_randinit_seed(encrypt_randstate, seed, str_i);
-      mife_encrypt(&gghlite_vtable, ciphertexts[i], messages[i], pp, sk, encrypt_randstate);
+      mife_encrypt(the_mmap, ciphertexts[i], messages[i], pp, sk, encrypt_randstate);
       aes_randclear(encrypt_randstate);
       char str[100];
       sprintf(str, "ct%d.out", i+1);
-      fwrite_mife_ciphertext(&gghlite_vtable, pp, ciphertexts[i], str);
-      mife_ciphertext_clear(&gghlite_vtable, pp, ciphertexts[i]);
+      fwrite_mife_ciphertext(the_mmap, pp, ciphertexts[i], str);
+      mife_ciphertext_clear(the_mmap, pp, ciphertexts[i]);
     }
   }
   PRINT_ENCODING_PROGRESS = 0;
@@ -289,7 +304,7 @@ void ore_challenge_gen(char *m_file, int challenge_index, int lambda,
   }
 
   mife_clear_pp(pp);
-  mife_clear_sk(&gghlite_vtable, sk);
+  mife_clear_sk(the_mmap, sk);
   mpfr_free_cache();
   flint_cleanup();
   free(params);
@@ -329,7 +344,7 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
 
   mpfr_t total;
   mpfr_init_set_ui(total, fmpz_get_ui(message_space_size), MPFR_RNDN);
-  
+
   mpfr_t tmp1;
   mpfr_t tmp2;
   mpfr_init(tmp1);
@@ -350,11 +365,11 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
     mpfr_ceil(tmp1, tmp1);
     unsigned long n = mpfr_get_ui(tmp1, MPFR_RNDN);
     nmap[base] = n;
-    
+
     // num encodings #1, #2
     int dc_enc = dc_num_enc(base,n);
     int mc_enc = mc_num_enc(base,n);
-   
+
     // use n to compute enc size
     dc_vals[base] = dc_enc * dc_enc_size(n);
     mc_vals[base] = mc_enc * mc_enc_size(n);
@@ -365,7 +380,7 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
   mpfr_clear(tmp2);
   mpfr_clear(total);
 
-  long min_enc = dc_vals[5]; 
+  long min_enc = dc_vals[5];
   int min_type = 0;
   int min_base;
   int i = 2;
@@ -402,7 +417,7 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
     ORE_GLOBAL_FLAGS = ORE_MBP_MC;
   }
 
-  params->d = min_base;  
+  params->d = min_base;
   params->bitstr_len = nmap[min_base];
   mife_init_params(pp, MIFE_DEFAULT);
 
@@ -417,7 +432,7 @@ void ore_set_best_params(mife_pp_t pp, int lambda, fmpz_t message_space_size,
 /**
  * Creates the first x-matrix in the matrix-compressed version of ORE.
  *
- * This matrix has a single row (so it's actually a vector), and d columns, 
+ * This matrix has a single row (so it's actually a vector), and d columns,
  * which each represent the bit that is being read.
  *
  * @param m The matrix
@@ -444,7 +459,7 @@ void ore_mc_clrmat_init_XFIRST(fmpz_mat_t m, int input, int d) {
 void ore_mc_clrmat_init_YFIRST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, d, 3);
   fmpz_mat_zero(m);
- 
+
   for(int i = 0; i < d; i++) {
     int j;
     if(i == input) {
@@ -459,7 +474,7 @@ void ore_mc_clrmat_init_YFIRST(fmpz_mat_t m, int input, int d) {
 }
 
 /**
- * Creates the x matrices (not the first) in the matrix-compressed version of 
+ * Creates the x matrices (not the first) in the matrix-compressed version of
  * ORE.
  *
  * This matrix is 3 x (d+2).
@@ -472,7 +487,7 @@ void ore_mc_clrmat_init_YFIRST(fmpz_mat_t m, int input, int d) {
 void ore_mc_clrmat_init_XREST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, 3, d+2);
   fmpz_mat_zero(m);
- 
+
   for(int i = 0; i < 3; i++) {
     int j;
     if(i == 0) {
@@ -487,7 +502,7 @@ void ore_mc_clrmat_init_XREST(fmpz_mat_t m, int input, int d) {
 }
 
 /**
- * Creates the y matrices (not the first) in the matrix-compressed version of 
+ * Creates the y matrices (not the first) in the matrix-compressed version of
  * ORE.
  *
  * This matrix is (d+2) x 3.
@@ -500,7 +515,7 @@ void ore_mc_clrmat_init_XREST(fmpz_mat_t m, int input, int d) {
 void ore_mc_clrmat_init_YREST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, d+2, 3);
   fmpz_mat_zero(m);
- 
+
   for(int i = 0; i < d+2; i++) {
     int j;
     if(i == d) {
@@ -523,7 +538,7 @@ void ore_mc_clrmat_init_YREST(fmpz_mat_t m, int input, int d) {
 /**
  * Creates the first x-matrix in the degree-compressed version of ORE.
  *
- * This matrix has a single row (so it's actually a vector), and d columns, 
+ * This matrix has a single row (so it's actually a vector), and d columns,
  * which each represent the bit that is being read.
  *
  * @param m The matrix
@@ -540,7 +555,7 @@ void ore_dc_clrmat_init_FIRST(fmpz_mat_t m, int input, int d) {
 /**
  * Creates the first y-matrix in the degree-compressed version of ORE.
  *
- * We use columns [0,d-1] to represent the bit being read, column d to represent 
+ * We use columns [0,d-1] to represent the bit being read, column d to represent
  * '<', and d+1 to represent '>'.
  *
  * @param m The matrix
@@ -551,7 +566,7 @@ void ore_dc_clrmat_init_FIRST(fmpz_mat_t m, int input, int d) {
 void ore_dc_clrmat_init_SECOND(fmpz_mat_t m, int input1, int input2, int d) {
   fmpz_mat_init(m, d, d+2);
   fmpz_mat_zero(m);
-  
+
   for(int i = 0; i < d; i++) {
     int j;
     if(i < input1) {
@@ -568,10 +583,10 @@ void ore_dc_clrmat_init_SECOND(fmpz_mat_t m, int input1, int input2, int d) {
 /**
  * Creates the "middle" matrices in the degree-compressed version of ORE.
  *
- * We use columns [0,d-1] to represent the bit being read, column d to represent 
- * '<', and d+1 to represent '>'. This is the same as the second matrix, except 
- * we have two more rows, and the last two rows just follow the identity matrix 
- * (since if we were in the '<' state, we stay in that state, and the same is 
+ * We use columns [0,d-1] to represent the bit being read, column d to represent
+ * '<', and d+1 to represent '>'. This is the same as the second matrix, except
+ * we have two more rows, and the last two rows just follow the identity matrix
+ * (since if we were in the '<' state, we stay in that state, and the same is
  * true for the '>' state).
  *
  * @param m The matrix
@@ -584,7 +599,7 @@ void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d,
     int type) {
   fmpz_mat_init(m, d+2, d+2);
   fmpz_mat_zero(m);
-  
+
   for(int i = 0; i < d; i++) {
     int j = -1;
     if(i < input1) {
@@ -613,7 +628,7 @@ void ore_dc_clrmat_init_MIDDLE(fmpz_mat_t m, int input1, int input2, int d,
 void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d, int type) {
   fmpz_mat_init(m, d+2, 3);
   fmpz_mat_zero(m);
-  
+
   for(int i = 0; i < d+2; i++) {
     int j;
     if(i == d) {
@@ -634,10 +649,10 @@ void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d, int type) {
 
 
 /**
- * Creates the (special case) second matrix in the degree-compressed version of 
+ * Creates the (special case) second matrix in the degree-compressed version of
  * ORE.
  *
- * This only is used when the second matrix is also the last matrix, in which 
+ * This only is used when the second matrix is also the last matrix, in which
  * case the dimensions are d x 3.
  *
  * We use column 0 to represent '=', column 1 for '<', and column 2 for '>'.
@@ -649,7 +664,7 @@ void ore_dc_clrmat_init_LAST(fmpz_mat_t m, int input, int d, int type) {
 void ore_dc_clrmat_init_SECONDANDLAST(fmpz_mat_t m, int input, int d) {
   fmpz_mat_init(m, d, 3);
   fmpz_mat_zero(m);
-  
+
   for(int i = 0; i < d; i++) {
     int j = -1;
     if(i == input) {
@@ -685,7 +700,7 @@ int ore_get_matrix_bit_normal_mbp(int input, int i, int j, int type) {
     int input_state = i-3; // we just read this digit from x
     if (input_state < 0)
       return 0;
-	
+
     // 'input_state' is the bit from x
     // 'input' is the bit from y
 
@@ -713,7 +728,7 @@ int ore_mbp_param(mife_pp_t pp, int index) {
       return (bitstr_len + 1) / 2;
     }
   }
-  
+
   if(ORE_GLOBAL_FLAGS & ORE_MBP_MC) {
     return bitstr_len;
   }
@@ -801,7 +816,7 @@ void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, void *message_untype
         bc++;
       }
     }
-    
+
     for(int k = 0, bc = 0; k < pp->n[1]; k++, bc++) {
       if(k == 0 && pp->n[0] > 1) {
         ore_dc_clrmat_init_SECOND(met->clr[1][k], dary_repr[bc],
@@ -837,7 +852,7 @@ void ore_mbp_set_matrices(mife_pp_t pp, mife_mat_clr_t met, void *message_untype
   } else {
     assert(0);
   }
-  free(dary_repr);    
+  free(dary_repr);
 }
 
 // index ranges from [0, kappa - 1]
@@ -868,7 +883,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   mife_sk_t sk;
 
   mife_init_params(pp, flags);
-  
+
   ore_params_t *params = malloc(sizeof(ore_params_t));
   params->d = d;
   params->bitstr_len = bitstr_len;
@@ -877,17 +892,17 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   aes_randstate_t randstate;
   aes_randinit_seed(randstate, DEFAULT_SHA_SEED, NULL);
-  mife_setup(&gghlite_vtable, pp, sk, L, lambda, randstate);
+  mife_setup(the_mmap, pp, sk, L, lambda, randstate);
 
-  fwrite_mife_pp(&gghlite_vtable, pp, "pp_test.out");
+  fwrite_mife_pp(the_mmap, pp, "pp_test.out");
   mife_clear_pp(pp);
   mife_pp_t pp2;
-  fread_mife_pp(&gghlite_vtable, pp2, "pp_test.out");
+  fread_mife_pp(the_mmap, pp2, "pp_test.out");
 
-  fwrite_mife_sk(&gghlite_vtable, sk, "sk_test.out");
-  mife_clear_sk(&gghlite_vtable, sk);
+  fwrite_mife_sk(the_mmap, sk, "sk_test.out");
+  mife_clear_sk(the_mmap, sk);
   mife_sk_t sk2;
-  fread_mife_sk(&gghlite_vtable, sk2, "sk_test.out");
+  fread_mife_sk(the_mmap, sk2, "sk_test.out");
 
   mife_mbp_set(params, pp2, 2, &ore_mbp_param, &ore_mbp_kilian,
       &ore_mbp_ordering, &ore_mbp_set_matrices, &ore_mbp_parse);
@@ -907,7 +922,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
 
   mife_ciphertext_t *ciphertexts = malloc(num_messages * sizeof(mife_ciphertext_t));
   for(int i = 0; i < num_messages; i++) {
-    mife_encrypt(&gghlite_vtable, ciphertexts[i], messages[i], pp2, sk2, randstate);
+    mife_encrypt(the_mmap, ciphertexts[i], messages[i], pp2, sk2, randstate);
   }
 
   for(int i = 0; i < num_messages; i++) {
@@ -916,7 +931,7 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
       memcpy(cts[0], ciphertexts[i], sizeof(mife_ciphertext_t));
       memcpy(cts[1], ciphertexts[j], sizeof(mife_ciphertext_t));
 
-      int compare = mife_evaluate(&gghlite_vtable, pp2, cts);
+      int compare = mife_evaluate(the_mmap, pp2, cts);
       fmpz_t modi, modj, true_mspace_size, fmpzd;
       fmpz_init(modi);
       fmpz_init(modj);
@@ -950,16 +965,16 @@ int test_ore(int lambda, int mspace_size, int num_messages, int d,
   }
 
   for(int i = 0; i < num_messages; i++) {
-    mife_ciphertext_clear(&gghlite_vtable, pp2, ciphertexts[i]);
+    mife_ciphertext_clear(the_mmap, pp2, ciphertexts[i]);
   }
   free(ciphertexts);
   free(messages);
 
-  mife_clear_pp_read(&gghlite_vtable, pp2);
-  mife_clear_sk(&gghlite_vtable, sk2);
+  mife_clear_pp_read(the_mmap, pp2);
+  mife_clear_sk(the_mmap, sk2);
   free(params);
   aes_randclear(randstate);
-  
+
   if(status == 0) {
     printf("SUCCESS\n");
   } else {
@@ -1009,7 +1024,7 @@ void print_random_matrices_with_inverse(int n, char *p_file,
 
   fmpz_mat_t a;
   fmpz_mat_init(a, n, n);
-  
+
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
       fmpz_randm_aes(fmpz_mat_entry(a, i, j), randstate, modp);

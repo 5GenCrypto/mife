@@ -29,4 +29,8 @@ bin_PROGRAMS = gghlite_params \
                bench_co_prime \
                bench_rem
 
-ore_SOURCES = ore.h ore.c ore_dir/mife_glue.h ore_dir/mife_glue.c
+ore_SOURCES = ore.h ore.c \
+			  ore_dir/mife_glue_gghlite.h \
+		      ore_dir/mife_glue_gghlite.c \
+			  ore_dir/mife_glue_clt.h \
+			  ore_dir/mife_glue_clt.c

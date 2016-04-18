@@ -1,6 +1,7 @@
 #include "mife_glue_clt.h"
 
 #include <gmp.h>
+#include "mife_glue.h"
 
 void clt_pp_clear_wrapper (mmap_pp *pp);
 void clt_pp_read_wrapper  (mmap_pp *const pp, FILE *const fp);
@@ -73,17 +74,17 @@ int g_verbose = 1;
 
 void clt_pp_clear_wrapper (mmap_pp *pp)
 {
-    clt_pp_clear(&(pp->self));
+    clt_pp_clear(&(pp->clt13_self));
 }
 
 void clt_pp_read_wrapper (mmap_pp *const pp, FILE *const fp)
 {
-    clt_pp_fread(fp, &(pp->self));
+    clt_pp_fread(fp, &(pp->clt13_self));
 }
 
 void clt_pp_save_wrapper (const mmap_pp *const pp, FILE *const fp)
 {
-    clt_pp_fsave(fp, &(pp->self));
+    clt_pp_fsave(fp, &(pp->clt13_self));
 }
 
 void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa,
@@ -93,78 +94,78 @@ void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa,
     for (int i = 0; i < gamma; i++) {
         pows[i] = 1;
     }
-    clt_state_init(&(sk->self), kappa, lambda, gamma, pows,
+    clt_state_init(&(sk->clt13_self), kappa, lambda, gamma, pows,
                    CLT_FLAG_DEFAULT & CLT_FLAG_OPT_PARALLEL_ENCODE, rng);
     free(pows);
 }
 
 void clt_state_clear_wrapper (mmap_sk *const sk)
 {
-    clt_state_clear(&(sk->self));
+    clt_state_clear(&(sk->clt13_self));
 }
 
 void clt_state_read_wrapper (mmap_sk *const sk, FILE *const fp)
 {
-    clt_state_fread(fp, &(sk->self));
+    clt_state_fread(fp, &(sk->clt13_self));
 }
 
 void clt_state_save_wrapper (const mmap_sk *const sk, FILE *const fp)
 {
-    clt_state_fsave(fp, &(sk->self));
+    clt_state_fsave(fp, &(sk->clt13_self));
 }
 
 void clt_state_get_modulus (const mmap_sk *const sk, fmpz_t p_out)
 {
-    fmpz_set_mpz(p_out, sk->self.gs[0]);
+    fmpz_set_mpz(p_out, sk->clt13_self.gs[0]);
 }
 
 const mmap_pp *const clt_pp_init_wrapper (const mmap_sk *const sk)
 {
     mmap_pp *pp = malloc(sizeof(mmap_pp));
-    clt_pp_init(&(pp->self), &(sk->self));
+    clt_pp_init(&(pp->clt13_self), &(sk->clt13_self));
     return pp;
 }
 
 void clt_enc_init_wrapper (mmap_enc *const enc, const mmap_pp *const pp)
 {
-    mpz_init(enc->self);
+    mpz_init(enc->clt13_self);
 }
 
 void clt_enc_clear_wrapper (mmap_enc *const enc)
 {
-    mpz_clear(enc->self);
+    mpz_clear(enc->clt13_self);
 }
 
 void clt_enc_fread_wrapper (mmap_enc *enc, FILE *const fp)
 {
-    mpz_inp_raw(enc->self, fp);
+    mpz_inp_raw(enc->clt13_self, fp);
 }
 
 void clt_enc_fwrite_wrapper (const mmap_enc *const enc, FILE *const fp)
 {
-    mpz_out_raw(fp, enc->self);
+    mpz_out_raw(fp, enc->clt13_self);
 }
 
 void clt_enc_set_wrapper (mmap_enc *const dest, const mmap_enc *const src)
 {
-    mpz_set(dest->self, src->self);
+    mpz_set(dest->clt13_self, src->clt13_self);
 }
 
 void clt_enc_add_wrapper (mmap_enc *const dest, const mmap_pp *const pp, const mmap_enc *const a, const mmap_enc *const b)
 {
-    mpz_add(dest->self, a->self, b->self);
-    mpz_mod(dest->self, dest->self, pp->self.x0);
+    mpz_add(dest->clt13_self, a->clt13_self, b->clt13_self);
+    mpz_mod(dest->clt13_self, dest->clt13_self, pp->clt13_self.x0);
 }
 
 void clt_enc_mul_wrapper (mmap_enc *const dest, const mmap_pp *const pp, const mmap_enc *const a, const mmap_enc *const b)
 {
-    mpz_mul(dest->self, a->self, b->self);
-    mpz_mod(dest->self, dest->self, pp->self.x0);
+    mpz_mul(dest->clt13_self, a->clt13_self, b->clt13_self);
+    mpz_mod(dest->clt13_self, dest->clt13_self, pp->clt13_self.x0);
 }
 
 bool clt_enc_is_zero_wrapper (const mmap_enc *const enc, const mmap_pp *const pp)
 {
-    clt_is_zero(&(pp->self), enc->self);
+    clt_is_zero(&(pp->clt13_self), enc->clt13_self);
 }
 
 void
@@ -174,6 +175,6 @@ clt_encode_wrapper (mmap_enc *const enc, const mmap_sk *const sk,
     mpz_t ins[1];
     mpz_init(ins[0]);
     fmpz_get_mpz(ins[0], plaintext);
-    clt_encode(enc->self, &(sk->self), 1, ins, group, rng);
+    clt_encode(enc->clt13_self, &(sk->clt13_self), 1, ins, group, rng);
     mpz_clear(ins[0]);
 }
