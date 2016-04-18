@@ -2,7 +2,7 @@ AC_INIT([gghflint], [20140613])
 
 AC_CONFIG_AUX_DIR([.])
 
-AC_CONFIG_SRCDIR([gghlite/gghlite.c])
+AC_CONFIG_SRCDIR([gghlite])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -41,6 +41,16 @@ AX_VALGRIND_CHECK()
 if test "x$enable_heuristics" = x"yes"; then
    AC_DEFINE(GGHLITE_HEURISTICS,1,[Define whether to enable performance improvements])
 fi
+
+AC_SEARCH_LIBS(aes_randinit,aesrand)
+if test "x$ac_cv_search_aes_randinit" = "xno"; then
+   AC_MSG_ERROR([libaesrand not found])
+fi
+AC_SEARCH_LIBS(fmpz_init,flint)
+if test "x$ac_cv_search_fmpz_init" = "xno"; then
+   AC_MSG_ERROR([libflint not found])
+fi
+
 
 AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile applications/ore_dir/Makefile mife/Makefile])
 
