@@ -88,7 +88,7 @@ void gghlite_enc_set_gghlite_clr_wrapper(mmap_enc *const enc, const mmap_sk *con
   gghlite_clr_t e;
   gghlite_clr_init(e);
   fmpz_poly_set_coeff_fmpz(e, 0, plaintext);
-  gghlite_enc_set_gghlite_clr(enc->gghlite_self, sk->gghlite_self, e, 1, group, 1, randstate);
+  gghlite_enc_set_gghlite_clr(enc->gghlite_self, sk->gghlite_self, e, 1, group, 0, randstate);
   gghlite_clr_clear(e);
 }
 
