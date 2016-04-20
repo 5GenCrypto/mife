@@ -191,7 +191,7 @@ void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_en
     fmpz_mat_t m, int *group, aes_randstate_t randstate) {
   for(int i = 0; i < enc->nrows; i++) {
     for(int j = 0; j < enc->ncols; j++) {
-      mmap->enc->encode(enc->m[i][j], sk->self, fmpz_mat_entry(m, i, j), group, randstate);
+        mmap->enc->encode(enc->m[i][j], sk->self, 1, fmpz_mat_entry(m, i, j), group, randstate);
       NUM_ENCODINGS_GENERATED++;
         timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
             NUM_ENCODINGS_GENERATED,

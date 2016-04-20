@@ -68,7 +68,7 @@ typedef struct {
   void (*const mul)(mmap_enc *, const mmap_pp *, const mmap_enc *, const mmap_enc *);
   bool (*const is_zero)(const mmap_enc *, const mmap_pp *);
   /* TODO: should this `int *` be `bool *`? */
-  void (*const encode)(mmap_enc *, const mmap_sk *, const fmpz_t, int *, aes_randstate_t);
+  void (*const encode)(mmap_enc *, const mmap_sk *, int, const fmpz_t *, int *, aes_randstate_t);
 } mmap_enc_vtable;
 
 typedef struct {
