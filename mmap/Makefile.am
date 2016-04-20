@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign -Wall
 
-AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir)
+AM_CFLAGS  = ${DEBUG_CFLAGS} -I$(top_srcdir) -I$(top_srcdir)/dgs
 
 lib_LTLIBRARIES=libmmap.la
 
