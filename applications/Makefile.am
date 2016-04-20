@@ -11,6 +11,7 @@ LDADD = $(top_builddir)/mife/libmife.la \
         $(top_builddir)/dgsl/libdgsl.la \
 	-laesrand -lflint \
 	-L$(top_builddir)/mife/jsmn -ljsmn \
+	-L$(top_builddir)/mmap \
 	-lgmp -lmpfr -lm -lssl -lcrypto -lclt13 -lmmap
 
 LDFLAGS = -no-install
