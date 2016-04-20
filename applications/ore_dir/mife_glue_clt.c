@@ -93,7 +93,7 @@ void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa,
         pows[i] = 1;
     }
     clt_state_init(&(sk->clt13_self), kappa, lambda, gamma, pows,
-                   CLT_FLAG_DEFAULT & CLT_FLAG_OPT_PARALLEL_ENCODE, rng);
+                   CLT_FLAG_VERBOSE & CLT_FLAG_DEFAULT & CLT_FLAG_OPT_PARALLEL_ENCODE, rng);
     free(pows);
 }
 
@@ -141,7 +141,7 @@ void clt_enc_fread_wrapper (mmap_enc *enc, FILE *const fp)
 
 void clt_enc_fwrite_wrapper (const mmap_enc *const enc, FILE *const fp)
 {
-    mpz_out_raw(fp, enc->clt13_self);
+    clt_elem_fsave(fp, enc->clt13_self);
 }
 
 void clt_enc_set_wrapper (mmap_enc *const dest, const mmap_enc *const src)
