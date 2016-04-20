@@ -1,6 +1,7 @@
 #ifndef _MIFE_INTERNALS_H_
 #define _MIFE_INTERNALS_H_
 
+#include "mmap/mmap.h"
 #include "mife_defs.h"
 
 /* MIFE internal functions */

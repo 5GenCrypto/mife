@@ -7,8 +7,8 @@
  */
 
 #include "ore.h"
-#include "ore_dir/mife_glue_gghlite.h"
-#include "ore_dir/mife_glue_clt.h"
+#include <mmap/mmap_gghlite.h>
+#include <mmap/mmap_clt.h>
 
 mmap_vtable *the_mmap;
 
