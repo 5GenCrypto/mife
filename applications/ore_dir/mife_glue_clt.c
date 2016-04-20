@@ -70,8 +70,6 @@ const mmap_vtable clt13_vtable =
 ////////////////////////////////////////////////////////////////////////////////
 // implementation
 
-int g_verbose = 1;
-
 void clt_pp_clear_wrapper (mmap_pp *pp)
 {
     clt_pp_clear(&(pp->clt13_self));
@@ -165,7 +163,7 @@ void clt_enc_mul_wrapper (mmap_enc *const dest, const mmap_pp *const pp, const m
 
 bool clt_enc_is_zero_wrapper (const mmap_enc *const enc, const mmap_pp *const pp)
 {
-    clt_is_zero(&(pp->clt13_self), enc->clt13_self);
+    return clt_is_zero(&(pp->clt13_self), enc->clt13_self);
 }
 
 void
