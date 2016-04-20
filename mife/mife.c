@@ -1,5 +1,9 @@
 #include "mife.h"
 
+int NUM_ENCODINGS_GENERATED;
+int PRINT_ENCODING_PROGRESS;
+int NUM_ENCODINGS_TOTAL;
+
 f2_matrix mife_zt_all(const_mmap_vtable mmap, const mife_pp_t pp, mmap_enc_mat_t ct) {
   f2_matrix pt;
   if(!f2_matrix_zero(&pt, ct->nrows, ct->ncols))

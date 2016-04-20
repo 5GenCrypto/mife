@@ -67,9 +67,9 @@ typedef struct {
 
 typedef const mmap_vtable *const const_mmap_vtable;
 
-int NUM_ENCODINGS_GENERATED;
-int PRINT_ENCODING_PROGRESS;
-int NUM_ENCODINGS_TOTAL;
+extern int NUM_ENCODINGS_GENERATED;
+extern int PRINT_ENCODING_PROGRESS;
+extern int NUM_ENCODINGS_TOTAL;
 
 typedef enum {
   //!< default behaviour
