@@ -1,11 +1,7 @@
 #ifndef _LIBMMAP_MMAP_GGHLITE_H
 #define _LIBMMAP_MMAP_GGHLITE_H
 
-#include "mmap.h"
-
-#include <gghlite.h>
-#include <gghlite/gghlite-defs.h>
-#include <mife/mife_defs.h>
+#include <mmap/mmap.h>
 
 #ifdef __cplusplus
 extern "C" {
