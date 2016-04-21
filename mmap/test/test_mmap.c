@@ -18,11 +18,6 @@ static int test(const mmap_vtable *mmap)
     ulong lambda  = 10;
     ulong kappa   = 2;
 
-    mmap_sk *sk  = malloc(mmap->sk->size);
-    mmap_sk *sk_ = malloc(mmap->sk->size);
-    mmap_pp *pp  = malloc(mmap->pp->size);
-    mmap_pp *pp_;
-
     aes_randstate_t rng;
     aes_randinit(rng);
 
@@ -42,16 +37,19 @@ static int test(const mmap_vtable *mmap)
     }
 
     // test initialization & serialization
+    mmap_sk *sk_ = malloc(mmap->sk->size);
     mmap->sk->init(sk_, lambda, kappa, nzs, rng);
     mmap->sk->fwrite(sk_, sk_f);
     rewind(sk_f);
     mmap->sk->clear(sk_);
+    free(sk_);
+    mmap_sk *sk = malloc(mmap->sk->size);
     mmap->sk->fread(sk, sk_f);
 
-    pp_ = mmap->sk->pp(sk);
+    mmap_pp *pp_ = mmap->sk->pp(sk);
     mmap->pp->fwrite(pp_, pp_f);
     rewind(pp_f);
-    mmap->pp->clear(pp_);
+    mmap_pp *pp = malloc(mmap->pp->size);
     mmap->pp->fread(pp, pp_f);
 
     fmpz_t x [1];
@@ -127,7 +125,6 @@ static int test(const mmap_vtable *mmap)
     mmap->enc->clear(&x1);
     mmap->enc->clear(&xp);
     free(sk);
-    free(pp);
     return !ok;
 }
 
