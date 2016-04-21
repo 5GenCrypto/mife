@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int expect(char * desc, int expected, int recieved);
+#include "utils.h"
 
 static int test(const mmap_vtable *mmap)
 {
@@ -139,15 +139,3 @@ int main(void)
     return 0;
 }
 
-int expect(char * desc, int expected, int recieved)
-{
-    if (expected != recieved) {
-        printf("\033[1;41m");
-    }
-    printf("%s = %d", desc, recieved);
-    if (expected != recieved) {
-        printf("\033[0m");
-    }
-    puts("");
-    return expected == recieved;
-}
