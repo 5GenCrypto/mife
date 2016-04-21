@@ -29,8 +29,6 @@ void mife_gen_partitioning(int *partitioning, fmpz_t index, int L, int nu);
 void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_enc_mat_t enc,
     fmpz_mat_t m, int *group, aes_randstate_t randstate);
 void mmap_enc_mat_zeros_print(const_mmap_vtable mmap, mife_pp_t pp, mmap_enc_mat_t m);
-void mmap_enc_mat_mul(const_mmap_vtable mmap, const mmap_pp *const params, mmap_enc_mat_t r,
-    mmap_enc_mat_t m1, mmap_enc_mat_t m2);
 void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct);
 void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d);
 
@@ -40,9 +38,6 @@ void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
 void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp);
 void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
     fmpz_t p);
-void mmap_enc_mat_init(const_mmap_vtable mmap, const mmap_pp *const params, mmap_enc_mat_t m,
-    int nrows, int ncols);
-void mmap_enc_mat_clear(const_mmap_vtable mmap, mmap_enc_mat_t m);
 void fmpz_init_exp(fmpz_t exp, int base, int n);
 
 /* functions for computing matrix inverse mod fmpz_t */

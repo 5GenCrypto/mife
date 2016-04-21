@@ -24,13 +24,13 @@ static int test(const mmap_vtable *mmap)
     int pows [nzs];
     for (ulong i = 0; i < nzs; i++) pows[i] = 1;
 
-    FILE *sk_f = fopen("test.sk", "w+");
+    FILE *sk_f = tmpfile();
     if (sk_f == NULL) {
         fprintf(stderr, "Couldn't open test.map!\n");
         exit(1);
     }
 
-    FILE *pp_f = fopen("test.pp", "w+");
+    FILE *pp_f = tmpfile();
     if (pp_f == NULL) {
         fprintf(stderr, "Couldn't open test.pp!\n");
         exit(1);
