@@ -10,3 +10,5 @@ libmmap_la_LIBADD = -L$(top_builddir)/gghlite -L$(top_builddir)/dgsl -lgghlite -
 
 pkgincludesubdir = $(includedir)/mmap
 pkgincludesub_HEADERS = mmap.h mmap_clt.h mmap_gghlite.h
+
+SUBDIRS = test
