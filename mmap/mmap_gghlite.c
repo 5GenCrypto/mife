@@ -1,5 +1,13 @@
 #include "mmap_gghlite.h"
 
+#include <gghlite.h>
+#include <gghlite/gghlite-defs.h>
+
+#define debug_printf printf
+#define CHECK(x, y) if((x) < (y)) { debug_printf( \
+      "ERROR: fscanf() error encountered when trying to read from file\n" \
+    ); }
+
 static void gghlite_params_clear_read_wrapper(mmap_pp *pp);
 static void fread_gghlite_params_wrapper(mmap_pp *const pp, FILE *const fp);
 static void fwrite_gghlite_params_wrapper(const mmap_pp *const pp, FILE *const fp);

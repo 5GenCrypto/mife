@@ -9,13 +9,12 @@
 #include <gghlite/misc.h>
 #include "mbp_types.h"
 
-#include "mmap/mmap.h"
+#include <mmap/mmap.h>
 
 #define debug_printf printf
 #define CHECK(x, y) if((x) < (y)) { debug_printf( \
       "ERROR: fscanf() error encountered when trying to read from file\n" \
     ); }
-
 
 extern int NUM_ENCODINGS_GENERATED;
 extern int PRINT_ENCODING_PROGRESS;
@@ -36,14 +35,6 @@ typedef enum {
   MIFE_SIMPLE_PARTITIONS  = 0x04,
 } mife_flag_t;
 
-struct _mmap_enc_mat_struct {
-  int nrows; // number of rows in the matrix
-  int ncols; // number of columns in the matrix
-  mmap_enc ***m;
-};
-
-typedef struct _mmap_enc_mat_struct mmap_enc_mat_t[1];
-
 struct _mife_mat_clr_struct {
   fmpz_mat_t **clr;
 };
@@ -55,9 +46,6 @@ struct _mife_ciphertext_struct {
 };
 
 typedef struct _mife_ciphertext_struct mife_ciphertext_t[1];
-
-
-
 
 struct _mife_pp_struct {
   int num_inputs; // the arity of the MBP (for comparisons, this is 2).
@@ -90,8 +78,5 @@ struct _mife_sk_struct {
 };
 
 typedef struct _mife_sk_struct mife_sk_t[1];
-
-
-
 
 #endif /* _MIFE_IO_H_ */
