@@ -5,6 +5,10 @@
 #include <clt13.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct mmap_pp {
   union {
     gghlite_params_t gghlite_self;
@@ -79,7 +83,6 @@ typedef struct {
 
 typedef const mmap_vtable *const const_mmap_vtable;
 
-
 struct _mmap_enc_mat_struct {
   int nrows; // number of rows in the matrix
   int ncols; // number of columns in the matrix
@@ -87,5 +90,18 @@ struct _mmap_enc_mat_struct {
 };
 
 typedef struct _mmap_enc_mat_struct mmap_enc_mat_t[1];
+
+void
+mmap_enc_mat_init(const_mmap_vtable mmap, const mmap_pp *const params,
+                  mmap_enc_mat_t m, int nrows, int ncols);
+void
+mmap_enc_mat_clear(const_mmap_vtable mmap, mmap_enc_mat_t m);
+void
+mmap_enc_mat_mul(const_mmap_vtable mmap, const mmap_pp *const params,
+                 mmap_enc_mat_t r, mmap_enc_mat_t m1, mmap_enc_mat_t m2);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
