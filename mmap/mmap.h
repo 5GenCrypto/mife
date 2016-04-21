@@ -79,4 +79,13 @@ typedef struct {
 
 typedef const mmap_vtable *const const_mmap_vtable;
 
+
+struct _mmap_enc_mat_struct {
+  int nrows; // number of rows in the matrix
+  int ncols; // number of columns in the matrix
+  mmap_enc ***m;
+};
+
+typedef struct _mmap_enc_mat_struct mmap_enc_mat_t[1];
+
 #endif

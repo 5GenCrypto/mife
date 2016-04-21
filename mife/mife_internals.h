@@ -4,6 +4,10 @@
 #include "mmap/mmap.h"
 #include "mife_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* MIFE internal functions */
 void reset_T();
 float get_T();
@@ -47,5 +51,8 @@ void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
 void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MIFE_INTERNALS_H_ */
