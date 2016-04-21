@@ -1000,6 +1000,8 @@ void test_rand() {
 }
 
 void run_tests() {
+/*int test_ore(int lambda, int mspace_size, int num_messages, int d,*/
+             /*int bitstr_len, ore_flag_t flags, int verbose) {*/
   test_ore(5, 16, 5, 2, 2, ORE_MBP_NORMAL, 0);
   test_ore(5, 16, 5, 2, 3, ORE_MBP_DC, 0);
   test_ore(5, 16, 5, 2, 4, ORE_MBP_MC, 0);

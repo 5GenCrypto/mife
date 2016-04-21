@@ -55,7 +55,7 @@ if test "x$ac_cv_search_fmpz_init" = "xno"; then
    AC_MSG_ERROR([libflint not found])
 fi
 
-AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile applications/ore_dir/Makefile mife/Makefile mmap/Makefile])
+AC_CONFIG_FILES([Makefile oz/Makefile dgsl/Makefile gghlite/Makefile applications/Makefile tests/Makefile applications/ore_dir/Makefile mife/Makefile mmap/Makefile mmap/test/Makefile])
 
 AC_CONFIG_SUBDIRS([dgs])
 
