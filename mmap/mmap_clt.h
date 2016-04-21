@@ -3,6 +3,6 @@
 
 #include <mmap/mmap.h>
 
-extern const mmap_vtable clt13_vtable;
+extern const mmap_vtable clt_vtable;
 
 #endif

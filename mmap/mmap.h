@@ -12,21 +12,21 @@ extern "C" {
 struct mmap_pp {
   union {
     gghlite_params_t gghlite_self;
-    clt_pp clt13_self;
+    clt_pp clt_self;
   };
 };
 
 struct mmap_sk {
   union {
     gghlite_sk_t gghlite_self;
-    clt_state clt13_self;
+    clt_state clt_self;
   };
 };
 
 struct mmap_enc {
   union {
     gghlite_enc_t gghlite_self;
-    clt_elem_t clt13_self;
+    clt_elem_t clt_self;
   };
 };
 
