@@ -11,6 +11,8 @@
 #include "parse.h"
 #include "util.h"
 
+extern int g_parallel;
+
 typedef struct {
 	mife_pp_t pp;
 	location database_location;
@@ -34,10 +36,12 @@ int main(int argc, char **argv) {
 	mife_eval_parse_cmdline(argc, argv, &ins, &use_clt);
 
     mmap_vtable *mmap;
-    if (use_clt)
+    if (use_clt) {
         mmap = &clt_vtable;
-    else
+        g_parallel = 1;
+    } else {
         mmap = &gghlite_vtable;
+    }
 
 	m = mife_eval_evaluate(mmap, ins);
 	success = NULL != m.elems;
@@ -130,10 +134,12 @@ void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool
 	}
 
     mmap_vtable *mmap;
-    if (*use_clt)
+    if (*use_clt) {
         mmap = &clt_vtable;
-    else
+        g_parallel = 1;
+    } else {
         mmap = &gghlite_vtable;
+    }
 
 	/* read the mapping */
 	if(optind != argc-1) {
@@ -244,7 +250,10 @@ f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins) {
 	if(!mife_eval_load_matrix(mmap, ins, 0, product)) goto done;
 	for(i = 1; i < template->steps_len; i++) {
 		if(!mife_eval_load_matrix(mmap, ins, i, multiplicand)) goto clear_product;
-		mmap_enc_mat_mul(mmap, ins.pp->params_ref, product, product, multiplicand);
+        if (g_parallel)
+          mmap_enc_mat_mul_par(mmap, ins.pp->params_ref, product, product, multiplicand);
+        else
+          mmap_enc_mat_mul(mmap, ins.pp->params_ref, product, product, multiplicand);
 		mmap_enc_mat_clear(mmap, multiplicand);
 	}
 

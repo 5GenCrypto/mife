@@ -14,6 +14,8 @@
 #include "parse.h"
 #include "util.h"
 
+extern int g_parallel;
+
 #define UID_TRIES 100
 #define INT_STR_LEN (3 * sizeof(int))
 
@@ -43,10 +45,12 @@ int main(int argc, char **argv) {
     mife_encrypt_parse_cmdline(argc, argv, &ins, &use_clt);
 
     mmap_vtable *mmap;
-    if (use_clt)
+    if (use_clt) {
         mmap = &clt_vtable;
-    else
+        g_parallel = 1;
+    } else {
         mmap = &gghlite_vtable;
+    }
 
     mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
 
@@ -240,10 +244,12 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
     // If we're going to use the mmap in this function, we should know which
     // one to use.
     mmap_vtable *mmap;
-    if (*use_clt)
+    if (*use_clt) {
         mmap = &clt_vtable;
-    else
+        g_parallel = 1;
+    } else {
         mmap = &gghlite_vtable;
+    }
 
     /* TODO: some error-checking would be nice here */
     fread_mife_pp(mmap, ins->pp, pp_location.path);

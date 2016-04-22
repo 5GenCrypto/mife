@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+extern int g_parallel;
+
 /* MIFE internal functions */
 void reset_T();
 float get_T();

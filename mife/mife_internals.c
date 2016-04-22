@@ -1,6 +1,5 @@
 #include "mife_internals.h"
 
-
 /**
  * sets exp = base^n, where exp is an mpfr_t
  */
@@ -108,7 +107,7 @@ void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d) {
     fmpz_tdiv_qr(message2, modresult, message2, modd);
     dary[i] = fmpz_get_ui(modresult);
   }
-  
+
   fmpz_clear(message2);
   fmpz_clear(modd);
   fmpz_clear(modresult);
@@ -117,17 +116,17 @@ void message_to_dary(ulong *dary, int bitstring_len, fmpz_t message, int d) {
 
 
 /**
- * Generates the i^th member of the exclusive partition family for the index 
+ * Generates the i^th member of the exclusive partition family for the index
  * sets.
  *
- * @param partitioning The description of the partitioning, each entry is in 
+ * @param partitioning The description of the partitioning, each entry is in
  * [0,d-1] and it is of length (1 + (d-1)(L+1)).
  * @param index The index being the i^th member of the partition family
- * @param L the log of the size of the partition family. So, i must be in the 
+ * @param L the log of the size of the partition family. So, i must be in the
  * range [0,2^L-1]
- * @param nu The number of total elements to be multiplied. partitioning[] 
+ * @param nu The number of total elements to be multiplied. partitioning[]
  * will describe a nu-partition of the universe set.
- */ 
+ */
 void mife_gen_partitioning(int *partitioning, fmpz_t index, int L, int nu) {
   int j = 0;
 
@@ -160,14 +159,28 @@ void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
 
 void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_enc_mat_t enc,
     fmpz_mat_t m, int *group, aes_randstate_t randstate) {
-  for(int i = 0; i < enc->nrows; i++) {
-    for(int j = 0; j < enc->ncols; j++) {
-        mmap->enc->encode(enc->m[i][j], sk->self, 1, fmpz_mat_entry(m, i, j), group, randstate);
-      NUM_ENCODINGS_GENERATED++;
-        timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
-            NUM_ENCODINGS_GENERATED,
-            get_NUM_ENC(),
-            get_T());
+  if (g_parallel) {
+#pragma omp parallel for schedule(dynamic,1) collapse(2)
+    for(int i = 0; i < enc->nrows; i++) {
+      for(int j = 0; j < enc->ncols; j++) {
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, fmpz_mat_entry(m, i, j), group, randstate);
+          NUM_ENCODINGS_GENERATED++;
+          timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
+              NUM_ENCODINGS_GENERATED,
+              get_NUM_ENC(),
+              get_T());
+      }
+    }
+  } else {
+    for(int i = 0; i < enc->nrows; i++) {
+      for(int j = 0; j < enc->ncols; j++) {
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, fmpz_mat_entry(m, i, j), group, randstate);
+          NUM_ENCODINGS_GENERATED++;
+          timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
+              NUM_ENCODINGS_GENERATED,
+              get_NUM_ENC(),
+              get_T());
+      }
     }
   }
 }
@@ -211,7 +224,7 @@ int ***mife_partitions(mife_pp_t pp, fmpz_t index) {
         memset(groups[i][j], 0, pp->gamma * sizeof(int));
       }
     }
-    
+
     for(int k = 0; k < pp->gamma; k++) {
       groups[0][0][k] = 1;
     }
@@ -281,7 +294,7 @@ void mife_set_encodings(const_mmap_vtable mmap, mife_ciphertext_t ct, mife_mat_c
           randstate);
     }
   }
-  
+
   // free group arrays
   mife_partitions_clear(pp, groups);
 }
@@ -317,7 +330,7 @@ void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p) {
     fmpz_set(det, fmpz_mat_entry(a, 0, 0));
     return;
   }
-	
+
   if (n == 2) {
     fmpz_t tmp1;
     fmpz_init(tmp1);
@@ -432,7 +445,7 @@ void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p) {
         }
         i1++;
       }
-			
+
       /* Calculate the determinant */
       fmpz_mat_det_modp(det, c, n-1, p);
 
