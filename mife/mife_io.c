@@ -1,7 +1,7 @@
 #include "mife_io.h"
 
 /**
- * 
+ *
  * Members of pp that are not transferred:
  * params->x
  * params->y
@@ -65,9 +65,9 @@ void fread_mife_pp(const_mmap_vtable mmap, mife_pp_t pp, char *filepath) {
 }
 
 void fwrite_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
-	uint64_t t = ggh_walltime(0);
+  uint64_t t = ggh_walltime(0);
   FILE *fp = fopen(filepath, "wb");
-	timer_printf("Starting writing Kilian matrices...\n");
+  timer_printf("Starting writing Kilian matrices...\n");
   fprintf(fp, "%d\n", sk->numR);
   for(int i = 0; i < sk->numR; i++) {
     fprintf(fp, "%ld %ld\n", sk->R[i]->r, sk->R[i]->c);
@@ -76,24 +76,24 @@ void fwrite_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
     fprintf(fp, "%ld %ld\n", sk->R_inv[i]->r, sk->R_inv[i]->c);
     fmpz_mat_fprint_raw(fp, sk->R_inv[i]);
     fprintf(fp, "\n");
-	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
-		i, sk->numR, ggh_seconds(ggh_walltime(t)));
+  timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+    i, sk->numR, ggh_seconds(ggh_walltime(t)));
 
   }
-	timer_printf("\n");
-	timer_printf("Finished writing Kilian matrices %8.2fs\n",
-		ggh_seconds(ggh_walltime(t)));
+  timer_printf("\n");
+  timer_printf("Finished writing Kilian matrices %8.2fs\n",
+    ggh_seconds(ggh_walltime(t)));
 
-	mmap->sk->fwrite(sk->self, fp);
+  mmap->sk->fwrite(sk->self, fp);
 
   fclose(fp);
 
 }
 
 void fread_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
-	uint64_t t = ggh_walltime(0);
+  uint64_t t = ggh_walltime(0);
   FILE *fp = fopen(filepath, "rb");
-	timer_printf("Starting reading Kilian matrices...\n");
+  timer_printf("Starting reading Kilian matrices...\n");
   CHECK(fscanf(fp, "%d\n", &sk->numR), 1);
   sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
   sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
@@ -108,15 +108,15 @@ void fread_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
     fmpz_mat_init(sk->R_inv[i], r2, c2);
     fmpz_mat_fread_raw(fp, sk->R_inv[i]);
     CHECK(fscanf(fp, "\n"), 0);
-	timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
-		i, sk->numR, ggh_seconds(ggh_walltime(t)));
+  timer_printf("\r    Progress: [%lu / %lu] %8.2fs",
+    i, sk->numR, ggh_seconds(ggh_walltime(t)));
   }
-	timer_printf("\n");
-	timer_printf("Finished reading Kilian matrices %8.2fs\n",
-		ggh_seconds(ggh_walltime(t)));
+  timer_printf("\n");
+  timer_printf("Finished reading Kilian matrices %8.2fs\n",
+    ggh_seconds(ggh_walltime(t)));
 
-	sk->self = malloc(mmap->sk->size);
-	mmap->sk->fread(sk->self, fp);
+  sk->self = malloc(mmap->sk->size);
+  mmap->sk->fread(sk->self, fp);
 
   fclose(fp);
 }
@@ -159,10 +159,10 @@ void fread_mmap_enc_mat(const_mmap_vtable mmap, mmap_enc_mat_t m, FILE *fp) {
   int check1 = fscanf(fp, " %d ", &m->nrows);
   int check2 = fscanf(fp, " %d ", &m->ncols);
   assert(check1 == 1 && check2 == 1);
-  m->m = malloc(m->nrows * sizeof(mmap_enc **));
+  m->m = malloc(m->nrows * sizeof(mmap->enc->size));
   assert(m->m);
   for(int i = 0; i < m->nrows; i++) {
-    m->m[i] = malloc(m->ncols * sizeof(mmap_enc *));
+    m->m[i] = malloc(m->ncols * sizeof(mmap->enc->size));
     assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
       m->m[i][j] = malloc(mmap->enc->size);

@@ -129,6 +129,7 @@ static void clt_enc_clear_wrapper (mmap_enc *const enc)
 
 static void clt_enc_fread_wrapper (mmap_enc *enc, FILE *const fp)
 {
+    mpz_init(enc->clt_self);
     mpz_inp_raw(enc->clt_self, fp);
 }
 

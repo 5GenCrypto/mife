@@ -1,5 +1,9 @@
 #include <getopt.h>
 
+#include <mife/mife.h>
+#include <mmap/mmap_gghlite.h>
+#include <mmap/mmap_clt.h>
+
 #include "cmdline.h"
 #include "mbp_types.h"
 #include "mbp_glue.h"
@@ -16,17 +20,25 @@ typedef struct {
 const mbp_template_stats *mbp_template_stats_from_eval_inputs(const eval_inputs ins) { return ins.pp->mbp_params; }
 const mbp_template       *mbp_template_from_eval_inputs      (const eval_inputs ins) { return mbp_template_stats_from_eval_inputs(ins)->template; }
 
-void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval_inputs *const ins);
+void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool *use_clt);
 f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins);
 void mife_eval_print_outputs(const mbp_template t, const f2_matrix m);
 void mife_eval_cleanup(const_mmap_vtable mmap, eval_inputs ins, f2_matrix m);
 
-int mife_eval_main(const_mmap_vtable mmap, int argc, char **argv) {
+int main(int argc, char **argv) {
 	eval_inputs ins;
 	f2_matrix m;
 	bool success;
+    bool use_clt = false;
 
-	mife_eval_parse_cmdline(mmap, argc, argv, &ins);
+	mife_eval_parse_cmdline(argc, argv, &ins, &use_clt);
+
+    mmap_vtable *mmap;
+    if (use_clt)
+        mmap = &clt_vtable;
+    else
+        mmap = &gghlite_vtable;
+
 	m = mife_eval_evaluate(mmap, ins);
 	success = NULL != m.elems;
 	if(success) mife_eval_print_outputs(*mbp_template_from_eval_inputs(ins), m);
@@ -54,6 +66,7 @@ void mife_eval_usage(const int code) {
 		"  -h, --help               Display this usage information\n"
 		"  -u, --public             A directory for public parameters [public]\n"
 		"  -d, --db, --database     A directory to store encrypted values in [database]\n"
+        "  -C, --clt13              Use CLT13 as the underlying multilinear map\n"
 		"\n"
 		"Evaluation-specific options: (none)\n"
 		"\n"
@@ -67,7 +80,7 @@ void mife_eval_usage(const int code) {
 	exit(code);
 }
 
-void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval_inputs *const ins) {
+void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool *use_clt) {
 	int i;
 
 	/* set defaults */
@@ -87,10 +100,11 @@ void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval
 		, {"database", required_argument, NULL, 'd'}
 		, {"help"    ,       no_argument, NULL, 'h'}
 		, {"public"  , required_argument, NULL, 'u'}
+        , {"clt"     ,       no_argument, NULL, 'C'}
 		};
 
 	while(!done) {
-		int c = getopt_long(argc, argv, "d:hu:", long_opts, NULL);
+		int c = getopt_long(argc, argv, "d:hu:C", long_opts, NULL);
 		switch(c) {
 			case  -1: done = true; break;
 			case   0: break; /* a long option with non-NULL flag; should never happen */
@@ -105,12 +119,21 @@ void mife_eval_parse_cmdline(const_mmap_vtable mmap, int argc, char **argv, eval
 				location_free(public_location);
 				public_location = (location) { optarg, true };
 				break;
+            case 'C':
+                *use_clt = true;
+                break;
 			default:
 				fprintf(stderr, "The impossible happened! getopt returned %d (%c)\n", c, c);
 				exit(-1);
 				break;
 		}
 	}
+
+    mmap_vtable *mmap;
+    if (*use_clt)
+        mmap = &clt_vtable;
+    else
+        mmap = &gghlite_vtable;
 
 	/* read the mapping */
 	if(optind != argc-1) {

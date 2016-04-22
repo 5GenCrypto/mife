@@ -131,7 +131,7 @@ static int test(const mmap_vtable *mmap)
 int main(void)
 {
     printf("* CLT13\n");
-    if (test(&clt13_vtable) == 1)
+    if (test(&clt_vtable) == 1)
         return 1;
     printf("* GGHLite\n");
     if (test(&gghlite_vtable) == 1)
