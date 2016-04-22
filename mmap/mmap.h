@@ -48,7 +48,7 @@ typedef struct {
    * kappa: how many multiplications we intend to do
    * gamma: the size of the universe that we will zero-test things at
    */
-  void (*const init)(mmap_sk *, size_t, size_t, size_t, aes_randstate_t);
+  void (*const init)(mmap_sk *, size_t, size_t, size_t, aes_randstate_t, bool);
   void (*const clear)(mmap_sk *);
   void (*const fread)(mmap_sk *c, FILE *);
   void (*const fwrite)(const mmap_sk *, FILE *);

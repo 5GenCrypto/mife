@@ -62,7 +62,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
       lambda, pp->kappa, pp->gamma);
   sk->self = malloc(mmap->sk->size);
-  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, randstate);
+  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, randstate, false);
   timer_printf("Finished MMAP secret key initialization\n");
 
   /* For const correctness, we should probably have two separate

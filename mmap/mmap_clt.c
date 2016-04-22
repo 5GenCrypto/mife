@@ -14,7 +14,7 @@ static const mmap_pp_vtable clt_pp_vtable =
   , .size   = sizeof(mmap_pp)
   };
 
-static void clt_state_init_wrapper  (mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate);
+static void clt_state_init_wrapper  (mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate, bool verbose);
 static void clt_state_clear_wrapper (mmap_sk *const sk);
 static void clt_state_read_wrapper  (mmap_sk *const sk, FILE *const fp);
 static void clt_state_save_wrapper  (const mmap_sk *const sk, FILE *const fp);
@@ -79,14 +79,16 @@ static void clt_pp_save_wrapper (const mmap_pp *const pp, FILE *const fp)
 }
 
 static void clt_state_init_wrapper (mmap_sk *const sk, size_t lambda, size_t kappa,
-                                    size_t gamma, aes_randstate_t rng)
+                                    size_t gamma, aes_randstate_t rng, bool verbose)
 {
+    int flags = CLT_FLAG_DEFAULT | CLT_FLAG_OPT_PARALLEL_ENCODE;
     int *pows = malloc(gamma * sizeof(int));
     for (size_t i = 0; i < gamma; i++) {
         pows[i] = 1;
     }
-    clt_state_init(&(sk->clt_self), kappa, lambda, gamma, pows,
-                   CLT_FLAG_DEFAULT, rng);
+    if (verbose)
+        flags |= CLT_FLAG_VERBOSE;
+    clt_state_init(&(sk->clt_self), kappa, lambda, gamma, pows, flags, rng);
     free(pows);
 }
 

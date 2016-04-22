@@ -12,7 +12,7 @@ static void gghlite_params_clear_read_wrapper(mmap_pp *pp);
 static void fread_gghlite_params_wrapper(mmap_pp *const pp, FILE *const fp);
 static void fwrite_gghlite_params_wrapper(const mmap_pp *const pp, FILE *const fp);
 
-static void gghlite_jigsaw_init_gamma_wrapper(mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate);
+static void gghlite_jigsaw_init_gamma_wrapper(mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate, bool verbose);
 static void gghlite_sk_clear_wrapper(mmap_sk *const sk);
 static void fread_gghlite_sk_wrapper(mmap_sk *const sk, FILE *const fp);
 static void fwrite_gghlite_sk_wrapper(const mmap_sk *const sk, FILE *const fp);
@@ -93,8 +93,12 @@ static void fread_gghlite_params_wrapper(mmap_pp *const pp, FILE *const fp)
 static void fwrite_gghlite_params_wrapper(const mmap_pp *const pp, FILE *const fp)
   { fwrite_gghlite_params(fp, pp->gghlite_self); }
 
-static void gghlite_jigsaw_init_gamma_wrapper(mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate) {
-  const gghlite_flag_t flags = GGHLITE_FLAGS_GOOD_G_INV | GGHLITE_FLAGS_QUIET;
+static void gghlite_jigsaw_init_gamma_wrapper(mmap_sk *const sk, size_t lambda, size_t kappa, size_t gamma, aes_randstate_t randstate, bool verbose) {
+  gghlite_flag_t flags = GGHLITE_FLAGS_GOOD_G_INV;
+  if (verbose)
+      flags |= GGHLITE_FLAGS_VERBOSE;
+  else
+      flags |= GGHLITE_FLAGS_QUIET;
   gghlite_jigsaw_init_gamma(sk->gghlite_self, lambda, kappa, gamma, flags, randstate);
 }
 
