@@ -13,6 +13,6 @@ test_mmap_LDADD   = -lm -lclt13 -lgghlite -lflint
 test_mmap_INCLUDEDIR = $(includedir)/oz $(includedir)/gghlite
 
 test_mmap_mat_SOURCES = test_mmap_mat.c utils.c
-test_mmap_mat_LDADD   = -lm -lclt13 -lgghlite -lflint
+test_mmap_mat_LDADD   = -lm -lclt13 -lgghlite -lflint -lmife
 test_mmap_mat_INCLUDEDIR = $(includedir)/oz $(includedir)/gghlite
 
