@@ -38,7 +38,7 @@ static int test(const mmap_vtable *mmap)
 
     // test initialization & serialization
     mmap_sk *sk_ = malloc(mmap->sk->size);
-    mmap->sk->init(sk_, lambda, kappa, nzs, rng);
+    mmap->sk->init(sk_, lambda, kappa, nzs, rng, 1);
     mmap->sk->fwrite(sk_, sk_f);
     rewind(sk_f);
     mmap->sk->clear(sk_);

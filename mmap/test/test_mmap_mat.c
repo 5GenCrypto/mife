@@ -45,7 +45,7 @@ static int test(const mmap_vtable *vtable)
     /* fmpz_t mod; */
     /* fmpz_init(mod); */
 
-    vtable->sk->init(&sk, lambda, kappa, nzs, rng);
+    vtable->sk->init(&sk, lambda, kappa, nzs, rng, 1);
     /* vtable->sk->plaintext_field(&sk, mod); */
     pp = vtable->sk->pp(&sk);
 
