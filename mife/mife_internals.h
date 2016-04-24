@@ -43,20 +43,6 @@ void mmap_enc_mat_zeros_print (const_mmap_vtable mmap, mife_pp_t pp,
 void mife_ciphertext_clear    (const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct);
 void message_to_dary          (ulong *dary, int bitstring_len, fmpz_t message, int d);
 
-/* functions dealing with fmpz types and matrix multiplications mod fmpz_t */
-void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
-void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
-void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp);
-void fmpz_mat_mul_modp(fmpz_mat_t a, fmpz_mat_t b, fmpz_mat_t c, int n,
-    fmpz_t p);
-void fmpz_init_exp(fmpz_t exp, int base, int n);
-
-/* functions for computing matrix inverse mod fmpz_t */
-void fmpz_mat_modp(fmpz_mat_t m, int dim, fmpz_t p);
-void fmpz_mat_det_modp(fmpz_t det, fmpz_mat_t a, int n, fmpz_t p);
-void fmpz_mat_cofactor_modp(fmpz_mat_t b, fmpz_mat_t a, int n, fmpz_t p);
-void fmpz_modp_matrix_inverse(fmpz_mat_t inv, fmpz_mat_t a, int dim, fmpz_t p);
-
 #ifdef __cplusplus
 }
 #endif
