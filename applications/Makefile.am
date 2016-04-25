@@ -13,7 +13,7 @@ LDADD = \
     -L$(top_builddir)/mmap \
     -lgmp -lmpfr -lm -lssl -lcrypto -lmmap
 
-LDFLAGS = -no-install
+#LDFLAGS = -no-install
 
 bin_PROGRAMS = gghlite_params \
                gghlite_instance \

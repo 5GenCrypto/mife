@@ -9,7 +9,7 @@ LDADD = $(top_builddir)/gghlite/libgghlite.la \
         $(top_builddir)/dgsl/libdgsl.la \
 		-laesrand -lflint -lgmp -lmpfr -lm 
 
-LDFLAGS = -no-install
+#LDFLAGS = -no-install
 
 TESTS = test_rem_small test_instgen test_jigsaw
 check_PROGRAMS = $(TESTS)
