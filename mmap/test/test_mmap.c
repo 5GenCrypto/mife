@@ -10,12 +10,13 @@
 
 #include "utils.h"
 
-static int test(const mmap_vtable *mmap)
+const ulong lambdas[] = {8, 16, 24, 32};
+
+static int test(const mmap_vtable *mmap, ulong lambda)
 {
     srand(time(NULL));
 
     ulong nzs     = 10;
-    ulong lambda  = 10;
     ulong kappa   = 2;
 
     aes_randstate_t rng;
@@ -38,7 +39,7 @@ static int test(const mmap_vtable *mmap)
 
     // test initialization & serialization
     mmap_sk *sk_ = malloc(mmap->sk->size);
-    mmap->sk->init(sk_, lambda, kappa, nzs, rng, 1);
+    mmap->sk->init(sk_, lambda, kappa, nzs, rng, false);
     mmap->sk->fwrite(sk_, sk_f);
     rewind(sk_f);
     mmap->sk->clear(sk_);
@@ -46,7 +47,7 @@ static int test(const mmap_vtable *mmap)
     mmap_sk *sk = malloc(mmap->sk->size);
     mmap->sk->fread(sk, sk_f);
 
-    mmap_pp *pp_ = mmap->sk->pp(sk);
+    const mmap_pp *pp_ = mmap->sk->pp(sk);
     mmap->pp->fwrite(pp_, pp_f);
     rewind(pp_f);
     mmap_pp *pp = malloc(mmap->pp->size);
@@ -128,14 +129,23 @@ static int test(const mmap_vtable *mmap)
     return !ok;
 }
 
+static int test_lambdas(const mmap_vtable *vtable)
+{
+    int err = 0;
+    for (int i = 0; i < sizeof(lambdas) / (sizeof(lambdas[0])); ++i) {
+        printf("** lambda = %lu\n", lambdas[i]);
+        err |= test(vtable, lambdas[i]);
+    }
+    return err;
+}
+
 int main(void)
 {
+    int err = 0;
     printf("* CLT13\n");
-    if (test(&clt_vtable) == 1)
-        return 1;
+    err |= test_lambdas(&clt_vtable);
     printf("* GGHLite\n");
-    if (test(&gghlite_vtable) == 1)
-        return 1;
-    return 0;
+    err |= test_lambdas(&gghlite_vtable);
+    return err;
 }
 

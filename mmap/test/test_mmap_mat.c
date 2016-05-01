@@ -12,8 +12,9 @@
 #include "utils.h"
 
 ulong nzs = 2;
-ulong lambda = 25;
 ulong kappa = 2;
+
+const ulong lambdas[] = {8, 16, 24, 32};
 
 static void encode(const mmap_vtable *vtable, mmap_sk *sk,
                    mmap_enc_mat_t out, fmpz_mat_t in, int idx, int nrows,
@@ -79,7 +80,7 @@ fmpz_layer_mul_right(fmpz_mat_t zero, fmpz_mat_t one, fmpz_mat_t m, fmpz_t p)
     fmpz_mat_mul_mod(one, one, m, p);
 }
 
-static int test(const mmap_vtable *vtable)
+static int test(const mmap_vtable *vtable, ulong lambda)
 {
     int ok = 1;
     mmap_sk sk;
@@ -91,7 +92,7 @@ static int test(const mmap_vtable *vtable)
     fmpz_t mod;
     fmpz_init(mod);
 
-    vtable->sk->init(&sk, lambda, kappa, nzs, rng, 1);
+    vtable->sk->init(&sk, lambda, kappa, nzs, rng, false);
     vtable->sk->plaintext_field(&sk, mod);
     pp = vtable->sk->pp(&sk);
 
@@ -163,13 +164,22 @@ static int test(const mmap_vtable *vtable)
     return !ok;
 }
 
+static int test_lambdas(const mmap_vtable *vtable)
+{
+    int err = 0;
+    for (int i = 0; i < sizeof(lambdas) / (sizeof(lambdas[0])); ++i) {
+        printf("** lambda = %lu\n", lambdas[i]);
+        err |= test(vtable, lambdas[i]);
+    }
+    return err;
+}
+
 int main(void)
 {
+    int err = 0;
     printf("* CLT13\n");
-    if (test(&clt_vtable) == 1)
-        return 1;
+    err |= test_lambdas(&clt_vtable);
     printf("* GGHLite\n");
-    if (test(&gghlite_vtable) == 1)
-        return 1;
-    return 0;
+    err |= test_lambdas(&gghlite_vtable);
+    return err;
 }
