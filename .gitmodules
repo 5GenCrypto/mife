@@ -1,0 +1,3 @@
+[submodule "applications/ore_dir/jsmn"]
+	path = mife/jsmn
+  url = https://github.com/zserge/jsmn.git
