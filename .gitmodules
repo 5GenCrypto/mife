@@ -1,3 +1,3 @@
-[submodule "applications/ore_dir/jsmn"]
-	path = mife/jsmn
-  url = https://github.com/zserge/jsmn.git
+[submodule "src/jsmn"]
+	path = src/jsmn
+	url = https://github.com/zserge/jsmn.git

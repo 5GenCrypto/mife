@@ -1,7 +1,7 @@
 #ifndef _MIFE_IO_H_
 #define _MIFE_IO_H_
 
-#include "mmap/mmap.h"
+#include <mmap/mmap.h>
 #include "mife_defs.h"
 #include "flint_raw_io.h"
 
