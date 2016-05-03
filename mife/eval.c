@@ -133,7 +133,7 @@ void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool
 		}
 	}
 
-    mmap_vtable *mmap;
+    const mmap_vtable *mmap;
     if (*use_clt) {
         mmap = &clt_vtable;
         g_parallel = 1;

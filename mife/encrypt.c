@@ -243,7 +243,7 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
 
     // If we're going to use the mmap in this function, we should know which
     // one to use.
-    mmap_vtable *mmap;
+    const mmap_vtable *mmap;
     if (*use_clt) {
         mmap = &clt_vtable;
         g_parallel = 1;
