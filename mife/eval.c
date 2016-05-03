@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
 	mife_eval_parse_cmdline(argc, argv, &ins, &use_clt);
 
-    mmap_vtable *mmap;
+    const mmap_vtable *mmap;
     if (use_clt) {
         mmap = &clt_vtable;
         g_parallel = 1;

@@ -12,22 +12,27 @@ AC_CONFIG_MACRO_DIR([build/autoconf])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 AM_PROG_AR
-dnl AC_PROG_LIBTOOL
-dnl AC_PROG_CC_C99
 
-dnl AS_IF([test "$ac_cv_prog_cc_c99" = "no"], AC_MSG_ERROR([C99 support is required but not found.]))
-
-dnl AC_ARG_ENABLE(debug,        [  --enable-debug          Enable assert() statements for debugging.], [enable_debug=yes])
-
-dnl # Debugging support
-dnl if test "x$enable_debug" = x"yes"; then
-dnl    DEBUG_FLAGS="-g"
-dnl    AC_SUBST(DEBUG_FLAGS)
-dnl else
-dnl    AC_DEFINE(NDEBUG,1,[Define whether debugging is enabled])
-dnl fi
-
-dnl AX_VALGRIND_CHECK()
+AC_SEARCH_LIBS(mpz_urandomm_aes,aesrand)
+if test "x$ac_cv_search_mpz_urandomm_aes" = "xno"; then
+  AC_MSG_ERROR([libaesrand not found])
+fi
+AC_SEARCH_LIBS(mmap_enc_mat_init,mmap)
+if test "x$ac_cv_search_mmap_enc_mat_init" = "xno"; then
+  AC_MSG_ERROR([libmmap not found])
+fi
+AC_SEARCH_LIBS(fmpz_init,flint)
+if test "x$ac_cv_search_fmpz_init" = "xno"; then
+  AC_MSG_ERROR([libflint not found])
+fi
+AC_SEARCH_LIBS(fmpz_mod_poly_oz_intt,oz)
+if test "x$ac_cv_search_fmpz_mod_poly_oz_intt" = "xno"; then
+  AC_MSG_ERROR([liboz not found])
+fi
+AC_SEARCH_LIBS(gghlite_init,gghlite)
+if test "x$ac_cv_search_gghlite_init" = "xno"; then
+  AC_MSG_ERROR([libgghlite not found])
+fi
 
 AC_CONFIG_FILES([Makefile mife/Makefile])
 

@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <gmp.h>
 #include <gghlite/misc.h>
 #include "mbp_types.h"
 
