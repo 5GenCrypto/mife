@@ -30,3 +30,24 @@
 
 # Debug files
 *.dSYM/
+
+Makefile
+*.in
+*.m4
+*.cache
+ar-lib
+compile
+depcomp
+install-sh
+missing
+*.log
+*.status
+configure
+m4
+.deps/
+*.in~
+config.h
+encrypt
+eval
+keygen
+stamp-h1
