@@ -209,6 +209,7 @@ void mife_encrypt_single(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, aes
 
   mmap_enc_mat_init(mmap, pp->params_ref, dest, src->r, src->c);
   mife_mat_encode(mmap, pp, sk, dest, src, partitions[position_index][local_index], randstate);
+  fmpz_mat_clear(src);
 }
 
 void mife_encrypt_clear(mife_pp_t pp, mife_mat_clr_t clr, int ***partitions) {
