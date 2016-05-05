@@ -1,5 +1,7 @@
 #include "mife_internals.h"
 
+int g_parallel;
+
 void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct) {
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int j = 0; j < pp->n[i]; j++) {
@@ -43,16 +45,16 @@ void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met) {
   free(met->clr);
 }
 
-void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) {
-  for(int i = 0; i < pp->num_inputs; i++) {
-    printf("clr[%d] matrices: \n", i);
-    for(int j = 0; j < pp->n[i]; j++) {
-      fmpz_mat_print_pretty(met->clr[i][j]);
-      printf("\n\n");
-    }
-  }
-  printf("\n");
-}
+/* static void print_mife_mat_clr(mife_pp_t pp, mife_mat_clr_t met) { */
+/*   for(int i = 0; i < pp->num_inputs; i++) { */
+/*     printf("clr[%d] matrices: \n", i); */
+/*     for(int j = 0; j < pp->n[i]; j++) { */
+/*       fmpz_mat_print_pretty(met->clr[i][j]); */
+/*       printf("\n\n"); */
+/*     } */
+/*   } */
+/*   printf("\n"); */
+/* } */
 
 
 void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
@@ -261,10 +263,10 @@ void mife_set_encodings(const_mmap_vtable mmap, mife_ciphertext_t ct, mife_mat_c
 
   if(! (pp->flags & MIFE_NO_KILIAN)) {
     // apply kilian to the cleartext matrices (overwriting them in the process)
-    for(int index = 0; index < pp->kappa; index++) {
+    for(int idx = 0; idx < pp->kappa; idx++) {
       int i, j;
-      pp->orderfn(pp, index, &i, &j);
-      mife_apply_kilian(pp, sk, met->clr[i][j], index);
+      pp->orderfn(pp, idx, &i, &j);
+      mife_apply_kilian(pp, sk, met->clr[i][j], idx);
     }
   }
 

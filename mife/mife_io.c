@@ -100,11 +100,11 @@ void fread_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
 
   for(int i = 0; i < sk->numR; i++) {
     unsigned long r1, c1, r2, c2;
-    CHECK(fscanf(fp, "%ld %ld\n", &r1, &c1), 2);
+    CHECK(fscanf(fp, "%lu %lu\n", &r1, &c1), 2);
     fmpz_mat_init(sk->R[i], r1, c1);
     fmpz_mat_fread_raw(fp, sk->R[i]);
     CHECK(fscanf(fp, "\n"), 0);
-    CHECK(fscanf(fp, "%ld %ld\n", &r2, &c2), 2);
+    CHECK(fscanf(fp, "%lu %lu\n", &r2, &c2), 2);
     fmpz_mat_init(sk->R_inv[i], r2, c2);
     fmpz_mat_fread_raw(fp, sk->R_inv[i]);
     CHECK(fscanf(fp, "\n"), 0);

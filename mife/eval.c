@@ -11,16 +11,14 @@
 #include "parse.h"
 #include "util.h"
 
-extern int g_parallel;
-
 typedef struct {
 	mife_pp_t pp;
 	location database_location;
 	ciphertext_mapping mapping;
 } eval_inputs;
 
-const mbp_template_stats *mbp_template_stats_from_eval_inputs(const eval_inputs ins) { return ins.pp->mbp_params; }
-const mbp_template       *mbp_template_from_eval_inputs      (const eval_inputs ins) { return mbp_template_stats_from_eval_inputs(ins)->template; }
+static const mbp_template_stats *mbp_template_stats_from_eval_inputs(const eval_inputs ins) { return ins.pp->mbp_params; }
+static const mbp_template       *mbp_template_from_eval_inputs      (const eval_inputs ins) { return mbp_template_stats_from_eval_inputs(ins)->template; }
 
 void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool *use_clt);
 f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins);
@@ -51,7 +49,7 @@ int main(int argc, char **argv) {
 	return success ? 0 : -1;
 }
 
-void mife_eval_usage(const int code) {
+static void mife_eval_usage(const int code) {
 	/* separate the diagnostic information from the usage information a little bit */
 	if(0 != code) printf("\n\n");
 	printf(
@@ -85,7 +83,7 @@ void mife_eval_usage(const int code) {
 }
 
 void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool *use_clt) {
-	int i;
+	unsigned int i;
 
 	/* set defaults */
 	location public_location = { "public", true };
@@ -198,9 +196,9 @@ void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool
 	if(position_missing) mife_eval_usage(6);
 }
 
-bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsigned int global_index, mmap_enc_mat_t out_m) {
+static bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsigned int global_index, mmap_enc_mat_t out_m) {
 	const mbp_template_stats *const stats    = ins.pp->mbp_params;
-	const mbp_template       *const template = stats->template;
+	/* const mbp_template       *const template = stats->template; */
 	const int local_index      = stats->local_index[global_index];
 	const char *const position = stats->positions[stats->position_index[global_index]];
 	const char *const uid      = uid_from_position(ins.mapping, position);
@@ -231,7 +229,6 @@ bool mife_eval_load_matrix(const_mmap_vtable mmap, const eval_inputs ins, unsign
 	fread_mmap_enc_mat(mmap, out_m, file);
 	result = true;
 
-fclose:
 	fclose(file);
 free_path:
 	free(path);
@@ -243,7 +240,7 @@ f2_matrix mife_eval_evaluate(const_mmap_vtable mmap, const eval_inputs ins) {
 	f2_matrix result = { .num_rows = 0, .num_cols = 0, .elems = NULL };
 	const mbp_template *const template = mbp_template_from_eval_inputs(ins);
 	mmap_enc_mat_t product, multiplicand;
-	int i;
+	unsigned int i;
 
 	/* if there are no steps to evaluate, I guess we're done */
 	if(template->steps_len < 1) goto done;
@@ -264,15 +261,15 @@ done:
 	return result;
 }
 
-unsigned int minui(const unsigned int l, const unsigned int r) {
+static unsigned int minui(const unsigned int l, const unsigned int r) {
 	return l < r ? l : r;
 }
 
 void mife_eval_print_outputs(const mbp_template t, const f2_matrix m) {
 	const unsigned int num_rows = minui(m.num_rows, t.outputs.num_rows);
 	const unsigned int num_cols = minui(m.num_cols, t.outputs.num_cols);
-	for(int i = 0; i < num_rows; i++) {
-		for(int j = 0; j < num_cols; j++) {
+	for(unsigned int i = 0; i < num_rows; i++) {
+		for(unsigned int j = 0; j < num_cols; j++) {
 			if(m.elems[i][j]) {
 				printf("%s\n", t.outputs.elems[i][j]);
 			}

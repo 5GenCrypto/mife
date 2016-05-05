@@ -85,11 +85,11 @@ bool jsmn_parse_f2_matrix(const char *const json_string, const jsmntok_t **const
 
 	/* parse each row */
 	int num_cols = -1;
-	int i;
+	unsigned int i;
 	for(i = 0; i < matrix->num_rows; i++) {
 		++(*json_tokens);
 		if(0 > (num_cols = jsmn_parse_f2_row(json_string, json_tokens, matrix->elems+i, num_cols))) {
-			int j;
+			unsigned int j;
 			for(j = 0; j < i; j++)
 				free(matrix->elems[j]);
 			free(matrix->elems);
@@ -117,11 +117,11 @@ bool jsmn_parse_f2_mbp(const char *const json_string, const jsmntok_t **const js
 	}
 
 	/* parse each matrix */
-	int i;
+	unsigned int i;
 	for(i = 0; i < mbp->matrices_len; i++) {
 		++(*json_tokens);
 		if(!jsmn_parse_f2_matrix(json_string, json_tokens, mbp->matrices+i)) {
-			int j;
+			unsigned int j;
 			for(j = 0; j < i; j++)
 				f2_matrix_free(mbp->matrices[j]);
 			free(mbp->matrices);
@@ -191,7 +191,7 @@ bool jsmn_parse_string_matrix(const char *const json_string, const jsmntok_t **c
 
 	/* parse each row */
 	int num_cols = -1;
-	int i;
+	unsigned int i;
 	for(i = 0; i < matrix->num_rows; i++) {
 		++(*json_tokens);
 		if(0 > (num_cols = jsmn_parse_string_row(json_string, json_tokens, matrix->elems+i, num_cols))) {
@@ -206,7 +206,7 @@ bool jsmn_parse_string_matrix(const char *const json_string, const jsmntok_t **c
 }
 
 bool jsmn_parse_mbp_step(const char *const json_string, const jsmntok_t **const json_tokens, mbp_step *const step) {
-	int i;
+	unsigned int i;
 
 	/* demand an object with at least two parts */
 	step->symbols_len = (*json_tokens)->size - 1;
@@ -232,7 +232,7 @@ bool jsmn_parse_mbp_step(const char *const json_string, const jsmntok_t **const 
 	}
 
 	/* parse each key-value pair */
-	int next_symbol = 0;
+	unsigned int next_symbol = 0;
 	for(i = 0; i < step->symbols_len+1; i++) {
 		++(*json_tokens);
 		char *key;
@@ -287,7 +287,7 @@ bool jsmn_parse_mbp_step(const char *const json_string, const jsmntok_t **const 
 	return true;
 }
 
-bool jsmn_parse_mbp_steps(const char *const json_string, const jsmntok_t **const json_tokens, mbp_template *const template) {
+static bool jsmn_parse_mbp_steps(const char *const json_string, const jsmntok_t **const json_tokens, mbp_template *const template) {
 	/* demand an array with at least one step in it */
 	template->steps_len = (*json_tokens)->size;
 	if((*json_tokens)->type != JSMN_ARRAY || template->steps_len <= 1) {
@@ -302,7 +302,7 @@ bool jsmn_parse_mbp_steps(const char *const json_string, const jsmntok_t **const
 	}
 
 	/* parse each step */
-	int i;
+	unsigned int i;
 	for(i = 0; i < template->steps_len; i++) {
 		++(*json_tokens);
 		if(!jsmn_parse_mbp_step(json_string, json_tokens, template->steps+i)) {
@@ -426,7 +426,7 @@ bool jsmn_parse_mbp_plaintext(const char *const json_string, const jsmntok_t **c
 	}
 
 	/* parse each symbol */
-	int i;
+	unsigned int i;
 	for(i = 0; i < plaintext->symbols_len; i++) {
 		++(*json_tokens);
 		if(!jsmn_parse_string(json_string, json_tokens, plaintext->symbols+i)) {
@@ -440,7 +440,7 @@ bool jsmn_parse_mbp_plaintext(const char *const json_string, const jsmntok_t **c
 }
 
 bool jsmn_parse_ciphertext_mapping(const char *const json_string, const jsmntok_t **const json_tokens, ciphertext_mapping *const mapping) {
-	int i;
+	unsigned int i;
 
 	/* demand an object */
 	mapping->positions_len = (*json_tokens)->size;
@@ -488,7 +488,7 @@ bool jsmn_parse_ciphertext_mapping(const char *const json_string, const jsmntok_
  * responsible for figuring out what those tokens mean
  *
  * not part of the public interface */
-bool jsmn_parse_setup(const char *const json_string, jsmntok_t **const json_tokens) {
+static bool jsmn_parse_setup(const char *const json_string, jsmntok_t **const json_tokens) {
 	jsmn_parser parser;
 	const size_t json_string_len = strlen(json_string);
 
@@ -547,7 +547,6 @@ bool jsmn_parse_mbp_template_location(const location loc, mbp_template *const te
 		free(json_tokens);
 	}
 
-fail_unmap:
 	munmap(json_string, fd_stat.st_size);
 fail_close:
 	close(fd);

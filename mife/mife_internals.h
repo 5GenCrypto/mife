@@ -11,10 +11,10 @@ extern "C" {
 extern int g_parallel;
 
 /* MIFE internal functions */
-void reset_T();
-float get_T();
+void reset_T(void);
+float get_T(void);
 void set_NUM_ENC(int val);
-int get_NUM_ENC();
+int get_NUM_ENC(void);
 
 void mife_apply_randomizer(mife_pp_t pp, aes_randstate_t randstate, fmpz_mat_t m);
 

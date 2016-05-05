@@ -6,8 +6,8 @@
 bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
   if(ALLOC_FAILS(dest->elems, src.num_rows))
     return false;
-  int *i = &dest->num_rows; /* to shorten some lines */
-  int j;
+  unsigned int *i = &dest->num_rows; /* to shorten some lines */
+  unsigned int j;
   for(*i = 0; *i < src.num_rows; (*i)++) {
     if(ALLOC_FAILS(dest->elems[*i], src.num_cols)) {
       f2_matrix_free(*dest);
@@ -24,7 +24,7 @@ bool f2_matrix_copy(f2_matrix *const dest, const f2_matrix src) {
 bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const unsigned int num_cols) {
   if(ALLOC_FAILS(dest->elems, num_rows))
     return false;
-  int j, *i = &dest->num_rows;
+  unsigned int j, *i = &dest->num_rows;
   for(*i = 0; *i < num_rows; (*i)++) {
     if(ALLOC_FAILS(dest->elems[*i], num_cols)) {
       f2_matrix_free(*dest);
@@ -39,7 +39,7 @@ bool f2_matrix_zero(f2_matrix *const dest, const unsigned int num_rows, const un
 }
 
 void f2_matrix_free(f2_matrix m) {
-  int i;
+  unsigned int i;
   if(NULL != m.elems) {
     for(i = 0; i < m.num_rows; i++)
       free(m.elems[i]);
@@ -48,7 +48,7 @@ void f2_matrix_free(f2_matrix m) {
 }
 
 void f2_mbp_free(f2_mbp mbp) {
-	int i;
+	unsigned int i;
 	if(NULL != mbp.matrices) {
 		for(i = 0; i < mbp.matrices_len; i++)
 			f2_matrix_free(mbp.matrices[i]);
@@ -57,7 +57,7 @@ void f2_mbp_free(f2_mbp mbp) {
 }
 
 void string_matrix_free(string_matrix m) {
-	int i, j;
+	unsigned int i, j;
 	if(NULL != m.elems) {
 		for(i = 0; i < m.num_rows; i++) {
 			if(NULL != m.elems[i]) {
@@ -71,7 +71,7 @@ void string_matrix_free(string_matrix m) {
 }
 
 void mbp_step_free(mbp_step s) {
-	int i;
+	unsigned int i;
 	if(NULL != s.symbols) {
 		for(i = 0; i < s.symbols_len; i++)
 			if(NULL != s.symbols[i])
@@ -87,7 +87,7 @@ void mbp_step_free(mbp_step s) {
 }
 
 void mbp_template_free(mbp_template t) {
-	int i;
+	unsigned int i;
 	if(NULL != t.steps) {
 		for(i = 0; i < t.steps_len; i++)
 			mbp_step_free(t.steps[i]);
@@ -97,7 +97,7 @@ void mbp_template_free(mbp_template t) {
 }
 
 void mbp_plaintext_free(mbp_plaintext pt) {
-	int i;
+	unsigned int i;
 	if(NULL != pt.symbols) {
 		for(i = 0; i < pt.symbols_len; i++)
 			free(pt.symbols[i]);
@@ -110,9 +110,9 @@ bool mbp_template_instantiate(const mbp_template *const t, const mbp_plaintext *
 	if(ALLOC_FAILS(mbp->matrices, t->steps_len))
 		return false;
 
-	int *i = &mbp->matrices_len;
+	unsigned int *i = &mbp->matrices_len;
 	for(*i = 0; *i < t->steps_len; (*i)++) {
-		int j;
+		unsigned int j;
 		bool found = false;
 		for(j = 0; j < t->steps[*i].symbols_len; j++) {
 			if(!strcmp(pt->symbols[*i], t->steps[*i].symbols[j])) {

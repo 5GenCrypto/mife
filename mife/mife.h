@@ -4,8 +4,6 @@
 #include "mife_internals.h"
 #include "mife_io.h"
 
-int g_parallel;
-
 /* front end functions which handle command line parsing, file IO, and all */
 int mife_keygen_main (const_mmap_vtable mmap, int argc, char **argv);
 int mife_encrypt_main(const_mmap_vtable mmap, int argc, char **argv);

@@ -14,8 +14,6 @@
 #include "parse.h"
 #include "util.h"
 
-extern int g_parallel;
-
 #define UID_TRIES 100
 #define INT_STR_LEN (3 * sizeof(int))
 
@@ -36,7 +34,7 @@ void mife_encrypt_cleanup(const_mmap_vtable mmap, encrypt_inputs *const ins);
 int main(int argc, char **argv) {
     encrypt_inputs ins;
     mife_mat_clr_t clr;
-    int i, ***partitions;
+    int ***partitions;
     bool success = true;
     bool use_clt = false;
 
@@ -60,7 +58,7 @@ int main(int argc, char **argv) {
      */
     int encoding_count = 0;
     const mbp_template *const template = ((mbp_template_stats *)ins.pp->mbp_params)->template;
-    for(i = 0; i < template->steps_len; i++) {
+    for(unsigned int i = 0; i < template->steps_len; i++) {
         const f2_matrix *const m = template->steps[i].matrix;
         encoding_count += m->num_rows * m->num_cols;
     }
@@ -70,7 +68,7 @@ int main(int argc, char **argv) {
     // now, perform the actual encryption
 
     reset_T();
-    for(i = 0; i < template->steps_len; i++) {
+    for(unsigned int i = 0; i < template->steps_len; i++) {
         mmap_enc_mat_t ct;
         mife_encrypt_single(mmap, ins.pp, ins.sk, ins.seed, i, clr, partitions, ct);
         success &= mife_encrypt_print_output(mmap, ins.pp, i, ct, ins.record_location);
@@ -83,7 +81,7 @@ int main(int argc, char **argv) {
     return success ? 0 : -1;
 }
 
-void mife_encrypt_usage(const int code) {
+static void mife_encrypt_usage(const int code) {
     /* separate the diagnostic information from the usage information a little bit */
     if(0 != code) printf("\n\n");
     printf(
@@ -124,7 +122,7 @@ void mife_encrypt_usage(const int code) {
 }
 
 /* reads (num_bits/8 + 1)*8 bytes into n, mod 2^num_bits */
-bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
+static bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
     fmpz_zero(n);
     while(num_bits >= 8) {
         int c = fgetc(file);
@@ -144,7 +142,7 @@ bool fmpz_read_bits(fmpz_t n, FILE *file, int num_bits) {
 }
 
 void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins, bool *use_clt) {
-    int i, j;
+    unsigned int i, j;
     bool done = false;
     char *uid = NULL;
     bool have_partition = false;
@@ -328,7 +326,7 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
         fprintf(stderr, "%s: out of memory when generating context for RNG seed\n", *argv);
         exit(-1);
     }
-    const int tmp = snprintf(context, context_size, "%s%s", function_name, uid);
+    const unsigned int tmp = snprintf(context, context_size, "%s%s", function_name, uid);
     if(context_len != tmp) {
         fprintf(stderr, "The impossible happened: expecting '%s%s' to have length %lu, but snprintf reports it has length %d.\n",
             function_name, uid, context_len, tmp);
@@ -385,7 +383,7 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
     location_free(private_location);
 }
 
-FILE *mife_encrypt_fopen_bin(const location record_location, const char *const position, const int local_index) {
+static FILE *mife_encrypt_fopen_bin(const location record_location, const char *const position, const int local_index) {
     int tmp;
     char *dir, *path;
     const size_t  dir_len = strlen(record_location.path) + 1 + strlen(position), dir_size = dir_len + 1;

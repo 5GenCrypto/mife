@@ -30,6 +30,8 @@ fi
 AC_SUBST(COMMON_CFLAGS)
 AC_SUBST(EXTRA_CFLAGS)
 
+AC_CHECK_HEADERS([omp.h])
+
 AC_SEARCH_LIBS(mpz_urandomm_aes,aesrand)
 if test "x$ac_cv_search_mpz_urandomm_aes" = "xno"; then
   AC_MSG_ERROR([libaesrand not found])

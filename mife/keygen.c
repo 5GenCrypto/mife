@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   return success ? 0 : -1;
 }
 
-void mife_keygen_usage(const int code) {
+static void mife_keygen_usage(const int code) {
   /* separate the diagnostic information from the usage information a little bit */
   if(0 != code) printf("\n\n");
   printf(
@@ -114,7 +114,7 @@ void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins,
     , {"secparam" , required_argument, NULL, 's'}
     , {"public"   , required_argument, NULL, 'u'}
     , {"clt"      ,       no_argument, NULL, 'C'}
-    , {}
+    , {NULL, 0, NULL, 0}
     };
 
   while(!done) {
