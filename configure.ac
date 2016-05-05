@@ -13,6 +13,23 @@ AM_INIT_AUTOMAKE([subdir-objects])
 
 AM_PROG_AR
 
+AC_ARG_ENABLE(debug,        [  --enable-debug          Enable assert() statements for debugging.], [enable_debug=yes])
+
+CFLAGS=                         dnl get rid of default -g -O2
+COMMON_CFLAGS="-Wall -Wformat -Wformat-security -Wextra -Wunused \
+-Wshadow -Wmissing-prototypes -Wfloat-equal -Wpointer-arith -Wcast-align \
+-Wstrict-prototypes -Wredundant-decls -Wendif-labels -Wcast-qual \
+-std=gnu11 -Wpedantic"
+
+if test "x$enable_debug" = x"yes"; then
+  EXTRA_CFLAGS="-O0 -g"
+else
+  EXTRA_CFLAGS="-O3"
+  AC_DEFINE(NDEBUG,1,[Define whether debugging is enabled])
+fi
+AC_SUBST(COMMON_CFLAGS)
+AC_SUBST(EXTRA_CFLAGS)
+
 AC_SEARCH_LIBS(mpz_urandomm_aes,aesrand)
 if test "x$ac_cv_search_mpz_urandomm_aes" = "xno"; then
   AC_MSG_ERROR([libaesrand not found])
