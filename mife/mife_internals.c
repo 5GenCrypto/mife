@@ -71,7 +71,7 @@ void mife_apply_randomizer(mife_pp_t pp, aes_randstate_t randstate, fmpz_mat_t m
   fmpz_init(rand);
   do {
     fmpz_randm_aes(rand, randstate, pp->p);
-  while (fmpz_is_zero(rand) || fmpz_is_one(rand));
+  } while (fmpz_is_zero(rand) || fmpz_is_one(rand));
   fmpz_mat_scalar_mul_modp(m, rand, pp->p);
   fmpz_clear(rand);
 }
