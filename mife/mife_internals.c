@@ -256,6 +256,13 @@ void mife_apply_kilian(mife_pp_t pp, mife_sk_t sk, fmpz_mat_t m, int global_inde
 
   fmpz_mat_set(m, tmp);
   fmpz_mat_clear(tmp);
+  
+  /* finally, reduce all entries mod p */
+  for(int i = 0; i < m->r; i++) {
+    for(int j = 0; j < m->c; j++) { 
+      fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), pp->p);
+    }     
+  }
 }
 
 void mife_set_encodings(const_mmap_vtable mmap, mife_ciphertext_t ct, mife_mat_clr_t met, fmpz_t index,
