@@ -1,4 +1,5 @@
 #include "mife.h"
+#include "util.h"
 
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
@@ -40,6 +41,14 @@ void mife_mbp_set(
   pp->setfn = setfn;
   pp->parsefn = parsefn;
 } 
+
+void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, fmpz_t p) {
+  for (int i = 0; i < dim; i++) {
+    for(int j = 0; j < dim; j++) {
+      fmpz_randm_aes(fmpz_mat_entry(m, i, j), randstate, p);
+    }
+  }
+}
 
 void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     aes_randstate_t randstate) {
@@ -95,35 +104,33 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
 
   /* do not parallelize calls to randomness generation! */  
   uint64_t t_init = ggh_walltime(0);
-  int count = 0;
-  int total = 0;
-  /* compute total */
-  for (int k = 0; k < pp->numR; k++) {
-    total += dims[k] * dims[k];
-  } 
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
-    for (int i = 0; i < dims[k]; i++) {
-      for(int j = 0; j < dims[k]; j++) {
-        fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), randstate, pp->p);
-        count++;
-        timer_printf("\r    Init Progress: [%d / %d] %8.2fs", count,
-            total, ggh_seconds(ggh_walltime(t_init)));
-      }
-    }
+    fmpz_rand_mat_square_aes(sk->R[k], dims[k], randstate, pp->p);
+    timer_printf("\r    Init Progress: [%d / %d] %8.2fs", pp->numR,
+        k, ggh_seconds(ggh_walltime(t_init)));
   }
   timer_printf("\n");
   
   int progress_count_approx = 0;
   uint64_t t = ggh_walltime(0);
+  int *non_invertible;
+  if(ALLOC_FAILS(non_invertible, pp->numR)) assert(false);
 #pragma omp parallel for
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
-    fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    non_invertible[k] = fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
     progress_count_approx++;
     timer_printf("\r    Inverse Computation Progress (Parallel): \
         [%lu / %lu] %8.2fs",
         progress_count_approx, pp->numR, ggh_seconds(ggh_walltime(t)));
+  }
+  for (int k = 0; k < pp->numR; k++) {
+    while(non_invertible[k]) {
+      timer_printf("Retrying matrix %d\n", k);
+      fmpz_rand_mat_square_aes(sk->R[k], dims[k], randstate, pp->p);
+      non_invertible[k] = fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    }
   }
   timer_printf("\n");
   timer_printf("Finished setting Kilian matrices");
