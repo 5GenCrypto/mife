@@ -1,4 +1,5 @@
 #include "mife.h"
+#include "util.h"
 
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
@@ -46,97 +47,102 @@ mife_mbp_set(void *mbp_params,
     pp->parsefn = parsefn;
 } 
 
-void
-mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
-           aes_randstate_t randstate)
-{
-    pp->n = malloc(pp->num_inputs * sizeof(int));
-    pp->kappa = 0;
-    for(int index = 0; index < pp->num_inputs; index++) {
-        pp->n[index] = pp->paramfn(pp, index);
-        pp->kappa += pp->n[index];
+void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, fmpz_t p) {
+  for (int i = 0; i < dim; i++) {
+    for(int j = 0; j < dim; j++) {
+      fmpz_randm_aes(fmpz_mat_entry(m, i, j), randstate, p);
     }
-    pp->L = L;
+  }
+}
 
-    pp->gamma = 0;
-    pp->gammas = malloc(pp->num_inputs * sizeof(int));
-    for(int i = 0 ; i < pp->num_inputs; i++) {
-        pp->gammas[i] = 1 + (pp->n[i]-1) * (pp->L+1);
-        pp->gamma += pp->gammas[i];
-    }
+void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
+    aes_randstate_t randstate) {
 
-    timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
-                 lambda, pp->kappa, pp->gamma);
-    sk->self = malloc(mmap->sk->size);
-    mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, 0, randstate, false);
-    timer_printf("Finished MMAP secret key initialization\n");
+  pp->n = malloc(pp->num_inputs * sizeof(int));
+  pp->kappa = 0;
+  for(int index = 0; index < pp->num_inputs; index++) {
+    pp->n[index] = pp->paramfn(pp, index);
+    pp->kappa += pp->n[index];
+  }
+  pp->L = L;
 
-    /* For const correctness, we should probably have two separate
-     * _mife_pp_struct types, one for pp's read from disk and one for pp's
-     * produced by picking a new keypair. Instead we keep only an informal
-     * (non-compiler-checked) invariant that we do not call read or clear on
-     * params_ref's produced from a new keypair generation.
-     */
-    pp->params_ref = (mmap_pp *)mmap->sk->pp(sk->self);
+  pp->gamma = 0;
+  pp->gammas = malloc(pp->num_inputs * sizeof(int));
+  for(int i = 0 ; i < pp->num_inputs; i++) {
+    pp->gammas[i] = 1 + (pp->n[i]-1) * (pp->L+1);
+    pp->gamma += pp->gammas[i];
+  }
 
-    timer_printf("Starting setting p...\n");
-    start_timer();
-    fmpz_init(pp->p);
-    mmap->sk->plaintext_field(sk->self, pp->p);
-    timer_printf("Finished setting p");
-    print_timer();
-    timer_printf("\n");
+  timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
+      lambda, pp->kappa, pp->gamma);
+  sk->self = malloc(mmap->sk->size);
+  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, 0, randstate, false);
+  timer_printf("Finished MMAP secret key initialization\n");
 
-    // set the kilian randomizers in sk
-    pp->numR = pp->kappa - 1;
-    sk->numR = pp->numR;
-    int *dims = malloc(pp->numR * sizeof(int));
-    pp->kilianfn(pp, dims);
+  /* For const correctness, we should probably have two separate
+   * _mife_pp_struct types, one for pp's read from disk and one for pp's
+   * produced by picking a new keypair. Instead we keep only an informal
+   * (non-compiler-checked) invariant that we do not call read or clear on
+   * params_ref's produced from a new keypair generation.
+   */
+  pp->params_ref = (mmap_pp *)mmap->sk->pp(sk->self);
 
-    sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
-    sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
+  timer_printf("Starting setting p...\n");
+  start_timer();
+  fmpz_init(pp->p);
+  mmap->sk->plaintext_field(sk->self, pp->p);
+  timer_printf("Finished setting p");
+  print_timer();
+  timer_printf("\n");
 
-    timer_printf("Starting setting Kilian matrices...\n");
-    start_timer();
+  // set the kilian randomizers in sk
+  pp->numR = pp->kappa - 1;
+  sk->numR = pp->numR;
+  int *dims = malloc(pp->numR * sizeof(int));
+  pp->kilianfn(pp, dims);
 
-    /* do not parallelize calls to randomness generation! */  
-    uint64_t t_init = ggh_walltime(0);
-    int count = 0;
-    int total = 0;
-    /* compute total */
-    for (int k = 0; k < pp->numR; k++) {
-        total += dims[k] * dims[k];
-    } 
-    for (int k = 0; k < pp->numR; k++) {
-        fmpz_mat_init(sk->R[k], dims[k], dims[k]);
-        for (int i = 0; i < dims[k]; i++) {
-            for(int j = 0; j < dims[k]; j++) {
-                fmpz_randm_aes(fmpz_mat_entry(sk->R[k], i, j), randstate, pp->p);
-                count++;
-                timer_printf("\r    Init Progress: [%d / %d] %8.2fs", count,
-                             total, ggh_seconds(ggh_walltime(t_init)));
-            }
-        }
-    }
-    timer_printf("\n");
+  sk->R = malloc(sk->numR * sizeof(fmpz_mat_t));
+  sk->R_inv = malloc(sk->numR * sizeof(fmpz_mat_t));
+
+  timer_printf("Starting setting Kilian matrices...\n");
+  start_timer();
+
+  /* do not parallelize calls to randomness generation! */  
+  uint64_t t_init = ggh_walltime(0);
+  for (int k = 0; k < pp->numR; k++) {
+    fmpz_mat_init(sk->R[k], dims[k], dims[k]);
+    fmpz_rand_mat_square_aes(sk->R[k], dims[k], randstate, pp->p);
+    timer_printf("\r    Init Progress: [%d / %d] %8.2fs", pp->numR,
+        k, ggh_seconds(ggh_walltime(t_init)));
+  }
+  timer_printf("\n");
   
-    int progress_count_approx = 0;
-    uint64_t t = ggh_walltime(0);
+  int progress_count_approx = 0;
+  uint64_t t = ggh_walltime(0);
+  int *non_invertible;
+  if(ALLOC_FAILS(non_invertible, pp->numR)) assert(false);
 #pragma omp parallel for
-    for (int k = 0; k < pp->numR; k++) {
-        fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
-        fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
-        progress_count_approx++;
-        timer_printf("\r    Inverse Computation Progress (Parallel): \
+  for (int k = 0; k < pp->numR; k++) {
+    fmpz_mat_init(sk->R_inv[k], dims[k], dims[k]);
+    non_invertible[k] = fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
+    progress_count_approx++;
+    timer_printf("\r    Inverse Computation Progress (Parallel): \
         [%lu / %lu] %8.2fs",
-                     progress_count_approx, pp->numR, ggh_seconds(ggh_walltime(t)));
+        progress_count_approx, pp->numR, ggh_seconds(ggh_walltime(t)));
+  }
+  for (int k = 0; k < pp->numR; k++) {
+    while(non_invertible[k]) {
+      timer_printf("Retrying matrix %d\n", k);
+      fmpz_rand_mat_square_aes(sk->R[k], dims[k], randstate, pp->p);
+      non_invertible[k] = fmpz_modp_matrix_inverse(sk->R_inv[k], sk->R[k], dims[k], pp->p);
     }
-    timer_printf("\n");
-    timer_printf("Finished setting Kilian matrices");
-    print_timer();
-    timer_printf("\n");
+  }
+  timer_printf("\n");
+  timer_printf("Finished setting Kilian matrices");
+  print_timer();
+  timer_printf("\n");
 
-    free(dims);
+  free(dims);
 }
 
 void
