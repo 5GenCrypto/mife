@@ -32,13 +32,13 @@ AC_SUBST(EXTRA_CFLAGS)
 
 AC_CHECK_HEADERS([omp.h])
 
-AC_SEARCH_LIBS(mpz_urandomm_aes,aesrand)
-if test "x$ac_cv_search_mpz_urandomm_aes" = "xno"; then
+AC_SEARCH_LIBS(aes_randinit,aesrand)
+if test "x$ac_cv_search_aes_randinit" = "xno"; then
   AC_MSG_ERROR([libaesrand not found])
 fi
-AC_SEARCH_LIBS(mmap_enc_mat_init,mmap)
-if test "x$ac_cv_search_mmap_enc_mat_init" = "xno"; then
-  AC_MSG_ERROR([libmmap not found])
+AC_SEARCH_LIBS(clt_state_new,clt13)
+if test "x$ac_cv_search_clt_state_new" = "xno"; then
+AC_MSG_ERROR([libclt13 not found])
 fi
 AC_SEARCH_LIBS(fmpz_init,flint)
 if test "x$ac_cv_search_fmpz_init" = "xno"; then
@@ -55,6 +55,10 @@ fi
 AC_SEARCH_LIBS(__gmpz_init,gmp)
 if test "x$ac_cv_search___gmpz_init" = "xno"; then
   AC_MSG_ERROR([libgmp not found])
+fi
+AC_SEARCH_LIBS(mmap_enc_mat_init,mmap)
+if test "x$ac_cv_search_mmap_enc_mat_init" = "xno"; then
+  AC_MSG_ERROR([libmmap not found])
 fi
 
 AC_CONFIG_FILES([Makefile mife/Makefile])
