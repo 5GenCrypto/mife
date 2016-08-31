@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <mife/mife.h>
 #include <mmap/mmap_gghlite.h>

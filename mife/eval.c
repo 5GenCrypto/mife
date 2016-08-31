@@ -3,6 +3,7 @@
 #include <mife/mife.h>
 #include <mmap/mmap_gghlite.h>
 #include <mmap/mmap_clt.h>
+#include <string.h>
 
 #include "cmdline.h"
 #include "mbp_types.h"

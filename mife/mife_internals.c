@@ -1,5 +1,7 @@
 #include "mife_internals.h"
 
+#include <string.h>
+
 int g_parallel;
 
 void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct) {
@@ -78,6 +80,7 @@ void mife_apply_randomizer(mife_pp_t pp, aes_randstate_t randstate, fmpz_mat_t m
 
 void mife_apply_randomizers(mife_mat_clr_t met, mife_pp_t pp, mife_sk_t sk,
     aes_randstate_t randstate) {
+  (void) sk;
   for(int i = 0; i < pp->num_inputs; i++) {
     for(int k = 0; k < pp->n[i]; k++) {
       mife_apply_randomizer(pp, randstate, met->clr[i][k]);
@@ -142,13 +145,15 @@ void mife_gen_partitioning(int *partitioning, fmpz_t index, int L, int nu) {
 
 void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_enc_mat_t enc,
     fmpz_mat_t m, int *group, aes_randstate_t randstate) {
+  (void) pp;
+  (void) randstate;
   if (g_parallel) {
 #pragma omp parallel for schedule(dynamic,1) collapse(2)
     for(int i = 0; i < enc->nrows; i++) {
       for(int j = 0; j < enc->ncols; j++) {
           fmpz_t *plaintext = malloc(sizeof(fmpz_t));
           memcpy(plaintext, fmpz_mat_entry(m, i, j), sizeof(fmpz_t));
-          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group, randstate);
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group);
           NUM_ENCODINGS_GENERATED++;
           timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
               NUM_ENCODINGS_GENERATED,
@@ -162,7 +167,7 @@ void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_en
       for(int j = 0; j < enc->ncols; j++) {
           fmpz_t *plaintext = malloc(sizeof(fmpz_t));
           memcpy(plaintext, fmpz_mat_entry(m, i, j), sizeof(fmpz_t));
-          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group, randstate);
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group);
           NUM_ENCODINGS_GENERATED++;
           timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
               NUM_ENCODINGS_GENERATED,

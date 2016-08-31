@@ -47,7 +47,7 @@ mife_mbp_set(void *mbp_params,
     pp->parsefn = parsefn;
 } 
 
-void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, fmpz_t p) {
+static void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, fmpz_t p) {
   for (int i = 0; i < dim; i++) {
     for(int j = 0; j < dim; j++) {
       fmpz_randm_aes(fmpz_mat_entry(m, i, j), randstate, p);
@@ -58,6 +58,7 @@ void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, 
 void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
     aes_randstate_t randstate) {
 
+  fmpz_t *tmp;
   pp->n = malloc(pp->num_inputs * sizeof(int));
   pp->kappa = 0;
   for(int index = 0; index < pp->num_inputs; index++) {
@@ -76,7 +77,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
       lambda, pp->kappa, pp->gamma);
   sk->self = malloc(mmap->sk->size);
-  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, 0, randstate, false);
+  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, NULL, 0, randstate, false);
   timer_printf("Finished MMAP secret key initialization\n");
 
   /* For const correctness, we should probably have two separate
@@ -90,7 +91,9 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   timer_printf("Starting setting p...\n");
   start_timer();
   fmpz_init(pp->p);
-  mmap->sk->plaintext_field(sk->self, pp->p);
+  tmp = mmap->sk->plaintext_fields(sk->self);
+  fmpz_set(pp->p, tmp[0]);
+  free(tmp);
   timer_printf("Finished setting p");
   print_timer();
   timer_printf("\n");
