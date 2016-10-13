@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -79,6 +80,13 @@ int main(int argc, char **argv) {
     mife_encrypt_clear(ins.pp, clr, partitions);
 
     mife_encrypt_cleanup(mmap, &ins);
+
+    {
+        struct rusage usage;
+        (void) getrusage(RUSAGE_SELF, &usage);
+        (void) printf("Max memory usage: %ld\n", usage.ru_maxrss);
+    }
+
     return success ? 0 : -1;
 }
 

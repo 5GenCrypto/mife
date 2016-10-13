@@ -4,6 +4,7 @@
 #include <mmap/mmap_gghlite.h>
 #include <mmap/mmap_clt.h>
 #include <string.h>
+#include <sys/resource.h>
 
 #include "cmdline.h"
 #include "mbp_types.h"
@@ -46,6 +47,12 @@ int main(int argc, char **argv) {
 	success = NULL != m.elems;
 	if(success) mife_eval_print_outputs(*mbp_template_from_eval_inputs(ins), m);
 	mife_eval_cleanup(mmap, ins, m);
+
+    {
+        struct rusage usage;
+        (void) getrusage(RUSAGE_SELF, &usage);
+        (void) printf("Max memory usage: %ld\n", usage.ru_maxrss);
+    }
 
 	return success ? 0 : -1;
 }

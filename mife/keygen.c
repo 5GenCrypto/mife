@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 
 #include <mife/mife.h>
 #include <mmap/mmap_gghlite.h>
@@ -64,6 +65,12 @@ int main(int argc, char **argv) {
   timer_printf("Finished cleanup");
   print_timer();
   timer_printf("\n");
+
+  {
+      struct rusage usage;
+      (void) getrusage(RUSAGE_SELF, &usage);
+      (void) printf("Max memory usage: %ld\n", usage.ru_maxrss);
+  }
 
   return success ? 0 : -1;
 }
