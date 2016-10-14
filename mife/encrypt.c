@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
         g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
+        g_parallel = 1;
     }
 
     mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
@@ -256,6 +257,7 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
         g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
+        g_parallel = 1;
     }
 
     /* TODO: some error-checking would be nice here */

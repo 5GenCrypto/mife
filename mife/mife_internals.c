@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-int g_parallel;
+int g_parallel = 0;
 
 void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t ct) {
   for(int i = 0; i < pp->num_inputs; i++) {

@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
         g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
+        g_parallel = 1;
     }
 
 	m = mife_eval_evaluate(mmap, ins);
@@ -145,6 +146,7 @@ void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool
         g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
+        g_parallel = 1;
     }
 
 	/* read the mapping */
