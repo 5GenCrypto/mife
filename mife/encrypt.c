@@ -47,10 +47,8 @@ int main(int argc, char **argv) {
     const mmap_vtable *mmap;
     if (use_clt) {
         mmap = &clt_vtable;
-        g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
-        g_parallel = 1;
     }
 
     mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
@@ -107,6 +105,7 @@ static void mife_encrypt_usage(const int code) {
         "  -u, --public             A directory for public parameters [public]\n"
         "  -d, --db, --database     A directory to store encrypted values in [database]\n"
         "  -C, --clt13              Use CLT13 as the underlying multilinear map\n"
+        "  -s, --sequential         Disable parallelism\n"
         "\n"
         "Encryption-specific options:\n"
         "  -i, --uid                A string that uniquely identifies this record and\n"
@@ -172,10 +171,13 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
         , {"private"  , required_argument, NULL, 'r'}
         , {"public"   , required_argument, NULL, 'u'}
         , {"clt"      ,       no_argument, NULL, 'C'}
+        , {"sequential",      no_argument, NULL, 's'}
         };
 
+    g_parallel = 1;
+
     while(!done) {
-        int c = getopt_long(argc, argv, "a:d:hi:Cr:u:", long_opts, NULL);
+        int c = getopt_long(argc, argv, "a:d:hi:Cr:su:", long_opts, NULL);
         switch(c) {
             case  -1: done = true; break;
             case   0: break; /* a long option with non-NULL flag; should never happen */
@@ -202,6 +204,9 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
             case 'r':
                 location_free(private_location);
                 private_location = (location) { optarg, true };
+                break;
+            case 's':
+                g_parallel = 0;
                 break;
             case 'u':
                 location_free(public_location);
@@ -254,10 +259,8 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
     const mmap_vtable *mmap;
     if (*use_clt) {
         mmap = &clt_vtable;
-        g_parallel = 1;
     } else {
         mmap = &gghlite_vtable;
-        g_parallel = 1;
     }
 
     /* TODO: some error-checking would be nice here */
