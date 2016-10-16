@@ -56,6 +56,7 @@ static void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t rand
 }
 
 void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
+                int ncores,
     aes_randstate_t randstate) {
 
   fmpz_t *tmp;
@@ -77,7 +78,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
       lambda, pp->kappa, pp->gamma);
   sk->self = malloc(mmap->sk->size);
-  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, NULL, 0, 0, randstate, false);
+  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, NULL, 0, ncores, randstate, false);
   timer_printf("Finished MMAP secret key initialization\n");
 
   /* For const correctness, we should probably have two separate

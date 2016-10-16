@@ -24,7 +24,7 @@ typedef struct {
   location public, private;
 } keygen_locations;
 
-void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs, bool *use_clt);
+void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins, keygen_locations *const outs, bool *use_clt, int *ncores);
 bool mife_keygen_print_outputs(const_mmap_vtable mmap, keygen_locations outs, mife_pp_t pp, mife_sk_t sk);
 void mife_keygen_cleanup(const_mmap_vtable mmap, keygen_inputs *const ins, keygen_locations *const outs, mife_pp_t pp, mife_sk_t sk);
 
@@ -36,10 +36,11 @@ int main(int argc, char **argv) {
   mbp_template_stats stats;
   bool success;
   bool use_clt = false;
+  int ncores;
 
   PRINT_TIMERS = 1; /* prints timing/progress info */
 
-  mife_keygen_parse_cmdline(argc, argv, &ins, &outs, &use_clt);
+  mife_keygen_parse_cmdline(argc, argv, &ins, &outs, &use_clt, &ncores);
 
   const mmap_vtable *mmap;
   if (use_clt)
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
   if (!mbp_template_to_mife_pp(pp, &ins.template, &stats))
       return -1;
 
-  mife_setup(mmap, pp, sk, ins.log_db_size, ins.sec_param, ins.seed);
+  mife_setup(mmap, pp, sk, ins.log_db_size, ins.sec_param, ncores, ins.seed);
   timer_printf("Finished calling mife_setup. Starting to write outputs...\n");
   start_timer();
 
@@ -87,6 +88,7 @@ static void mife_keygen_usage(const int code) {
     "  -r, --private      A directory for private parameters [private]\n"
     "  -u, --public       A directory for public parameters [public]\n"
     "  -C, --clt13        Use CLT13 as the underlying multilinear map\n"
+    "  -c, --ncores       Number of cores to use [0]\n"
     "\n"
     "Keygen-specific options:\n"
     "  -s, --secparam     Security parameter [80]\n"
@@ -105,13 +107,14 @@ static void mife_keygen_usage(const int code) {
 }
 
 void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins,
-                               keygen_locations *const outs, bool *use_clt)
+                               keygen_locations *const outs, bool *use_clt, int *ncores)
 {
   bool done = false;
 
   /* set defaults */
   ins->sec_param = 80;
   ins->log_db_size = 80;
+  *ncores = 0;
   *outs = (keygen_locations) { { "public", true }, { "private", true } };
 
   struct option long_opts[] =
@@ -121,16 +124,20 @@ void mife_keygen_parse_cmdline(int argc, char **argv, keygen_inputs *const ins,
     , {"secparam" , required_argument, NULL, 's'}
     , {"public"   , required_argument, NULL, 'u'}
     , {"clt"      ,       no_argument, NULL, 'C'}
+    , {"ncores"   , required_argument, NULL, 'c'}
     , {NULL, 0, NULL, 0}
     };
 
   while(!done) {
-    int c = getopt_long(argc, argv, "hn:Cr:s:u:", long_opts, NULL);
+    int c = getopt_long(argc, argv, "hn:c:Cr:s:u:", long_opts, NULL);
     switch(c) {
       case  -1: done = true; break;
       case   0: break; /* a long option with non-NULL flag; should never happen */
       case '?': mife_keygen_usage(1); break; /* braking is good defensive driving */
       case 'h': mife_keygen_usage(0); break;
+    case 'c':
+        *ncores = atoi(optarg);
+        break;
       case 'n':
         if((ins->log_db_size = atoi(optarg)) < 1) {
           fprintf(stderr, "%s: unparseable database size '%s', should be positive number\n", *argv, optarg);

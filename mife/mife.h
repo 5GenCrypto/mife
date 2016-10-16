@@ -22,6 +22,7 @@ void mife_mbp_set(
     int (*parsefn)  (mife_pp_t, f2_matrix)
     );
 void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int lambda,
+                int ncores,
     aes_randstate_t randstate);
 void mife_encrypt(const_mmap_vtable mmap, mife_ciphertext_t ct, void *message, mife_pp_t pp,
     mife_sk_t sk, aes_randstate_t randstate);
