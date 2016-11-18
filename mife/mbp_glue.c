@@ -1,4 +1,5 @@
 #include <flint/fmpz.h>
+#include <string.h>
 
 #include "mbp_glue.h"
 #include "util.h"

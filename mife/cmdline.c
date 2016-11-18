@@ -1,4 +1,5 @@
 #include "cmdline.h"
+#include <string.h>
 
 const mife_flag_t mife_flags = MIFE_DEFAULT;
 
