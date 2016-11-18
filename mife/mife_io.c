@@ -159,10 +159,10 @@ void fread_mmap_enc_mat(const_mmap_vtable mmap, mmap_enc_mat_t m, FILE *fp) {
   int check1 = fscanf(fp, " %d ", &m->nrows);
   int check2 = fscanf(fp, " %d ", &m->ncols);
   assert(check1 == 1 && check2 == 1);
-  m->m = malloc(m->nrows * sizeof(mmap->enc->size));
+  m->m = malloc(m->nrows * sizeof(mmap_enc *));
   assert(m->m);
   for(int i = 0; i < m->nrows; i++) {
-    m->m[i] = malloc(m->ncols * sizeof(mmap->enc->size));
+    m->m[i] = malloc(m->ncols * sizeof(mmap_enc));
     assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
       m->m[i][j] = malloc(mmap->enc->size);
