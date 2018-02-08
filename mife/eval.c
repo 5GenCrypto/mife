@@ -1,7 +1,7 @@
 #include <getopt.h>
 
 #include <mife/mife.h>
-#include <mmap/mmap_gghlite.h>
+#include <mmap/mmap_dummy.h>
 #include <mmap/mmap_clt.h>
 #include <string.h>
 #include <sys/resource.h>
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     if (use_clt) {
         mmap = &clt_vtable;
     } else {
-        mmap = &gghlite_vtable;
+        mmap = &dummy_vtable;
     }
 
 	m = mife_eval_evaluate(mmap, ins);
@@ -150,7 +150,7 @@ void mife_eval_parse_cmdline(int argc, char **argv, eval_inputs *const ins, bool
     if (*use_clt) {
         mmap = &clt_vtable;
     } else {
-        mmap = &gghlite_vtable;
+        mmap = &dummy_vtable;
     }
 
 	/* read the mapping */

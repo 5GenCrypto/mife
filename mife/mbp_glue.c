@@ -1,8 +1,9 @@
-#include <flint/fmpz.h>
-#include <string.h>
-
 #include "mbp_glue.h"
 #include "util.h"
+
+#include <assert.h>
+#include <flint/fmpz.h>
+#include <string.h>
 
 void mbp_template_stats_free(mbp_template_stats stats) {
 	free(stats.position_index);

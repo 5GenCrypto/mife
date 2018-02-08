@@ -1,5 +1,7 @@
 #include "mife_internals.h"
+#include "util.h"
 
+#include <assert.h>
 #include <string.h>
 
 int g_parallel = 0;
@@ -15,8 +17,7 @@ void mife_ciphertext_clear(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext
 }
 
 void mife_clear_pp_read(const_mmap_vtable mmap, mife_pp_t pp) {
-  mmap->pp->clear(pp->params_ref);
-  free(pp->params_ref);
+  mmap->pp->free(pp->params_ref);
   mife_clear_pp(pp);
 }
 
@@ -27,8 +28,7 @@ void mife_clear_pp(mife_pp_t pp) {
 }
 
 void mife_clear_sk(const_mmap_vtable mmap, mife_sk_t sk) {
-  mmap->sk->clear(sk->self);
-  free(sk->self);
+  mmap->sk->free(sk->self);
   for(int i = 0; i < sk->numR; i++) {
     fmpz_mat_clear(sk->R[i]);
     fmpz_mat_clear(sk->R_inv[i]);
@@ -59,7 +59,7 @@ void mife_mat_clr_clear(mife_pp_t pp, mife_mat_clr_t met) {
 /* } */
 
 
-void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
+static void fmpz_mat_scalar_mul_modp(fmpz_mat_t m, fmpz_t scalar, fmpz_t modp) {
   for (int i = 0; i < m->r; i++) {
     for(int j = 0; j < m->c; j++) {
       fmpz_mul(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), scalar);
@@ -153,7 +153,7 @@ void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_en
       for(int j = 0; j < enc->ncols; j++) {
           fmpz_t *plaintext = malloc(sizeof(fmpz_t));
           memcpy(plaintext, fmpz_mat_entry(m, i, j), sizeof(fmpz_t));
-          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group);
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group, 0);
           NUM_ENCODINGS_GENERATED++;
           timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
               NUM_ENCODINGS_GENERATED,
@@ -167,7 +167,7 @@ void mife_mat_encode(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, mmap_en
       for(int j = 0; j < enc->ncols; j++) {
           fmpz_t *plaintext = malloc(sizeof(fmpz_t));
           memcpy(plaintext, fmpz_mat_entry(m, i, j), sizeof(fmpz_t));
-          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group);
+          mmap->enc->encode(enc->m[i][j], sk->self, 1, plaintext, group, 0);
           NUM_ENCODINGS_GENERATED++;
           timer_printf("\r    Generated encoding [%d / %d] (Time elapsed: %8.2f s)",
               NUM_ENCODINGS_GENERATED,
@@ -261,12 +261,12 @@ void mife_apply_kilian(mife_pp_t pp, mife_sk_t sk, fmpz_mat_t m, int global_inde
 
   fmpz_mat_set(m, tmp);
   fmpz_mat_clear(tmp);
-  
+
   /* finally, reduce all entries mod p */
   for(int i = 0; i < m->r; i++) {
-    for(int j = 0; j < m->c; j++) { 
+    for(int j = 0; j < m->c; j++) {
       fmpz_mod(fmpz_mat_entry(m, i, j), fmpz_mat_entry(m, i, j), pp->p);
-    }     
+    }
   }
 }
 
@@ -287,7 +287,7 @@ void mife_set_encodings(const_mmap_vtable mmap, mife_ciphertext_t ct, mife_mat_c
   // encode
   ct->enc = malloc(pp->num_inputs * sizeof(mmap_enc_mat_t *));
   for(int i = 0; i < pp->num_inputs; i++) {
-    ct->enc[i] = malloc(pp->n[i] * mmap->enc->size);
+    ct->enc[i] = malloc(pp->n[i] * sizeof(mmap_enc));
     for(int j = 0; j < pp->n[i]; j++) {
       mmap_enc_mat_init(mmap, pp->params_ref, ct->enc[i][j],
           met->clr[i][j]->r, met->clr[i][j]->c);
@@ -325,4 +325,3 @@ void reset_T() {
 float get_T() {
   return ggh_seconds(ggh_walltime(T));
 }
-

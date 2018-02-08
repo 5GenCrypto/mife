@@ -44,10 +44,10 @@ AC_SEARCH_LIBS(fmpz_init,flint)
 if test "x$ac_cv_search_fmpz_init" = "xno"; then
   AC_MSG_ERROR([libflint not found])
 fi
-AC_SEARCH_LIBS(fmpz_mod_poly_oz_intt,oz)
-if test "x$ac_cv_search_fmpz_mod_poly_oz_intt" = "xno"; then
-  AC_MSG_ERROR([liboz not found])
-fi
+dnl AC_SEARCH_LIBS(fmpz_mod_poly_oz_intt,oz)
+dnl if test "x$ac_cv_search_fmpz_mod_poly_oz_intt" = "xno"; then
+dnl   AC_MSG_ERROR([liboz not found])
+dnl fi
 dnl AC_SEARCH_LIBS(gghlite_init,gghlite)
 dnl if test "x$ac_cv_search_gghlite_init" = "xno"; then
 dnl   AC_MSG_ERROR([libgghlite not found])

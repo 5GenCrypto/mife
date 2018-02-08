@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -6,7 +7,7 @@
 #include <string.h>
 
 #include <mife/mife.h>
-#include <mmap/mmap_gghlite.h>
+#include <mmap/mmap_dummy.h>
 #include <mmap/mmap_clt.h>
 
 #include "cmdline.h"
@@ -48,7 +49,7 @@ int main(int argc, char **argv) {
     if (use_clt) {
         mmap = &clt_vtable;
     } else {
-        mmap = &gghlite_vtable;
+        mmap = &dummy_vtable;
     }
 
     mife_encrypt_setup(ins.pp, ins.partition, &ins.pt, clr, &partitions);
@@ -260,7 +261,7 @@ void mife_encrypt_parse_cmdline(int argc, char **argv, encrypt_inputs *const ins
     if (*use_clt) {
         mmap = &clt_vtable;
     } else {
-        mmap = &gghlite_vtable;
+        mmap = &dummy_vtable;
     }
 
     /* TODO: some error-checking would be nice here */

@@ -4,9 +4,8 @@
 #include <sys/resource.h>
 
 #include <mife/mife.h>
-#include <mmap/mmap_gghlite.h>
+#include <mmap/mmap_dummy.h>
 #include <mmap/mmap_clt.h>
-#include <gghlite/misc.h>
 
 #include "cmdline.h"
 #include "mbp_glue.h"
@@ -46,7 +45,7 @@ int main(int argc, char **argv) {
   if (use_clt)
     mmap = &clt_vtable;
   else
-    mmap = &gghlite_vtable;
+    mmap = &dummy_vtable;
 
   if (!mbp_template_to_mife_pp(pp, &ins.template, &stats))
       return -1;

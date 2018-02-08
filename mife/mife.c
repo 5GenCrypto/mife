@@ -1,6 +1,8 @@
 #include "mife.h"
 #include "util.h"
 
+#include <assert.h>
+
 int NUM_ENCODINGS_GENERATED;
 int PRINT_ENCODING_PROGRESS;
 int NUM_ENCODINGS_TOTAL;
@@ -45,7 +47,7 @@ mife_mbp_set(void *mbp_params,
     pp->orderfn = orderfn;
     pp->setfn = setfn;
     pp->parsefn = parsefn;
-} 
+}
 
 static void fmpz_rand_mat_square_aes(fmpz_mat_t m, int dim, aes_randstate_t randstate, fmpz_t p) {
   for (int i = 0; i < dim; i++) {
@@ -59,7 +61,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
                 int ncores,
     aes_randstate_t randstate) {
 
-  fmpz_t *tmp;
+  mpz_t *tmp;
   pp->n = malloc(pp->num_inputs * sizeof(int));
   pp->kappa = 0;
   for(int index = 0; index < pp->num_inputs; index++) {
@@ -77,8 +79,12 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
 
   timer_printf("Starting MMAP secret key initialization: %d %d %d...\n",
       lambda, pp->kappa, pp->gamma);
-  sk->self = malloc(mmap->sk->size);
-  mmap->sk->init(sk->self, lambda, pp->kappa, pp->gamma, NULL, 1, ncores, randstate, false);
+  mmap_sk_params params = {
+      .lambda = lambda,
+      .kappa = pp->kappa,
+      .gamma = pp->gamma,
+  };
+  sk->self = mmap->sk->new(&params, NULL, ncores, randstate, false);
   timer_printf("Finished MMAP secret key initialization\n");
 
   /* For const correctness, we should probably have two separate
@@ -93,7 +99,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   start_timer();
   fmpz_init(pp->p);
   tmp = mmap->sk->plaintext_fields(sk->self);
-  fmpz_set(pp->p, tmp[0]);
+  fmpz_set_mpz(pp->p, tmp[0]);
   free(tmp);
   timer_printf("Finished setting p");
   print_timer();
@@ -111,7 +117,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
   timer_printf("Starting setting Kilian matrices...\n");
   start_timer();
 
-  /* do not parallelize calls to randomness generation! */  
+  /* do not parallelize calls to randomness generation! */
   uint64_t t_init = ggh_walltime(0);
   for (int k = 0; k < pp->numR; k++) {
     fmpz_mat_init(sk->R[k], dims[k], dims[k]);
@@ -120,7 +126,7 @@ void mife_setup(const_mmap_vtable mmap, mife_pp_t pp, mife_sk_t sk, int L, int l
         k, ggh_seconds(ggh_walltime(t_init)));
   }
   timer_printf("\n");
-  
+
   int progress_count_approx = 0;
   uint64_t t = ggh_walltime(0);
   int *non_invertible;
@@ -163,7 +169,7 @@ mife_encrypt(const_mmap_vtable mmap, mife_ciphertext_t ct, void *message,
     fmpz_randm_aes(index, randstate, powL);
     fmpz_clear(powL);
     fmpz_clear(two);
-  
+
     mife_mat_clr_t met;
     pp->setfn(pp, met, message);
 
@@ -183,7 +189,7 @@ mife_evaluate(const_mmap_vtable mmap, mife_pp_t pp, mife_ciphertext_t *cts)
     for(int index = 1; index < pp->kappa; index++) {
         int i, j;
         pp->orderfn(pp, index, &i, &j);
-    
+
         if(index == 1) {
             // multiply the 0th index with the 1st index
             int i0, j0;
@@ -242,4 +248,3 @@ mife_encrypt_clear(mife_pp_t pp, mife_mat_clr_t clr, int ***partitions)
     mife_mat_clr_clear(pp, clr);
     mife_partitions_clear(pp, partitions);
 }
-

@@ -1,4 +1,7 @@
 #include "mife_io.h"
+#include "util.h"
+
+#include <assert.h>
 
 /**
  *
@@ -59,8 +62,7 @@ void fread_mife_pp(const_mmap_vtable mmap, mife_pp_t pp, char *filepath) {
   fmpz_inp_raw(pp->p, fp);
   CHECK(fscanf(fp, "\n"), 0);
 
-  pp->params_ref = malloc(mmap->pp->size);
-  mmap->pp->fread(pp->params_ref, fp);
+  pp->params_ref = mmap->pp->fread(fp);
   fclose(fp);
 }
 
@@ -115,8 +117,7 @@ void fread_mife_sk(const_mmap_vtable mmap, mife_sk_t sk, char *filepath) {
   timer_printf("Finished reading Kilian matrices %8.2fs\n",
     ggh_seconds(ggh_walltime(t)));
 
-  sk->self = malloc(mmap->sk->size);
-  mmap->sk->fread(sk->self, fp);
+  sk->self = mmap->sk->fread(fp);
 
   fclose(fp);
 }
@@ -165,11 +166,8 @@ void fread_mmap_enc_mat(const_mmap_vtable mmap, mmap_enc_mat_t m, FILE *fp) {
     m->m[i] = malloc(m->ncols * sizeof(mmap_enc));
     assert(m->m[i]);
     for(int j = 0; j < m->ncols; j++) {
-      m->m[i][j] = malloc(mmap->enc->size);
-      assert(m->m[i][j]);
-      mmap->enc->fread(m->m[i][j], fp);
+      m->m[i][j] = mmap->enc->fread(fp);
       CHECK(fscanf(fp, "\n"), 0);
     }
   }
 }
-
